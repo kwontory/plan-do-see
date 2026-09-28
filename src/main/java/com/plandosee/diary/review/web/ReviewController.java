@@ -23,12 +23,14 @@ import com.plandosee.diary.common.domain.Priority;
 import com.plandosee.diary.common.error.RetryLaterException;
 import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.error.NotFoundException;
+import com.plandosee.diary.common.error.ServiceBusyException;
 import com.plandosee.diary.common.paging.PageRequest;
 import com.plandosee.diary.common.web.ConflictKeys;
 import com.plandosee.diary.common.web.ConflictResponses;
 import com.plandosee.diary.common.web.EditConflicts;
 import com.plandosee.diary.common.web.FlashMessages;
 import com.plandosee.diary.common.web.FormErrors;
+import com.plandosee.diary.common.web.PageNavigation;
 import com.plandosee.diary.plan.web.PlanForm;
 import com.plandosee.diary.review.application.ReviewDetail;
 import com.plandosee.diary.review.application.ReviewEvidencePage;
@@ -38,6 +40,7 @@ import com.plandosee.diary.review.application.ReviewStaleException;
 import com.plandosee.diary.review.application.TransferResult;
 import com.plandosee.diary.review.domain.ReviewEvidence;
 import com.plandosee.diary.review.domain.ReviewMetric;
+import com.plandosee.diary.review.domain.ReviewRow;
 import com.plandosee.diary.review.domain.ReviewSummary;
 
 /**
@@ -111,10 +114,14 @@ public class ReviewController {
             return detailView(model, detail, form);
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
-            return detailView(model, reviewService.detail(reviewId), form);
+            return detailAgain(model, reviewId, form);
+        } catch (ServiceBusyException ex) {
+            // ADR-19: out of time or connections. Shown again without reading the database, input kept (503).
+            ConflictResponses.rejectForm(result, response, ex);
+            return detailUnavailable(model, reviewId, form);
         } catch (RetryLaterException ex) {
             ConflictResponses.rejectForm(result, response, ex);
-            return detailView(model, reviewService.detail(reviewId), form);
+            return detailAgain(model, reviewId, form);
         }
         FlashMessages.add(redirect, outcome == EditOutcome.UNCHANGED ? FLASH_IMPROVEMENT_UNCHANGED : FLASH_IMPROVEMENT_SAVED);
         return "redirect:/reviews/" + reviewId;
@@ -141,8 +148,8 @@ public class ReviewController {
         model.addAttribute("evidenceActualMinutes", evidence.evidenceActualMinutes());
         model.addAttribute("evidenceVarianceMinutes", evidence.evidenceVarianceMinutes());
         model.addAttribute("evidenceEmpty", evidence.empty());
-        model.addAttribute("page", evidence.todoPage());
-        model.addAttribute("logPage", evidence.logPage());
+        PageNavigation.addTo(model, "page", evidence.todoPage());
+        PageNavigation.addTo(model, "logPage", evidence.logPage());
         return "reviews/evidence";
     }
 
@@ -179,10 +186,14 @@ public class ReviewController {
             transfer = reviewService.transferImprovement(reviewId, form.toCommand());
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
-            return nextPlanView(model, reviewService.detail(reviewId));
+            return nextPlanAgain(model, reviewId);
+        } catch (ServiceBusyException ex) {
+            // ADR-19: out of time or connections. Shown again without reading the database, input kept (503).
+            ConflictResponses.rejectForm(result, response, ex);
+            return nextPlanUnavailable(model, reviewId);
         } catch (RetryLaterException ex) {
             ConflictResponses.rejectForm(result, response, ex);
-            return nextPlanView(model, reviewService.detail(reviewId));
+            return nextPlanAgain(model, reviewId);
         }
         if (!transfer.created()) {
             return alreadyTransferred(model, result, response, reviewService.detail(reviewId));
@@ -197,6 +208,52 @@ public class ReviewController {
         response.setStatus(HttpServletResponse.SC_CONFLICT);
         model.addAttribute("nextPlan", detail.nextPlan());
         return nextPlanView(model, detail);
+    }
+
+    /** The review page after a failed save; without the database if even that read does not fit in the budget. */
+    private String detailAgain(Model model, UUID reviewId, ImprovementForm form) {
+        return EditConflicts.readForForm(() -> reviewService.detail(reviewId))
+                .map(detail -> detailView(model, detail, form))
+                .orElseGet(() -> detailUnavailable(model, reviewId, form));
+    }
+
+    /**
+     * ADR-15/ADR-19: the review page from the request alone. Model: review (a stand-in holding the id from the path
+     * and the submitted version; improvement, period, nextPlanId and the rest unknown), improvementForm (the input),
+     * snapshotUnavailable = true. plan, nextPlan, summary and metricValues are absent (null).
+     */
+    private String detailUnavailable(Model model, UUID reviewId, ImprovementForm form) {
+        EditConflicts.markSnapshotUnavailable(model);
+        model.addAttribute("review", standIn(reviewId, form.getVersion()));
+        model.addAttribute("improvementForm", form);
+        return "reviews/detail";
+    }
+
+    /** The next-plan page after a failed save; without the database if even that read does not fit in the budget. */
+    private String nextPlanAgain(Model model, UUID reviewId) {
+        return EditConflicts.readForForm(() -> reviewService.detail(reviewId))
+                .map(detail -> nextPlanView(model, detail))
+                .orElseGet(() -> nextPlanUnavailable(model, reviewId));
+    }
+
+    /**
+     * ADR-15/ADR-19: the next-plan page from the request alone. Model: review (a stand-in holding the id from the
+     * path; the improvement to carry is unknown), planForm (the input, already in the model), priorities,
+     * snapshotUnavailable = true. plan and nextPlan are absent (null).
+     */
+    private String nextPlanUnavailable(Model model, UUID reviewId) {
+        EditConflicts.markSnapshotUnavailable(model);
+        model.addAttribute("review", standIn(reviewId, null));
+        model.addAttribute("priorities", Priority.values());
+        return "reviews/next-plan";
+    }
+
+    /** The review as far as it is known without the database: its id and, for the improvement form, the version. */
+    private static ReviewRow standIn(UUID reviewId, Integer version) {
+        ReviewRow review = new ReviewRow();
+        review.setId(reviewId);
+        review.setVersion(version == null ? 0 : version);
+        return review;
     }
 
     private String detailView(Model model, ReviewDetail detail, ImprovementForm form) {

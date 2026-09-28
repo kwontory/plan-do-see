@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org"
       th:with="formError=${#fields.hasErrors('${executionForm.*}')},
-               done=${todo.completed}">
-<head th:replace="~{fragments/layout :: head(${todo.title}, ${formError})}">
+               done=${todo.completed},
+               unavailable=${snapshotUnavailable == true}">
+<head th:replace="~{fragments/layout :: head(${unavailable} ? #{todos.detail.headingUnknown} : ${todo.title}, ${formError})}">
     <meta charset="UTF-8">
     <title>todo</title>
 </head>
@@ -13,14 +14,20 @@
     <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
         <ol>
             <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
-            <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">plan</a></li>
-            <li><a th:href="@{/plans/{id}/todos(id=${plan.id})}" href="#" th:text="#{breadcrumb.todos}">todos</a></li>
-            <li aria-current="page" th:text="${todo.title}">todo</li>
+            <!--/* ADR-19 stand-in (snapshotUnavailable): the plan and the todo title are unknown; those steps are left out. */-->
+            <th:block th:unless="${unavailable}">
+                <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">plan</a></li>
+                <li><a th:href="@{/plans/{id}/todos(id=${plan.id})}" href="#" th:text="#{breadcrumb.todos}">todos</a></li>
+            </th:block>
+            <li aria-current="page" th:text="${unavailable} ? #{todos.detail.headingUnknown} : ${todo.title}">todo</li>
         </ol>
     </nav>
     <div th:replace="~{fragments/layout :: flash}"></div>
-    <h1 th:text="${todo.title}">todo</h1>
+    <h1 th:text="${unavailable} ? #{todos.detail.headingUnknown} : ${todo.title}">todo</h1>
+    <p class="note" th:if="${unavailable}" data-test="snapshot-unavailable" th:text="#{conflict.latest.unavailable}">unavailable</p>
 
+    <!--/* ADR-19 stand-in: only the execution form (section 3) can be drawn; sections 1, 2 and 4-6 need the database. */-->
+    <th:block th:unless="${unavailable}">
     <!--/* 1. Current values (ADR-16, screens.md 11.2.1: same "current" card as the plan detail) */-->
     <section class="section" aria-labelledby="info-heading">
         <h2 id="info-heading"><th:block th:text="#{todos.detail.info.heading}">info</th:block> <span
@@ -64,6 +71,7 @@
             <button type="submit" class="btn btn--secondary" th:text="#{todos.action.reopen}">reopen</button>
         </form>
     </section>
+    </th:block>
 
     <!--/* 3. Execution form */-->
     <section class="section" aria-labelledby="exec-form-heading">
@@ -104,6 +112,8 @@
         <p class="muted" th:text="#{todos.detail.exec.auditNote}">audit</p>
     </section>
 
+    <th:block th:unless="${unavailable}">
+
     <!--/* 4. Execution logs */-->
     <section class="section" aria-labelledby="logs-heading">
         <h2 id="logs-heading" th:text="#{todos.detail.logs.heading}">logs</h2>
@@ -140,8 +150,8 @@
                 </tfoot>
             </table>
         </div>
-        <p th:replace="~{fragments/layout :: allPagesNote(${logPage})}"></p>
-        <div th:replace="~{fragments/layout :: pager(${logPage}, 'logPage', @{/todos/{id}(id=${todo.id},historyPage=${historyPage.number})}, '#logs-heading', ${#messages.msg('pager.nav', #messages.msg('todos.detail.logs.heading'))})}"></div>
+        <p th:replace="~{fragments/layout :: allPagesNote(${logPageNav})}"></p>
+        <div th:replace="~{fragments/layout :: pager(${logPageNav}, 'logPage', @{/todos/{id}(id=${todo.id},historyPage=${historyPage.number})}, '#logs-heading', ${#messages.msg('pager.nav', #messages.msg('todos.detail.logs.heading'))})}"></div>
     </section>
 
     <!--/* 5. Completions and reopens (ADR-16, screens.md 11.2.3). The server merges and orders them (completionHistory,
@@ -177,7 +187,7 @@
             </div>
             <p class="muted" th:text="#{todos.detail.history.cycleNote}">cycle note</p>
         </th:block>
-        <div th:replace="~{fragments/layout :: pager(${historyPage}, 'historyPage', @{/todos/{id}(id=${todo.id},logPage=${logPage.number})}, '#history-heading', ${#messages.msg('pager.nav', #messages.msg('todos.detail.history.heading'))})}"></div>
+        <div th:replace="~{fragments/layout :: pager(${historyPageNav}, 'historyPage', @{/todos/{id}(id=${todo.id},logPage=${logPage.number})}, '#history-heading', ${#messages.msg('pager.nav', #messages.msg('todos.detail.history.heading'))})}"></div>
     </section>
 
     <!--/* 6. Edit history (ADR-16, screens.md 11.2.2): values before each edit, newest first (server order). */-->
@@ -194,6 +204,7 @@
             </li>
         </ol>
     </section>
+    </th:block>
 </main>
 
 <footer th:replace="~{fragments/layout :: footer}"></footer>

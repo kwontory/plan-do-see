@@ -120,9 +120,9 @@
             </table>
         </div>
         <!--/* ADR-21: the footer totals and the check above cover the whole scope; this page shows a part of it. */-->
-        <p th:replace="~{fragments/layout :: allPagesNote(${page})}"></p>
+        <p th:replace="~{fragments/layout :: allPagesNote(${pageNav})}"></p>
         <th:block th:with="todoBase=${logPage != null} ? @{/reviews/{id}/evidence(id=${review.id},metric=${mk},logPage=${logPage.number})} : @{/reviews/{id}/evidence(id=${review.id},metric=${mk})}">
-            <div th:replace="~{fragments/layout :: pager(${page}, 'page', ${todoBase}, '#ev-todo-heading', ${#messages.msg('pager.nav', #messages.msg('evidence.todos.region'))})}"></div>
+            <div th:replace="~{fragments/layout :: pager(${pageNav}, 'page', ${todoBase}, '#ev-todo-heading', ${#messages.msg('pager.nav', #messages.msg('evidence.todos.region'))})}"></div>
         </th:block>
     </section>
 
@@ -161,9 +161,9 @@
                 </tfoot>
             </table>
         </div>
-        <p th:replace="~{fragments/layout :: allPagesNote(${logPage})}"></p>
+        <p th:replace="~{fragments/layout :: allPagesNote(${logPageNav})}"></p>
         <th:block th:with="logBase=${page != null} ? @{/reviews/{id}/evidence(id=${review.id},metric=${mk},page=${page.number})} : @{/reviews/{id}/evidence(id=${review.id},metric=${mk})}">
-            <div th:replace="~{fragments/layout :: pager(${logPage}, 'logPage', ${logBase}, '#ev-log-heading', ${#messages.msg('pager.nav', #messages.msg('evidence.logs.region'))})}"></div>
+            <div th:replace="~{fragments/layout :: pager(${logPageNav}, 'logPage', ${logBase}, '#ev-log-heading', ${#messages.msg('pager.nav', #messages.msg('evidence.logs.region'))})}"></div>
         </th:block>
     </section>
 

@@ -20,7 +20,7 @@
     <section aria-labelledby="plan-list-heading" class="section">
         <h2 id="plan-list-heading" class="visually-hidden" th:text="#{plans.list.srHeading}">list</h2>
         <th:block th:replace="~{fragments/plan :: planList(${plans})}"></th:block>
-        <div th:replace="~{fragments/layout :: pager(${page}, 'page', @{/plans}, '#plan-list-heading', #{plans.list.pagerLabel})}"></div>
+        <div th:replace="~{fragments/layout :: pager(${pageNav}, 'page', @{/plans}, '#plan-list-heading', #{plans.list.pagerLabel})}"></div>
     </section>
 </main>
 

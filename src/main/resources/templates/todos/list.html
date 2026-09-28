@@ -7,8 +7,9 @@
                tagKey=${#strings.toString(filter.tagId)},
                dueKey=${#strings.toString(filter.due)},
                sortKey=${#strings.toString(filter.sort)},
+               unavailable=${snapshotUnavailable == true},
                filterActive=${!#strings.isEmpty(qText) or !#strings.isEmpty(statusKey) or !#strings.isEmpty(priorityKey) or !#strings.isEmpty(tagKey) or !#strings.isEmpty(dueKey)}">
-<head th:replace="~{fragments/layout :: head(#{todos.list.pageTitle(${plan.title})}, ${formError})}">
+<head th:replace="~{fragments/layout :: head(${unavailable} ? #{todos.list.heading} : #{todos.list.pageTitle(${plan.title})}, ${formError})}">
     <meta charset="UTF-8">
     <title>todos</title>
 </head>
@@ -19,14 +20,17 @@
     <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
         <ol>
             <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
-            <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">plan</a></li>
+            <!--/* ADR-19 stand-in (snapshotUnavailable): only the plan id is known, not its title. */-->
+            <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#"
+                   th:text="${unavailable} ? #{breadcrumb.thisPlan} : ${plan.title}">plan</a></li>
             <li aria-current="page" th:text="#{breadcrumb.todos}">todos</li>
         </ol>
     </nav>
     <div th:replace="~{fragments/layout :: flash}"></div>
     <h1 th:text="#{todos.list.heading}">todos</h1>
-    <p class="subtitle"><th:block th:text="#{todos.list.planLabel}">plan:</th:block> <a th:href="@{/plans/{id}(id=${plan.id})}" href="#"
+    <p class="subtitle" th:unless="${unavailable}"><th:block th:text="#{todos.list.planLabel}">plan:</th:block> <a th:href="@{/plans/{id}(id=${plan.id})}" href="#"
             th:text="${plan.title}">plan</a></p>
+    <p class="note" th:if="${unavailable}" data-test="snapshot-unavailable" th:text="#{conflict.latest.unavailable}">unavailable</p>
 
     <!--/* 1. Add */-->
     <section class="section" aria-labelledby="add-heading">
@@ -114,7 +118,10 @@
     <!--/* 3. List */-->
     <section class="section" aria-labelledby="list-heading">
         <h2 id="list-heading" th:text="#{todos.list.listHeading}">list</h2>
+        <p class="note" th:if="${unavailable}" data-test="section-unavailable" th:text="#{conflict.section.unavailable}">unavailable</p>
 
+        <!--/* ADR-19 stand-in: todos, page, pageNav, tags and completionKeys are absent, so the list part is left out. */-->
+        <th:block th:unless="${unavailable}">
         <div class="filter-status" th:if="${filterActive}">
             <p><th:block th:text="#{todos.filter.active}">active</th:block>
                 <span class="filter-conditions"><span th:unless="${#strings.isEmpty(qText)}" th:text="#{todos.filter.cond.q(${qText})}">q</span><th:block
@@ -215,7 +222,8 @@
             </li>
         </ul>
 
-        <div th:replace="~{fragments/layout :: pager(${page}, 'page', @{${filter.listUrl(plan.id, 1)}}, '#list-heading', #{todos.list.pagerLabel})}"></div>
+        <div th:replace="~{fragments/layout :: pager(${pageNav}, 'page', @{${filter.listUrl(plan.id, 1)}}, '#list-heading', #{todos.list.pagerLabel})}"></div>
+        </th:block>
     </section>
 </main>
 

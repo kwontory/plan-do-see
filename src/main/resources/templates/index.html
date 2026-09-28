@@ -32,7 +32,7 @@
         <h2 id="plans-heading" th:text="#{home.plans.heading}">plans</h2>
         <p><a class="btn" th:href="@{/plans/new}" href="/plans/new" th:text="#{plans.new}">new</a></p>
         <th:block th:replace="~{fragments/plan :: planList(${plans})}"></th:block>
-        <div th:replace="~{fragments/layout :: pager(${page}, 'page', @{/}, '#plans-heading', #{plans.list.pagerLabel})}"></div>
+        <div th:replace="~{fragments/layout :: pager(${pageNav}, 'page', @{/}, '#plans-heading', #{plans.list.pagerLabel})}"></div>
     </section>
 </main>
 

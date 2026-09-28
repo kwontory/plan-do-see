@@ -151,31 +151,30 @@
     <p><span class="badge badge--readonly" th:text="#{badge.readonly}">before</span></p>
 </th:block>
 
-<!--/* ADR-21 page navigation. page: PageInfo (server computed; nothing renders for an empty list).
+<!--/* ADR-21 page navigation. nav: PageNavigation (server computed, web-contract revision 7: the page window, gaps,
+       neighbours; the template only prints them and builds the links). Nothing renders for an empty list or a list
+       that is not on this page (null).
        pageParam: query parameter of this list (page, logPage, historyPage). base: context URL of page 1 of this list with
        every other condition already in it (search, filter, sort, the other list's page); page 1 is the base itself
-       because an absent parameter means page 1. anchor: "#id" of the list heading or ''. label: nav name.
-       Only a window of page numbers is shown (first, current-2..current+2, last) so long lists stay short. */-->
-<div th:fragment="pager(page, pageParam, base, anchor, label)" class="pager" th:if="${page != null and page.totalCount > 0}"
-     th:with="pre=${base + (#strings.contains(base, '?') ? '&' : '?') + pageParam + '='},
-              from=${page.number - 2 < 1 ? 1 : page.number - 2},
-              to=${page.number + 2 > page.totalPages ? page.totalPages : page.number + 2}">
+       because an absent parameter means page 1. anchor: "#id" of the list heading or ''. label: nav name. */-->
+<div th:fragment="pager(nav, pageParam, base, anchor, label)" class="pager" th:if="${nav != null and nav.visible}"
+     th:with="pre=${base + (#strings.contains(base, '?') ? '&' : '?') + pageParam + '='}">
     <p class="pager__range" data-test="pager-range"
-       th:text="#{pager.range(${page.firstItem}, ${page.lastItem}, ${page.totalCount})}">1-50 / 50</p>
-    <nav class="pager__nav" th:if="${page.totalPages > 1}" th:attr="aria-label=${label}" data-test="pager">
+       th:text="#{pager.range(${nav.firstItem}, ${nav.lastItem}, ${nav.totalCount})}">1-50 / 50</p>
+    <nav class="pager__nav" th:if="${nav.navigable}" th:attr="aria-label=${label}" data-test="pager">
         <ul class="pager__list">
-            <li th:if="${page.hasPrevious}" th:with="n=${page.number - 1}"><a class="btn btn--secondary" rel="prev"
+            <li th:if="${nav.hasPrevious}" th:with="n=${nav.previousNumber}"><a class="btn btn--secondary" rel="prev"
                     th:href="${n == 1} ? ${base + anchor} : ${pre + n + anchor}" href="#"><th:block
                     th:text="#{pager.previous}">prev</th:block><span class="visually-hidden"
                     th:text="#{common.srContext(${#messages.msg('pager.page.sr', n)})}"></span></a></li>
-            <li th:if="${from > 1}"><a th:replace="~{fragments/layout :: pagerNumber(1, false, ${base + anchor})}"></a></li>
-            <li th:if="${from > 2}" class="pager__gap" aria-hidden="true" th:text="#{pager.gap}">...</li>
-            <li th:each="n : ${#numbers.sequence(from, to)}"><a
-                    th:replace="~{fragments/layout :: pagerNumber(${n}, ${n == page.number}, ${n == 1 ? base + anchor : pre + n + anchor})}"></a></li>
-            <li th:if="${to < page.totalPages - 1}" class="pager__gap" aria-hidden="true" th:text="#{pager.gap}">...</li>
-            <li th:if="${to < page.totalPages}"><a
-                    th:replace="~{fragments/layout :: pagerNumber(${page.totalPages}, false, ${pre + page.totalPages + anchor})}"></a></li>
-            <li th:if="${page.hasNext}" th:with="n=${page.number + 1}"><a class="btn btn--secondary" rel="next"
+            <li th:if="${nav.showFirst}"><a th:replace="~{fragments/layout :: pagerNumber(1, false, ${base + anchor})}"></a></li>
+            <li th:if="${nav.gapBefore}" class="pager__gap" aria-hidden="true" th:text="#{pager.gap}">...</li>
+            <li th:each="slot : ${nav.numbers}"><a
+                    th:replace="~{fragments/layout :: pagerNumber(${slot.number}, ${slot.current}, ${slot.first ? base + anchor : pre + slot.number + anchor})}"></a></li>
+            <li th:if="${nav.gapAfter}" class="pager__gap" aria-hidden="true" th:text="#{pager.gap}">...</li>
+            <li th:if="${nav.showLast}"><a
+                    th:replace="~{fragments/layout :: pagerNumber(${nav.lastNumber}, false, ${pre + nav.lastNumber + anchor})}"></a></li>
+            <li th:if="${nav.hasNext}" th:with="n=${nav.nextNumber}"><a class="btn btn--secondary" rel="next"
                     th:href="${pre + n + anchor}" href="#"><th:block th:text="#{pager.next}">next</th:block><span
                     class="visually-hidden" th:text="#{common.srContext(${#messages.msg('pager.page.sr', n)})}"></span></a></li>
         </ul>
@@ -188,7 +187,7 @@
         th:text="#{pager.number(${n})}">1</span><span class="visually-hidden" th:text="#{pager.page.sr(${n})}">1</span></a>
 
 <!--/* Note under a paged table whose footer totals cover every page (ADR-21 3). */-->
-<p th:fragment="allPagesNote(page)" th:if="${page != null and page.totalPages > 1}" class="muted"
+<p th:fragment="allPagesNote(nav)" th:if="${nav != null and nav.navigable}" class="muted"
    th:text="#{pager.allPagesNote}">totals cover all pages</p>
 
 </body>

@@ -1,5 +1,6 @@
 package com.plandosee.diary.todo.web;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -78,13 +79,23 @@ public class TodoController {
             todoService.create(planId, form.toCommand());
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
-            return pages.list(model, planId, filter, form);
+            return listAgain(model, planId, filter, form);
+        } catch (ServiceBusyException ex) {
+            // ADR-19: out of time or connections. Shown again without reading the database, input kept (503).
+            ConflictResponses.rejectForm(result, response, ex);
+            return pages.listUnavailable(model, planId, filter, form);
         } catch (RetryLaterException ex) {
             ConflictResponses.rejectForm(result, response, ex);
-            return pages.list(model, planId, filter, form);
+            return listAgain(model, planId, filter, form);
         }
         FlashMessages.add(redirect, FLASH_CREATED);
         return "redirect:" + filter.listUrl(planId);
+    }
+
+    /** The list page after a failed add; without the database if even that read does not fit in the budget. */
+    private String listAgain(Model model, UUID planId, TodoListQuery filter, TodoForm form) {
+        return EditConflicts.readForForm(() -> pages.list(model, planId, filter, form))
+                .orElseGet(() -> pages.listUnavailable(model, planId, filter, form));
     }
 
     @GetMapping("/todos/{id}")
@@ -155,13 +166,13 @@ public class TodoController {
 
     /** After a collision (ADR-15): the latest todo and what differs, or the stand-in if even the read fails. */
     private String editViewWithLatest(Model model, UUID todoId, TodoForm form) {
-        EditSnapshot<TodoRow> snapshot;
-        try {
-            snapshot = todoService.latestForEdit(todoId, form.toCommand());
-        } catch (RetryLaterException readFailed) {
+        Optional<EditSnapshot<TodoRow>> read =
+                EditConflicts.readForForm(() -> todoService.latestForEdit(todoId, form.toCommand()));
+        if (read.isEmpty()) {
             EditConflicts.markSnapshotUnavailable(model);
             return editView(model, standIn(todoId, form));
         }
+        EditSnapshot<TodoRow> snapshot = read.get();
         EditConflicts.showLatest(model, snapshot.latest(), snapshot.changedFields());
         return editView(model, snapshot.latest());
     }

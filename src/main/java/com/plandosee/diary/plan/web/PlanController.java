@@ -1,5 +1,6 @@
 package com.plandosee.diary.plan.web;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -28,6 +29,7 @@ import com.plandosee.diary.common.paging.PageRequest;
 import com.plandosee.diary.common.web.ConflictResponses;
 import com.plandosee.diary.common.web.FlashMessages;
 import com.plandosee.diary.common.web.FormErrors;
+import com.plandosee.diary.common.web.PageNavigation;
 import com.plandosee.diary.plan.application.PlanService;
 import com.plandosee.diary.plan.application.PlanStaleException;
 import com.plandosee.diary.plan.domain.PlanRow;
@@ -57,7 +59,7 @@ public class PlanController {
     public String list(@RequestParam(name = "page", required = false) String page, Model model) {
         Page<PlanRow> plans = planService.listPage(PageRequest.parse(page));
         model.addAttribute("plans", plans.items());
-        model.addAttribute("page", plans.info());
+        PageNavigation.addTo(model, "page", plans.info());
         return "plans/list";
     }
 
@@ -137,13 +139,13 @@ public class PlanController {
 
     /** After a collision (ADR-15): the latest plan and what differs, or the stand-in if even the read fails. */
     private String editViewWithLatest(Model model, UUID planId, PlanForm form) {
-        EditSnapshot<PlanRow> snapshot;
-        try {
-            snapshot = planService.latestForEdit(planId, form.toCommand());
-        } catch (RetryLaterException readFailed) {
+        Optional<EditSnapshot<PlanRow>> read =
+                EditConflicts.readForForm(() -> planService.latestForEdit(planId, form.toCommand()));
+        if (read.isEmpty()) {
             EditConflicts.markSnapshotUnavailable(model);
             return editView(model, standIn(planId, form));
         }
+        EditSnapshot<PlanRow> snapshot = read.get();
         EditConflicts.showLatest(model, snapshot.latest(), snapshot.changedFields());
         return editView(model, snapshot.latest());
     }

@@ -1,12 +1,16 @@
 package com.plandosee.diary.common.web;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 
+import com.plandosee.diary.common.concurrency.BusyCause;
+import com.plandosee.diary.common.error.RetryLaterException;
 import com.plandosee.diary.common.error.StaleVersionException;
 
 /**
@@ -48,5 +52,25 @@ public final class EditConflicts {
 
     public static void markSnapshotUnavailable(Model model) {
         model.addAttribute(SNAPSHOT_UNAVAILABLE, true);
+    }
+
+    /**
+     * A read made only to show a form again after a failed save. Empty when that read itself did not fit in the time
+     * budget or pool wait (ADR-19) or collided (ADR-15), so the caller can show the form from the request alone
+     * (stand-in, {@link #markSnapshotUnavailable}) instead of losing the input on an error page. A plain read is
+     * not behind the write boundary, so its budget failure arrives as the raw Spring exception and is recognised
+     * here by {@link BusyCause}. Anything else (not found, a bug) is rethrown.
+     */
+    public static <T> Optional<T> readForForm(Supplier<T> read) {
+        try {
+            return Optional.ofNullable(read.get());
+        } catch (RetryLaterException unavailable) {
+            return Optional.empty();
+        } catch (RuntimeException failure) {
+            if (BusyCause.classify(failure).isPresent()) {
+                return Optional.empty();
+            }
+            throw failure;
+        }
     }
 }
