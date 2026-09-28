@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.plandosee.diary.common.domain.Priority;
@@ -42,14 +43,16 @@ public class TodoController {
     }
 
     /**
-     * The add form carries the current list state as hidden fields (개정 1 Q10). The filter's priority is not
-     * read here because the TodoForm field of the same name owns the "priority" parameter.
+     * The add form carries the current list state as hidden fields (개정 1 Q10). Because TodoForm owns the
+     * "priority" parameter, the list's priority filter arrives as hidden "listPriority" on this form only.
      */
     @PostMapping("/plans/{id}/todos")
     public String create(@PathVariable("id") UUID planId,
                          @Valid @ModelAttribute("todoForm") TodoForm form, BindingResult result,
-                         @ModelAttribute("filter") TodoListQuery filter, Model model, RedirectAttributes redirect) {
-        filter.setPriority(null);
+                         @ModelAttribute("filter") TodoListQuery filter,
+                         @RequestParam(name = "listPriority", required = false) String listPriority,
+                         Model model, RedirectAttributes redirect) {
+        filter.setPriority(listPriority);
         if (result.hasErrors()) {
             return pages.list(model, planId, filter, form);
         }

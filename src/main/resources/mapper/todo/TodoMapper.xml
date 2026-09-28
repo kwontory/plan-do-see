@@ -166,11 +166,14 @@
           AND deleted_at IS NULL
     </update>
 
-    <select id="countEventsByKey" resultType="int">
+    <select id="countEventsByKeyOwned" resultType="int">
         SELECT COUNT(c.id) AS event_count
         FROM completion_events c
+        JOIN todos t ON t.id = c.todo_id
+        JOIN plans p ON p.id = t.plan_id
         WHERE c.todo_id = #{todoId}
           AND c.idempotency_key = #{idempotencyKey}
+          AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
     </select>
 
     <insert id="insertCompletionEvent" parameterType="com.plandosee.diary.todo.domain.CompletionEventRow">

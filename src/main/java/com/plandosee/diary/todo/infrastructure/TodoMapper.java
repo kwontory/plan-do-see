@@ -30,7 +30,8 @@ public interface TodoMapper {
 
     int markInProgress(@Param("todoId") UUID todoId, @Param("now") OffsetDateTime now);
 
-    int countEventsByKey(@Param("todoId") UUID todoId, @Param("idempotencyKey") UUID idempotencyKey);
+    int countEventsByKeyOwned(@Param("userId") UUID userId, @Param("todoId") UUID todoId,
+                              @Param("idempotencyKey") UUID idempotencyKey);
 
     int insertCompletionEvent(CompletionEventRow event);
 

@@ -50,7 +50,7 @@ public class TodoCompletionService {
         } catch (DuplicateKeyException duplicate) {
             // Reached only after the owned-todo lock succeeded: a concurrent request committed first.
             // Report the current state instead of a DB error.
-            Boolean sameKey = transactionTemplate.execute(status -> todoMapper.countEventsByKey(todoId, idempotencyKey) > 0);
+            Boolean sameKey = transactionTemplate.execute(status -> todoMapper.countEventsByKeyOwned(currentUserProvider.currentUserId(), todoId, idempotencyKey) > 0);
             return Boolean.TRUE.equals(sameKey) ? TransitionResult.REPLAYED : TransitionResult.ALREADY_COMPLETED;
         }
     }
@@ -68,7 +68,7 @@ public class TodoCompletionService {
 
     private TransitionResult completeInTransaction(UUID todoId, UUID idempotencyKey) {
         TodoRow todo = lock(todoId);
-        if (todoMapper.countEventsByKey(todoId, idempotencyKey) > 0) {
+        if (todoMapper.countEventsByKeyOwned(currentUserProvider.currentUserId(), todoId, idempotencyKey) > 0) {
             return TransitionResult.REPLAYED;
         }
         if (todo.getStatus() == TodoStatus.COMPLETED) {

@@ -14,6 +14,7 @@ import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.todo.application.TodoCompletionService;
 import com.plandosee.diary.todo.application.TodoService;
 import com.plandosee.diary.todo.application.TransitionResult;
+import com.plandosee.diary.todo.domain.TodoStatus;
 
 /**
  * Completion and reopen (DEC-05, ADR-05). Server idempotency does not rely on the browser disabling buttons.
@@ -23,6 +24,7 @@ public class TodoCompletionController {
 
     static final String COMPLETED = "완료로 바꿨습니다.";
     static final String ALREADY_COMPLETED = "이미 완료된 할 일입니다. 완료 기록은 추가되지 않았습니다.";
+    static final String REPLAYED_NOW_IN_PROGRESS = "이미 처리한 완료 요청입니다. 이 할 일은 지금 진행 중입니다.";
     static final String REOPENED = "진행 중으로 되돌렸습니다.";
     static final String ALREADY_IN_PROGRESS = "이미 진행 중입니다.";
 
@@ -42,7 +44,10 @@ public class TodoCompletionController {
         UUID planId = todoService.get(todoId).getPlanId();
         String message;
         try {
-            message = message(completionService.complete(todoId, parseKey(idempotencyKey)));
+            TransitionResult result = completionService.complete(todoId, parseKey(idempotencyKey));
+            message = result == TransitionResult.REPLAYED
+                    ? replayMessage(todoService.get(todoId).getStatus())
+                    : message(result);
         } catch (DomainRuleException ex) {
             message = ex.getMessage();
         }
@@ -57,6 +62,14 @@ public class TodoCompletionController {
         UUID planId = todoService.get(todoId).getPlanId();
         redirect.addFlashAttribute("flashMessage", message(completionService.reopen(todoId)));
         return redirect(todoId, planId, returnTo, filter);
+    }
+
+    /**
+     * ADR-12 Q-E2: a replayed key adds nothing; the message follows the todo's current state so a request
+     * replayed after a reopen is not mistaken for a completion.
+     */
+    static String replayMessage(TodoStatus currentStatus) {
+        return currentStatus == TodoStatus.COMPLETED ? COMPLETED : REPLAYED_NOW_IN_PROGRESS;
     }
 
     static String message(TransitionResult result) {
