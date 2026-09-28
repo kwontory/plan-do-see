@@ -1,21 +1,6 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head(#{error.400.title}, false)}">
-    <meta charset="UTF-8">
-    <title>400</title>
-</head>
-<body>
-<header th:replace="~{fragments/layout :: header('none')}"></header>
-
-<main id="main" tabindex="-1">
-    <h1 th:text="#{error.400.title}">400</h1>
-    <p th:text="#{error.400.body}">error</p>
-    <ul class="link-row">
-        <li><a class="btn btn--secondary" th:href="@{/}" href="/" th:text="#{common.home}">home</a></li>
-        <li><a class="btn btn--secondary" th:href="@{/plans}" href="/plans" th:text="#{common.planList}">plans</a></li>
-    </ul>
-</main>
-
-<footer th:replace="~{fragments/layout :: footer}"></footer>
-</body>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/error :: errorPage('error.400.title', 'error.400.body')}">
+<head><meta charset="UTF-8"><title>400</title></head>
+<body></body>
 </html>
