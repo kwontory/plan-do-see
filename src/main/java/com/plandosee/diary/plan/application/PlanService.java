@@ -18,7 +18,7 @@ import com.plandosee.diary.common.paging.PageInfo;
 import com.plandosee.diary.common.paging.PageSettings;
 import com.plandosee.diary.common.time.SeoulDates;
 import com.plandosee.diary.plan.application.port.PlanMapper;
-import com.plandosee.diary.plan.domain.PlanPeriod;
+import com.plandosee.diary.plan.domain.PlanRules;
 import com.plandosee.diary.plan.domain.PlanRevisionRow;
 import com.plandosee.diary.plan.domain.PlanRow;
 
@@ -166,8 +166,16 @@ public class PlanService {
         plan.setEstimatedMinutes(command.estimatedMinutes());
     }
 
+    /**
+     * ADR-22: the service does not trust the form. Every command is checked at the entrance with the same rules and
+     * codes as PlanForm (PlanRules), so a direct call never reaches the DB constraints with a known bad value.
+     */
     private void validate(PlanCommand command) {
-        PlanPeriod.check(command.startDate(), command.endDate());
+        if (command == null) {
+            throw new IllegalArgumentException("plan command");
+        }
+        PlanRules.check(command.title(), command.startDate(), command.endDate(), command.priority(),
+                command.successCriteria(), command.estimatedMinutes());
     }
 
     private OffsetDateTime now() {

@@ -32,17 +32,15 @@ import com.plandosee.diary.review.domain.EvidenceTotals;
 import com.plandosee.diary.review.domain.ReviewEvidence;
 import com.plandosee.diary.review.domain.ReviewMetric;
 import com.plandosee.diary.review.domain.ReviewRow;
+import com.plandosee.diary.review.domain.ReviewRules;
 import com.plandosee.diary.review.domain.ReviewScope;
 import com.plandosee.diary.review.domain.ReviewSummary;
 
 @Service
 public class ReviewService {
 
-    public static final int IMPROVEMENT_MAX_LENGTH = 1000;
     public static final String IMPROVEMENT_ALREADY_TRANSFERRED = "review.improvement.alreadyTransferred";
     public static final String IMPROVEMENT_MISSING = "review.improvement.missing";
-    /** Message argument {0}: IMPROVEMENT_MAX_LENGTH as a plain string (no number grouping). */
-    public static final String IMPROVEMENT_TOO_LONG = "review.improvement.tooLong";
 
     private final ReviewMapper reviewMapper;
     private final PlanService planService;
@@ -70,10 +68,11 @@ public class ReviewService {
      * DEC-01: a review belongs to one plan and copies the plan period for display and audit.
      */
     public UUID create(UUID planId, String improvement) {
-        return writes.run(() -> insert(planId, improvement));
+        String normalized = normalizeImprovement(improvement);
+        return writes.run(() -> insert(planId, normalized));
     }
 
-    private UUID insert(UUID planId, String improvement) {
+    private UUID insert(UUID planId, String normalizedImprovement) {
         PlanRow plan = planService.requireOwned(planId);
         OffsetDateTime now = now();
         ReviewRow review = new ReviewRow();
@@ -82,7 +81,7 @@ public class ReviewService {
         review.setPlanId(plan.getId());
         review.setPeriodStart(plan.getStartDate());
         review.setPeriodEnd(plan.getEndDate());
-        review.setImprovement(normalizeImprovement(improvement));
+        review.setImprovement(normalizedImprovement);
         review.setCreatedAt(now);
         review.setUpdatedAt(now);
         reviewMapper.insert(review);
@@ -117,10 +116,11 @@ public class ReviewService {
      * carried, or the transfer wins and this is rejected (ADR-08, ADR-15).
      */
     public void updateImprovement(UUID reviewId, String improvement) {
-        writes.run(() -> updateImprovementLocked(reviewId, improvement));
+        String normalized = normalizeImprovement(improvement);
+        writes.run(() -> updateImprovementLocked(reviewId, normalized));
     }
 
-    private void updateImprovementLocked(UUID reviewId, String improvement) {
+    private void updateImprovementLocked(UUID reviewId, String normalizedImprovement) {
         UUID userId = currentUserProvider.currentUserId();
         ReviewRow review = reviewMapper.lockActiveOwned(userId, reviewId);
         if (review == null) {
@@ -129,7 +129,7 @@ public class ReviewService {
         if (review.isTransferred()) {
             throw new DomainRuleException("improvement", IMPROVEMENT_ALREADY_TRANSFERRED);
         }
-        if (reviewMapper.updateImprovementOwned(userId, reviewId, normalizeImprovement(improvement), now()) != 1) {
+        if (reviewMapper.updateImprovementOwned(userId, reviewId, normalizedImprovement, now()) != 1) {
             throw new NotFoundException("review");
         }
     }
@@ -286,9 +286,8 @@ public class ReviewService {
         if (trimmed.isEmpty()) {
             return null;
         }
-        if (trimmed.length() > IMPROVEMENT_MAX_LENGTH) {
-            throw new DomainRuleException("improvement", IMPROVEMENT_TOO_LONG, String.valueOf(IMPROVEMENT_MAX_LENGTH));
-        }
+        // ADR-22: same rule and code as ImprovementForm (validation.improvement.max; was review.improvement.tooLong).
+        ReviewRules.checkImprovement(trimmed);
         return trimmed;
     }
 

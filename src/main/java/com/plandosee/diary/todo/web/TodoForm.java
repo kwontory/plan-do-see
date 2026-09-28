@@ -15,15 +15,17 @@ import com.plandosee.diary.todo.application.TagNames;
 import com.plandosee.diary.todo.application.TodoCommand;
 import com.plandosee.diary.todo.domain.TagRow;
 import com.plandosee.diary.todo.domain.TodoRow;
+import com.plandosee.diary.todo.domain.TodoRules;
 
 /**
  * Todo create/edit form. Only the ADR-07 editable fields exist here; status, plan, and id cannot be submitted.
- * tags is a comma-separated list parsed by TagNames (each 1..50 chars, case-insensitive duplicates merged).
+ * tags is a comma-separated list parsed by TagNames (each 1..TodoRules.TAG_NAME_MAX chars, case-insensitive
+ * duplicates merged). Limits come from TodoRules (ADR-22).
  */
 public class TodoForm {
 
     @NotBlank(message = "{validation.title.required}")
-    @Size(max = 200, message = "{validation.title.max}")
+    @Size(max = TodoRules.TITLE_MAX, message = "{validation.title.max}")
     private String title;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -33,8 +35,8 @@ public class TodoForm {
     private Priority priority;
 
     @NotNull(message = "{validation.estimatedMinutes.required}")
-    @Min(value = 0, message = "{validation.estimatedMinutes.min}")
-    @Max(value = 525600, message = "{validation.estimatedMinutes.max}")
+    @Min(value = TodoRules.ESTIMATED_MINUTES_MIN, message = "{validation.estimatedMinutes.min}")
+    @Max(value = TodoRules.ESTIMATED_MINUTES_MAX, message = "{validation.estimatedMinutes.max}")
     private Integer estimatedMinutes;
 
     private String tags;

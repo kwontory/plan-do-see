@@ -2,12 +2,15 @@ package com.plandosee.diary.review.web;
 
 import jakarta.validation.constraints.Size;
 
+import com.plandosee.diary.review.domain.ReviewRules;
+
 /**
- * Optional improvement (1..1000 chars after trim; blank clears it). Read-only after transfer (ADR-08).
+ * Optional improvement (1..ReviewRules.IMPROVEMENT_MAX chars after trim; blank clears it). Read-only after transfer
+ * (ADR-08).
  */
 public class ImprovementForm {
 
-    @Size(max = 1000, message = "{validation.improvement.max}")
+    @Size(max = ReviewRules.IMPROVEMENT_MAX, message = "{validation.improvement.max}")
     private String improvement;
 
     public static ImprovementForm of(String improvement) {

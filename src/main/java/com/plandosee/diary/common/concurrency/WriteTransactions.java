@@ -8,12 +8,15 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.plandosee.diary.common.error.ConcurrencyConflictException;
+import com.plandosee.diary.common.error.ConstraintViolationTranslator;
+import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.error.ServiceBusyException;
 
 /**
@@ -30,7 +33,12 @@ import com.plandosee.diary.common.error.ServiceBusyException;
  * A failure caused by the time budget ({@link BusyCause}: statement or transaction timeout, pool wait) is never
  * retried and becomes {@link ServiceBusyException}.
  * <p>
- * Logs carry the conflict kind and attempt numbers only (CLAUDE.md 5장).
+ * A DB integrity violation (CHECK, UNIQUE, NOT NULL, foreign key) becomes a {@link DomainRuleException} with the
+ * code registered for that constraint (ADR-22), so it is shown like any other rule violation instead of a 500.
+ * A caller that turns a particular violation into a result itself (completion's duplicate key) uses
+ * {@link #runKeepingConstraintErrors}.
+ * <p>
+ * Logs carry the conflict kind and attempt numbers, or the constraint name, only (CLAUDE.md 5장).
  */
 @Component
 public class WriteTransactions {
@@ -38,6 +46,7 @@ public class WriteTransactions {
     private static final Logger log = LoggerFactory.getLogger(WriteTransactions.class);
 
     private final TransactionTemplate template;
+    private final ConstraintViolationTranslator constraints;
     private final int maxRetries;
     private final long baseDelayMillis;
     private final long jitterMillis;
@@ -46,16 +55,31 @@ public class WriteTransactions {
     private final AtomicLong deadlocks = new AtomicLong();
 
     public WriteTransactions(PlatformTransactionManager transactionManager,
+                             ConstraintViolationTranslator constraints,
                              @Value("${app.retry.max-retries:0}") int maxRetries,
                              @Value("${app.retry.base-delay-ms:50}") long baseDelayMillis,
                              @Value("${app.retry.jitter-ms:100}") long jitterMillis) {
         this.template = new TransactionTemplate(transactionManager);
+        this.constraints = constraints;
         this.maxRetries = Math.max(0, maxRetries);
         this.baseDelayMillis = Math.max(0, baseDelayMillis);
         this.jitterMillis = Math.max(0, jitterMillis);
     }
 
     public <T> T run(Supplier<T> work) {
+        try {
+            return runKeepingConstraintErrors(work);
+        } catch (DataIntegrityViolationException violation) {
+            throw constraints.translate(violation);
+        }
+    }
+
+    /**
+     * Like {@link #run(Supplier)} but a DataIntegrityViolationException reaches the caller unchanged, for callers
+     * that turn a specific violation into a result (ADR-05 completion: a concurrent duplicate key means "already
+     * done"). The caller must not let it escape as a 500.
+     */
+    public <T> T runKeepingConstraintErrors(Supplier<T> work) {
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
             return work.get();
         }

@@ -64,7 +64,7 @@ public class TodoCompletionService {
             throw new DomainRuleException("idempotencyKey", KEY_MISSING);
         }
         try {
-            return writes.run(() -> completeLocked(todoId, idempotencyKey));
+            return writes.runKeepingConstraintErrors(() -> completeLocked(todoId, idempotencyKey));
         } catch (DuplicateKeyException duplicate) {
             // Reached only after the owned-todo lock succeeded: a concurrent request committed first.
             // Report the current state instead of a DB error.

@@ -32,6 +32,7 @@ import com.plandosee.diary.todo.domain.DueFilter;
 import com.plandosee.diary.todo.domain.TagRow;
 import com.plandosee.diary.todo.domain.TodoFilter;
 import com.plandosee.diary.todo.domain.TodoRow;
+import com.plandosee.diary.todo.domain.TodoRules;
 import com.plandosee.diary.todo.domain.TodoSort;
 import com.plandosee.diary.todo.domain.TodoStatus;
 
@@ -61,6 +62,7 @@ public class TodoService {
     }
 
     public UUID create(UUID planId, TodoCommand command) {
+        validate(command);
         return writes.run(() -> {
             UUID userId = currentUserProvider.currentUserId();
             planService.requireOwned(planId);
@@ -75,7 +77,7 @@ public class TodoService {
             todo.setCreatedAt(now);
             todo.setUpdatedAt(now);
             todoMapper.insert(todo);
-            replaceTags(userId, todo.getId(), command.tagNames(), now);
+            replaceTags(userId, todo.getId(), tagNames(command), now);
             return todo.getId();
         });
     }
@@ -84,6 +86,7 @@ public class TodoService {
      * Only title, due date, priority, estimate, and tags change (ADR-07). Status, plan, and id are untouched.
      */
     public void update(UUID todoId, TodoCommand command) {
+        validate(command);
         writes.run(() -> {
             UUID userId = currentUserProvider.currentUserId();
             TodoRow todo = todoMapper.lockActiveOwned(userId, todoId);
@@ -96,7 +99,7 @@ public class TodoService {
             if (todoMapper.updateContentOwned(userId, todo) != 1) {
                 throw new NotFoundException("todo");
             }
-            replaceTags(userId, todoId, command.tagNames(), now);
+            replaceTags(userId, todoId, tagNames(command), now);
         });
     }
 
@@ -221,6 +224,16 @@ public class TodoService {
         return planId == null ? new NotFoundException("todo") : new TodoDeletedException(planId);
     }
 
+    /**
+     * ADR-22: the same rules and codes as TodoForm (TodoRules), checked at the entrance whatever the caller.
+     */
+    private static void validate(TodoCommand command) {
+        if (command == null) {
+            throw new IllegalArgumentException("todo command");
+        }
+        TodoRules.check(command.title(), command.priority(), command.estimatedMinutes(), command.tagNames());
+    }
+
     private void applyContent(TodoRow todo, TodoCommand command) {
         todo.setTitle(command.title().strip());
         todo.setDueDate(command.dueDate());
@@ -240,6 +253,14 @@ public class TodoService {
             UUID tagId = tagMapper.findActiveIdByName(userId, name);
             tagMapper.insertTodoLink(todoId, tagId, now);
         }
+    }
+
+    /** Parsed tag names without blanks (a direct call may pass null or blank entries). */
+    private static List<String> tagNames(TodoCommand command) {
+        if (command.tagNames() == null) {
+            return List.of();
+        }
+        return command.tagNames().stream().filter(name -> name != null && !name.isBlank()).map(String::strip).toList();
     }
 
     /**

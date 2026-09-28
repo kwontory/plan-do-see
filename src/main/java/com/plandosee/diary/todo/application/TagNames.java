@@ -6,16 +6,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import com.plandosee.diary.common.error.DomainRuleException;
+import com.plandosee.diary.todo.domain.TodoRules;
 
 /**
  * Parses the comma-separated tag input (ADR-07). Duplicates that differ only by case or spaces collapse to one.
  */
 public final class TagNames {
 
-    public static final int MAX_LENGTH = 50;
+    public static final int MAX_LENGTH = TodoRules.TAG_NAME_MAX;
     /** Message argument {0}: MAX_LENGTH as a plain string (no number grouping). */
-    public static final String TOO_LONG = "todo.tags.tooLong";
+    public static final String TOO_LONG = TodoRules.TAG_TOO_LONG;
 
     private TagNames() {
     }
@@ -30,9 +30,7 @@ public final class TagNames {
             if (name.isEmpty()) {
                 continue;
             }
-            if (name.length() > MAX_LENGTH) {
-                throw new DomainRuleException("tags", TOO_LONG, String.valueOf(MAX_LENGTH));
-            }
+            TodoRules.checkTagName(name);
             unique.putIfAbsent(name.toLowerCase(Locale.ROOT), name);
         }
         return new ArrayList<>(unique.values());

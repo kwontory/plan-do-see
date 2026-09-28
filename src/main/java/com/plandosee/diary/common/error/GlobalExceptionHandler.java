@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -37,6 +38,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({MissingServletRequestParameterException.class, DomainRuleException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public String badRequest() {
+        return "error/400";
+    }
+
+    /**
+     * ADR-22: an integrity violation outside the write boundary (the boundary already turns them into rule
+     * violations). A 400 notice, never a 500; the log has the constraint name only.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String constraintViolation(DataIntegrityViolationException ex) {
+        log.warn("event=constraint_violation constraint={}",
+                ConstraintViolationTranslator.constraintName(ex).orElse("unknown"));
         return "error/400";
     }
 

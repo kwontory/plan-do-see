@@ -13,9 +13,11 @@ import org.springframework.format.annotation.DateTimeFormat;
 import com.plandosee.diary.common.domain.Priority;
 import com.plandosee.diary.plan.application.PlanCommand;
 import com.plandosee.diary.plan.domain.PlanRow;
+import com.plandosee.diary.plan.domain.PlanRules;
 
 /**
  * Plan create/edit/next-plan form (web-contract.md). Strings arrive trimmed; blank becomes null (FormBindingAdvice).
+ * Limits come from PlanRules (ADR-22), the same values PlanService checks and the DB CHECK constraints hold.
  * endDate >= startDate is the PlanPeriod rule, checked here as a form-level constraint and shown on the endDate
  * field together with the other field errors (QA-D5); PlanService checks it again for direct calls.
  */
@@ -23,7 +25,7 @@ import com.plandosee.diary.plan.domain.PlanRow;
 public class PlanForm {
 
     @NotBlank(message = "{validation.title.required}")
-    @Size(max = 200, message = "{validation.title.max}")
+    @Size(max = PlanRules.TITLE_MAX, message = "{validation.title.max}")
     private String title;
 
     @NotNull(message = "{validation.startDate.required}")
@@ -38,12 +40,12 @@ public class PlanForm {
     private Priority priority;
 
     @NotBlank(message = "{validation.successCriteria.required}")
-    @Size(max = 1000, message = "{validation.successCriteria.max}")
+    @Size(max = PlanRules.SUCCESS_CRITERIA_MAX, message = "{validation.successCriteria.max}")
     private String successCriteria;
 
     @NotNull(message = "{validation.estimatedMinutes.required}")
-    @Min(value = 0, message = "{validation.estimatedMinutes.min}")
-    @Max(value = 525600, message = "{validation.estimatedMinutes.max}")
+    @Min(value = PlanRules.ESTIMATED_MINUTES_MIN, message = "{validation.estimatedMinutes.min}")
+    @Max(value = PlanRules.ESTIMATED_MINUTES_MAX, message = "{validation.estimatedMinutes.max}")
     private Integer estimatedMinutes;
 
     public static PlanForm from(PlanRow plan) {
