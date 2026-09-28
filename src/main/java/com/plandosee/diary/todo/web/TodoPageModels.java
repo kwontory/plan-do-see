@@ -52,7 +52,6 @@ public class TodoPageModels {
         model.addAttribute("plan", plan);
         model.addAttribute("todos", todos);
         model.addAttribute("filter", filter);
-        model.addAttribute("sortDescription", sort.description());
         model.addAttribute("sorts", TodoSort.values());
         model.addAttribute("statuses", TodoStatus.values());
         model.addAttribute("priorities", Priority.values());

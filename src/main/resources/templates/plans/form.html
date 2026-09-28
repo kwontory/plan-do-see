@@ -1,33 +1,36 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org"
-      th:with="isEdit=${mode == 'edit'},formError=${#fields.hasErrors('${planForm.*}')}">
-<head th:replace="~{fragments/layout :: head(${isEdit ? '계획 수정' : '새 계획 만들기'}, ${formError})}">
+      th:with="isEdit=${mode == 'edit'},
+               formError=${#fields.hasErrors('${planForm.*}')},
+               pageHeading=(${mode == 'edit'} ? #{plans.form.editTitle} : #{plans.form.createTitle})">
+<head th:replace="~{fragments/layout :: head(${pageHeading}, ${formError})}">
     <meta charset="UTF-8">
-    <title>계획 폼</title>
+    <title>plan form</title>
 </head>
 <body>
 <header th:replace="~{fragments/layout :: header('plans')}"></header>
 
 <main id="main" tabindex="-1">
-    <nav class="breadcrumb" aria-label="현재 위치">
+    <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
         <ol>
-            <li><a th:href="@{/plans}" href="/plans">계획</a></li>
+            <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
             <th:block th:if="${isEdit}">
-                <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">계획 제목</a></li>
-                <li aria-current="page">수정</li>
+                <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">plan</a></li>
+                <li aria-current="page" th:text="#{breadcrumb.edit}">edit</li>
             </th:block>
-            <li th:unless="${isEdit}" aria-current="page">새 계획</li>
+            <li th:unless="${isEdit}" aria-current="page" th:text="#{breadcrumb.newPlan}">new</li>
         </ol>
     </nav>
     <div th:replace="~{fragments/layout :: flash}"></div>
-    <h1 th:text="${isEdit} ? '계획 수정' : '새 계획 만들기'">새 계획 만들기</h1>
+    <h1 th:text="${pageHeading}">plan form</h1>
 
-    <p class="note" th:if="${isEdit}">저장하면 수정 전 값이 수정 이력에 그대로 남고, 계획은 새 값으로 바뀝니다.</p>
+    <p class="note" th:if="${isEdit}" th:text="#{plans.form.editNote}">note</p>
 
     <div class="readonly-box"
          th:if="${isEdit and plan.carriedImprovement != null and !#strings.isEmpty(plan.carriedImprovement)}">
-        <p class="readonly-box__label"><span class="badge badge--carried">이전 회고에서 넘어온 개선점(수정 불가)</span></p>
-        <p class="pre-wrap" th:text="${plan.carriedImprovement}">개선점</p>
+        <p class="readonly-box__label"><span class="badge badge--carried" th:text="#{badge.carried}">carried</span>
+            <span class="muted" th:text="#{plans.form.carriedReadonly}">read only</span></p>
+        <p class="pre-wrap" th:text="${plan.carriedImprovement}">improvement</p>
     </div>
 
     <form method="post" novalidate class="form"
@@ -37,8 +40,8 @@
         <div th:replace="~{fragments/layout :: errorSummary}"></div>
         <th:block th:replace="~{fragments/plan :: planFields(${priorities})}"></th:block>
         <div class="form-actions">
-            <button type="submit" class="btn" th:text="${isEdit} ? '수정 저장' : '계획 만들기'">계획 만들기</button>
-            <a th:href="${isEdit} ? @{/plans/{id}(id=${plan.id})} : @{/plans}" href="/plans">취소</a>
+            <button type="submit" class="btn" th:text="${isEdit} ? #{common.saveEdit} : #{plans.form.submitCreate}">save</button>
+            <a th:href="${isEdit} ? @{/plans/{id}(id=${plan.id})} : @{/plans}" href="/plans" th:text="#{common.cancel}">cancel</a>
         </div>
     </form>
 </main>

@@ -1,27 +1,27 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org"
       th:with="formError=${#fields.hasErrors('${todoForm.*}')}">
-<head th:replace="~{fragments/layout :: head(|할 일 수정: ${todo.title}|, ${formError})}">
+<head th:replace="~{fragments/layout :: head(#{todos.form.pageTitle(${todo.title})}, ${formError})}">
     <meta charset="UTF-8">
-    <title>할 일 수정</title>
+    <title>todo edit</title>
 </head>
 <body>
 <header th:replace="~{fragments/layout :: header('plans')}"></header>
 
 <main id="main" tabindex="-1">
-    <nav class="breadcrumb" aria-label="현재 위치">
+    <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
         <ol>
-            <li><a th:href="@{/plans}" href="/plans">계획</a></li>
+            <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
             <li><a th:href="@{/plans/{id}(id=${todo.planId})}" href="#"
-                   th:text="${plan != null ? plan.title : '계획'}">계획</a></li>
-            <li><a th:href="@{/plans/{id}/todos(id=${todo.planId})}" href="#">할 일</a></li>
-            <li><a th:href="@{/todos/{id}(id=${todo.id})}" href="#" th:text="${todo.title}">할 일 제목</a></li>
-            <li aria-current="page">수정</li>
+                   th:text="${plan != null} ? ${plan.title} : #{breadcrumb.plans}">plan</a></li>
+            <li><a th:href="@{/plans/{id}/todos(id=${todo.planId})}" href="#" th:text="#{breadcrumb.todos}">todos</a></li>
+            <li><a th:href="@{/todos/{id}(id=${todo.id})}" href="#" th:text="${todo.title}">todo</a></li>
+            <li aria-current="page" th:text="#{breadcrumb.edit}">edit</li>
         </ol>
     </nav>
     <div th:replace="~{fragments/layout :: flash}"></div>
-    <h1>할 일 수정</h1>
-    <p class="note">완료 여부는 이 화면에서 바꾸지 않습니다. 할 일 목록이나 상세의 완료 버튼을 사용하세요.</p>
+    <h1 th:text="#{todos.form.heading}">edit</h1>
+    <p class="note" th:text="#{todos.form.note}">note</p>
 
     <form method="post" novalidate class="form"
           th:action="@{/todos/{id}(id=${todo.id})}" th:object="${todoForm}">
@@ -29,8 +29,8 @@
         <div th:replace="~{fragments/layout :: errorSummary}"></div>
         <th:block th:replace="~{fragments/plan :: todoFields(${priorities})}"></th:block>
         <div class="form-actions">
-            <button type="submit" class="btn">수정 저장</button>
-            <a th:href="@{/todos/{id}(id=${todo.id})}" href="#">취소</a>
+            <button type="submit" class="btn" th:text="#{common.saveEdit}">save</button>
+            <a th:href="@{/todos/{id}(id=${todo.id})}" href="#" th:text="#{common.cancel}">cancel</a>
         </div>
     </form>
 </main>

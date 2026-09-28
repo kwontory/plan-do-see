@@ -20,28 +20,28 @@ import com.plandosee.diary.plan.domain.PlanRow;
  */
 public class PlanForm {
 
-    @NotBlank(message = "제목을 입력하세요.")
-    @Size(max = 200, message = "제목은 200자 이하로 입력하세요.")
+    @NotBlank(message = "{validation.title.required}")
+    @Size(max = 200, message = "{validation.title.max}")
     private String title;
 
-    @NotNull(message = "시작일을 입력하세요.")
+    @NotNull(message = "{validation.startDate.required}")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate startDate;
 
-    @NotNull(message = "종료일을 입력하세요.")
+    @NotNull(message = "{validation.endDate.required}")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate endDate;
 
-    @NotNull(message = "우선순위를 선택하세요.")
+    @NotNull(message = "{validation.priority.required}")
     private Priority priority;
 
-    @NotBlank(message = "성공 기준을 입력하세요.")
-    @Size(max = 1000, message = "성공 기준은 1000자 이하로 입력하세요.")
+    @NotBlank(message = "{validation.successCriteria.required}")
+    @Size(max = 1000, message = "{validation.successCriteria.max}")
     private String successCriteria;
 
-    @NotNull(message = "예상 시간(분)을 입력하세요.")
-    @Min(value = 0, message = "예상 시간은 0분 이상이어야 합니다.")
-    @Max(value = 525600, message = "예상 시간은 525600분 이하여야 합니다.")
+    @NotNull(message = "{validation.estimatedMinutes.required}")
+    @Min(value = 0, message = "{validation.estimatedMinutes.min}")
+    @Max(value = 525600, message = "{validation.estimatedMinutes.max}")
     private Integer estimatedMinutes;
 
     public static PlanForm from(PlanRow plan) {

@@ -23,6 +23,11 @@ server:
 spring:
   application:
     name: plandosee-diary
+  messages:
+    # User-facing text lives only here (ADR-13). See docs/architecture/message-keys.md.
+    basename: messages
+    encoding: UTF-8
+    fallback-to-system-locale: false
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}

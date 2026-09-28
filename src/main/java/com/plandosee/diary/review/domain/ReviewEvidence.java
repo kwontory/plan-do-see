@@ -5,7 +5,7 @@ import java.util.List;
 import com.plandosee.diary.execution.domain.ExecutionLogRow;
 
 /**
- * Drill-down result that reconciles with the summary on the same page (T06-C83, web-contract 개정 1 Q2).
+ * Drill-down result that reconciles with the summary on the same page (T06-C83, web-contract revision 1 Q2).
  * <ul>
  *   <li>evidenceCount: logs.size() for actual, otherwise todos.size() (= the count metric for planned,
  *       completed, overdue, blocked)</li>

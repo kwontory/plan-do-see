@@ -1,5 +1,7 @@
 package com.plandosee.diary.common.web;
 
+import java.util.Arrays;
+
 import org.springframework.beans.PropertyAccessException;
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
 import org.springframework.validation.BindingResult;
@@ -11,13 +13,14 @@ import org.springframework.web.bind.annotation.InitBinder;
 
 /**
  * Trims every submitted string; blank input becomes null so @NotBlank and optional-field rules apply uniformly.
- * Conversion failures (for example letters in a minutes field) become a plain Korean field error
- * instead of the framework message, which would expose Java type names.
+ * Conversion failures (for example letters in a minutes field) become a field error with the message key
+ * {@link #TYPE_MISMATCH_CODE} and no default message, instead of the framework message that would expose
+ * Java type names.
  */
 @ControllerAdvice
 public class FormBindingAdvice {
 
-    public static final String TYPE_MISMATCH_MESSAGE = "입력 형식이 올바르지 않습니다.";
+    public static final String TYPE_MISMATCH_CODE = "validation.typeMismatch";
 
     @InitBinder
     public void trimStrings(WebDataBinder binder) {
@@ -34,9 +37,12 @@ public class FormBindingAdvice {
                 super.processPropertyAccessException(ex, bindingResult);
                 return;
             }
-            String[] codes = bindingResult.resolveMessageCodes(ex.getErrorCode(), field);
+            // Framework codes first (a field-specific override may exist); the generic key is the last resort.
+            String[] resolved = bindingResult.resolveMessageCodes(ex.getErrorCode(), field);
+            String[] codes = Arrays.copyOf(resolved, resolved.length + 1);
+            codes[resolved.length] = TYPE_MISMATCH_CODE;
             bindingResult.addError(new FieldError(bindingResult.getObjectName(), field, ex.getValue(), true,
-                    codes, null, TYPE_MISMATCH_MESSAGE));
+                    codes, null, null));
         }
     }
 }

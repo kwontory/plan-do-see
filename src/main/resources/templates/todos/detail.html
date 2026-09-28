@@ -5,131 +5,133 @@
                logTotal=${logs == null or logs.isEmpty() ? 0 : #aggregates.sum(logs.![actualMinutes])}">
 <head th:replace="~{fragments/layout :: head(${todo.title}, ${formError})}">
     <meta charset="UTF-8">
-    <title>할 일 상세</title>
+    <title>todo</title>
 </head>
 <body>
 <header th:replace="~{fragments/layout :: header('plans')}"></header>
 
 <main id="main" tabindex="-1">
-    <nav class="breadcrumb" aria-label="현재 위치">
+    <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
         <ol>
-            <li><a th:href="@{/plans}" href="/plans">계획</a></li>
-            <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">계획 제목</a></li>
-            <li><a th:href="@{/plans/{id}/todos(id=${plan.id})}" href="#">할 일</a></li>
-            <li aria-current="page" th:text="${todo.title}">할 일 제목</li>
+            <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
+            <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">plan</a></li>
+            <li><a th:href="@{/plans/{id}/todos(id=${plan.id})}" href="#" th:text="#{breadcrumb.todos}">todos</a></li>
+            <li aria-current="page" th:text="${todo.title}">todo</li>
         </ol>
     </nav>
     <div th:replace="~{fragments/layout :: flash}"></div>
-    <h1 th:text="${todo.title}">할 일 제목</h1>
+    <h1 th:text="${todo.title}">todo</h1>
 
     <!--/* 1. Summary */-->
     <section class="section" aria-labelledby="info-heading">
-        <h2 id="info-heading">할 일 정보</h2>
+        <h2 id="info-heading" th:text="#{todos.detail.info.heading}">info</h2>
         <p class="badges"><th:block th:replace="~{fragments/todo :: statusBadges(${todo}, ${today})}"></th:block></p>
         <dl class="dl-grid">
-            <dt>마감일</dt>
-            <dd th:text="${todo.dueDate != null ? todo.dueDate : '마감일 없음'}">마감일 없음</dd>
-            <dt>우선순위</dt>
-            <dd th:text="${todo.priority.label()}">보통</dd>
-            <dt>예상 시간(계획 값)</dt>
-            <dd><span class="num" th:text="|${todo.estimatedMinutes}분|">0분</span>
-                <span class="muted">실행 기록을 남겨도 예상 시간은 바뀌지 않습니다.</span></dd>
-            <dt>태그</dt>
-            <dd th:text="${todo.tags != null and !todo.tags.isEmpty() ? #strings.listJoin(todo.tags.![name], ', ') : '없음'}">없음</dd>
+            <dt th:text="#{todos.field.dueDate}">due</dt>
+            <dd th:text="${todo.dueDate != null} ? ${todo.dueDate} : #{todos.item.noDue}">due</dd>
+            <dt th:text="#{todos.field.priority}">priority</dt>
+            <dd th:text="${#messages.msg('enum.Priority.' + todo.priority)}">priority</dd>
+            <dt th:text="#{todos.field.estimatedPlanValue}">estimated</dt>
+            <dd><span class="num" data-test="todo-estimated-minutes" th:data-value="${todo.estimatedMinutes}"
+                      th:text="#{common.minutes(${todo.estimatedMinutes})}">0</span>
+                <span class="muted" th:text="#{todos.detail.estimatedNote}">note</span></dd>
+            <dt th:text="#{todos.field.tags}">tags</dt>
+            <dd th:text="${todo.tags != null and !todo.tags.isEmpty()} ? ${#strings.listJoin(todo.tags.![name], ', ')} : #{common.none}">tags</dd>
             <th:block th:if="${done and todo.completedAt != null}">
-                <dt>완료 시각</dt>
+                <dt th:text="#{todos.field.completedAt}">completed</dt>
                 <dd><time th:replace="~{fragments/layout :: datetime(${todo.completedAt})}"></time></dd>
             </th:block>
         </dl>
-        <p><a class="btn btn--secondary" th:href="@{/todos/{id}/edit(id=${todo.id})}" href="#">수정</a></p>
+        <p><a class="btn btn--secondary" th:href="@{/todos/{id}/edit(id=${todo.id})}" href="#" th:text="#{common.edit}">edit</a></p>
     </section>
 
     <!--/* 2. Completion */-->
     <section class="section" aria-labelledby="completion-heading">
-        <h2 id="completion-heading">완료 상태</h2>
-        <p class="field-help" id="completion-help">완료 버튼을 여러 번 눌러도 완료 기록은 한 번만 남습니다.</p>
+        <h2 id="completion-heading" th:text="#{todos.detail.completion.heading}">completion</h2>
+        <p class="field-help" id="completion-help" th:text="#{todos.detail.completion.help}">help</p>
         <form th:unless="${done}" method="post" class="inline-form" aria-describedby="completion-help"
               th:action="@{/todos/{id}/completion(id=${todo.id})}">
             <input type="hidden" name="idempotencyKey" th:value="${completionKey}">
             <input type="hidden" name="returnTo" value="detail">
-            <button type="submit" class="btn">완료</button>
+            <button type="submit" class="btn" th:text="#{todos.action.complete}">complete</button>
         </form>
         <form th:if="${done}" method="post" class="inline-form" aria-describedby="completion-help"
               th:action="@{/todos/{id}/completion(id=${todo.id})}">
             <input type="hidden" name="_method" value="delete">
             <input type="hidden" name="returnTo" value="detail">
-            <button type="submit" class="btn btn--secondary">진행 중으로 되돌리기</button>
+            <button type="submit" class="btn btn--secondary" th:text="#{todos.action.reopen}">reopen</button>
         </form>
     </section>
 
     <!--/* 3. Execution form */-->
     <section class="section" aria-labelledby="exec-form-heading">
-        <h2 id="exec-form-heading">실행 기록 남기기</h2>
+        <h2 id="exec-form-heading" th:text="#{todos.detail.exec.heading}">record</h2>
         <div id="exec-help" class="note">
-            <p>시각은 서울(Asia/Seoul) 기준으로 입력합니다.</p>
-            <p>실제 시간은 저장할 때 서버가 ‘종료 − 시작’으로 계산합니다. 1초라도 남으면 1분으로 올립니다(예: 10분 1초 → 11분). 시작과 종료가 같으면 0분입니다.</p>
+            <p th:text="#{todos.detail.exec.zoneHelp}">zone</p>
+            <p th:text="#{todos.detail.exec.calcHelp}">calc</p>
         </div>
         <form method="post" novalidate class="form" aria-describedby="exec-help"
               th:action="@{/todos/{id}/executions(id=${todo.id})}" th:object="${executionForm}">
             <div th:replace="~{fragments/layout :: errorSummary}"></div>
             <div class="field-group--pair">
-                <div class="field" th:classappend="${#fields.hasErrors('startedAt')} ? 'field--error'">
-                    <label for="startedAt">시작 시각</label>
+                <div class="field">
+                    <label for="startedAt" th:text="#{todos.detail.exec.startedAt}">start</label>
                     <p th:replace="~{fragments/layout :: fieldError('startedAt')}"></p>
                     <input type="datetime-local" step="1" th:field="*{startedAt}" required
                            th:attr="aria-describedby=${#fields.hasErrors('startedAt')} ? 'startedAt-error' : null,aria-invalid=${#fields.hasErrors('startedAt')} ? 'true' : null">
                 </div>
-                <div class="field" th:classappend="${#fields.hasErrors('endedAt')} ? 'field--error'">
-                    <label for="endedAt">종료 시각</label>
-                    <p class="field-help" id="endedAt-help">시작 시각과 같거나 뒤여야 합니다.</p>
+                <div class="field">
+                    <label for="endedAt" th:text="#{todos.detail.exec.endedAt}">end</label>
+                    <p class="field-help" id="endedAt-help" th:text="#{todos.detail.exec.endedAtHelp}">help</p>
                     <p th:replace="~{fragments/layout :: fieldError('endedAt')}"></p>
                     <input type="datetime-local" step="1" th:field="*{endedAt}" required
                            th:attr="aria-describedby=${#fields.hasErrors('endedAt')} ? 'endedAt-help endedAt-error' : 'endedAt-help',aria-invalid=${#fields.hasErrors('endedAt')} ? 'true' : null">
                 </div>
             </div>
-            <div class="field" th:classappend="${#fields.hasErrors('blockerReason')} ? 'field--error'">
-                <label for="blockerReason">막힌 이유(선택)</label>
-                <p class="field-help" id="blockerReason-help">막힌 점이 있었다면 적습니다. 비워 두면 저장하지 않습니다. 회고의 막힘 수에 반영됩니다.</p>
+            <div class="field">
+                <label for="blockerReason" th:text="#{todos.detail.exec.blockerReason}">blocker</label>
+                <p class="field-help" id="blockerReason-help" th:text="#{todos.detail.exec.blockerReasonHelp}">help</p>
                 <p th:replace="~{fragments/layout :: fieldError('blockerReason')}"></p>
                 <textarea th:field="*{blockerReason}" rows="3"
                           th:attr="aria-describedby=${#fields.hasErrors('blockerReason')} ? 'blockerReason-help blockerReason-error' : 'blockerReason-help',aria-invalid=${#fields.hasErrors('blockerReason')} ? 'true' : null"></textarea>
             </div>
             <div class="form-actions">
-                <button type="submit" class="btn">실행 기록 저장</button>
+                <button type="submit" class="btn" th:text="#{todos.detail.exec.submit}">save</button>
             </div>
         </form>
-        <p class="muted">저장한 실행 기록은 감사 근거라서 이 화면에서 고치거나 지울 수 없습니다.</p>
+        <p class="muted" th:text="#{todos.detail.exec.auditNote}">audit</p>
     </section>
 
     <!--/* 4. Execution logs */-->
     <section class="section" aria-labelledby="logs-heading">
-        <h2 id="logs-heading">실행 기록</h2>
-        <p class="summary-line" th:text="|${#lists.size(logs)}건 · 실제 시간 합계 ${logTotal}분|">0건 · 실제 시간 합계 0분</p>
-        <p class="sort-note">시작 시각이 빠른 순입니다.</p>
-        <p class="empty" th:if="${logs.isEmpty()}">아직 실행 기록이 없습니다. 위에서 시작·종료 시각을 입력해 첫 기록을 남기세요.</p>
-        <div class="table-wrap" tabindex="0" role="region" aria-label="실행 기록" th:unless="${logs.isEmpty()}">
+        <h2 id="logs-heading" th:text="#{todos.detail.logs.heading}">logs</h2>
+        <p class="summary-line" th:text="#{todos.detail.logs.summary(${#lists.size(logs)}, ${logTotal})}">0</p>
+        <p class="sort-note" th:text="#{todos.detail.logs.sortNote}">sort</p>
+        <p class="empty" th:if="${logs.isEmpty()}" th:text="#{todos.detail.logs.empty}">empty</p>
+        <div class="table-wrap" tabindex="0" role="region" th:attr="aria-label=#{todos.detail.logs.heading}" th:unless="${logs.isEmpty()}">
             <table>
-                <caption class="visually-hidden">실행 기록</caption>
+                <caption class="visually-hidden" th:text="#{todos.detail.logs.heading}">logs</caption>
                 <thead>
                 <tr>
-                    <th scope="col">시작</th>
-                    <th scope="col">종료</th>
-                    <th scope="col" class="num">실제 시간</th>
-                    <th scope="col">막힌 이유</th>
+                    <th scope="col" th:text="#{todos.detail.logs.col.start}">start</th>
+                    <th scope="col" th:text="#{todos.detail.logs.col.end}">end</th>
+                    <th scope="col" class="num" th:text="#{todos.detail.logs.col.actual}">actual</th>
+                    <th scope="col" th:text="#{todos.detail.logs.col.blocker}">blocker</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr th:each="log : ${logs}">
                     <td><time th:replace="~{fragments/layout :: datetime(${log.startedAt})}"></time></td>
                     <td><time th:replace="~{fragments/layout :: datetime(${log.endedAt})}"></time></td>
-                    <td class="num" th:text="|${log.actualMinutes}분|">0분</td>
-                    <td class="pre-wrap" th:text="${log.blockerReason != null ? log.blockerReason : '없음'}">없음</td>
+                    <td class="num" data-test="execution-actual-minutes" th:data-value="${log.actualMinutes}"
+                        th:text="#{common.minutes(${log.actualMinutes})}">0</td>
+                    <td class="pre-wrap" th:text="${log.blockerReason != null} ? ${log.blockerReason} : #{common.none}">none</td>
                 </tr>
                 </tbody>
                 <tfoot>
                 <tr>
-                    <th scope="row" colspan="2">합계</th>
-                    <td class="num" th:text="|${logTotal}분|">0분</td>
+                    <th scope="row" colspan="2" th:text="#{common.total}">total</th>
+                    <td class="num" th:text="#{common.minutes(${logTotal})}">0</td>
                     <td></td>
                 </tr>
                 </tfoot>
@@ -139,23 +141,23 @@
 
     <!--/* 5. Completion events */-->
     <section class="section" aria-labelledby="events-heading">
-        <h2 id="events-heading">완료 기록</h2>
-        <p class="muted">완료로 바꿀 때마다 한 건씩 남습니다. 진행 중으로 되돌린 뒤 다시 완료하면 다음 회차가 추가됩니다.</p>
-        <p class="summary-line" th:text="|완료 기록 ${#lists.size(events)}건|">완료 기록 0건</p>
-        <p class="sort-note">회차 순입니다.</p>
-        <p class="empty" th:if="${events.isEmpty()}">아직 완료한 적이 없습니다.</p>
-        <div class="table-wrap" tabindex="0" role="region" aria-label="완료 기록" th:unless="${events.isEmpty()}">
+        <h2 id="events-heading" th:text="#{todos.detail.events.heading}">events</h2>
+        <p class="muted" th:text="#{todos.detail.events.intro}">intro</p>
+        <p class="summary-line" th:text="#{todos.detail.events.summary(${#lists.size(events)})}">0</p>
+        <p class="sort-note" th:text="#{todos.detail.events.sortNote}">sort</p>
+        <p class="empty" th:if="${events.isEmpty()}" th:text="#{todos.detail.events.empty}">empty</p>
+        <div class="table-wrap" tabindex="0" role="region" th:attr="aria-label=#{todos.detail.events.heading}" th:unless="${events.isEmpty()}">
             <table>
-                <caption class="visually-hidden">완료 기록</caption>
+                <caption class="visually-hidden" th:text="#{todos.detail.events.heading}">events</caption>
                 <thead>
                 <tr>
-                    <th scope="col">회차</th>
-                    <th scope="col">완료 시각</th>
+                    <th scope="col" th:text="#{todos.detail.events.col.cycle}">cycle</th>
+                    <th scope="col" th:text="#{todos.detail.events.col.completedAt}">completed</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr th:each="ev : ${events}">
-                    <td th:text="|${ev.cycleNo}회차|">1회차</td>
+                    <td th:text="#{todos.detail.events.cycle(${ev.cycleNo})}">1</td>
                     <td><time th:replace="~{fragments/layout :: datetime(${ev.completedAt})}"></time></td>
                 </tr>
                 </tbody>

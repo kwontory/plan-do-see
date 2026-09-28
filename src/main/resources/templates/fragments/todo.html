@@ -19,12 +19,13 @@
 <!--/* Status + derived badges. todo needs status, dueDate. today: LocalDate (Seoul) */-->
 <th:block th:fragment="statusBadges(todo, today)"
           th:with="done=${todo.status.name() == 'COMPLETED'}">
-    <span th:if="${done}" class="badge badge--done"><span aria-hidden="true">✓ </span>완료</span>
-    <span th:unless="${done}" class="badge badge--progress">진행 중</span>
+    <span th:if="${done}" class="badge badge--done"><span aria-hidden="true">✓ </span><th:block
+            th:text="#{enum.TodoStatus.COMPLETED}">done</th:block></span>
+    <span th:unless="${done}" class="badge badge--progress" th:text="#{enum.TodoStatus.IN_PROGRESS}">in progress</span>
     <span th:if="${!done and todo.dueDate != null and today != null and todo.dueDate.isBefore(today)}"
-          class="badge badge--overdue">지연</span>
+          class="badge badge--overdue" th:text="#{badge.overdue}">overdue</span>
     <span th:if="${!done and todo.dueDate != null and today != null and todo.dueDate.isEqual(today)}"
-          class="badge badge--today">오늘 마감</span>
+          class="badge badge--today" th:text="#{badge.dueToday}">today</span>
 </th:block>
 
 </body>

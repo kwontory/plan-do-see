@@ -8,7 +8,9 @@
 (function () {
     'use strict';
 
-    var BUSY_TEXT = '처리 중…';
+    // Busy label comes from messages.properties (common.busy) through <meta name="pds-busy-text"> (ADR-13).
+    var busyMeta = document.querySelector('meta[name="pds-busy-text"]');
+    var BUSY_TEXT = busyMeta ? busyMeta.getAttribute('content') : '...';
     var originals = new WeakMap();
 
     function lock(button) {

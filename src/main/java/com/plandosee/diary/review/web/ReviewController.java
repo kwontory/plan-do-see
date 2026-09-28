@@ -1,6 +1,7 @@
 package com.plandosee.diary.review.web;
 
-import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import jakarta.validation.Valid;
@@ -19,8 +20,10 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.plandosee.diary.common.domain.Priority;
 import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.error.NotFoundException;
+import com.plandosee.diary.common.web.FlashMessages;
 import com.plandosee.diary.common.web.FormErrors;
 import com.plandosee.diary.plan.application.PlanService;
+import com.plandosee.diary.plan.web.PlanController;
 import com.plandosee.diary.plan.web.PlanForm;
 import com.plandosee.diary.review.application.ReviewService;
 import com.plandosee.diary.review.application.TransferResult;
@@ -35,6 +38,11 @@ import com.plandosee.diary.review.domain.ReviewSummary;
 @Controller
 public class ReviewController {
 
+    public static final String FLASH_CREATED = "flash.review.created";
+    public static final String FLASH_IMPROVEMENT_SAVED = "flash.review.improvementSaved";
+    public static final String FLASH_TRANSFERRED = "flash.review.transferred";
+    public static final String FLASH_ALREADY_TRANSFERRED = "flash.review.alreadyTransferred";
+
     private final ReviewService reviewService;
     private final PlanService planService;
 
@@ -43,11 +51,11 @@ public class ReviewController {
         this.planService = planService;
     }
 
-    /** 개정 1 Q5: no fields; the improvement is entered on the review page. */
+    /** Revision 1 Q5: no fields; the improvement is entered on the review page. */
     @PostMapping("/plans/{id}/reviews")
     public String create(@PathVariable("id") UUID planId, RedirectAttributes redirect) {
         UUID reviewId = reviewService.create(planId, null);
-        redirect.addFlashAttribute("flashMessage", "회고를 만들었습니다.");
+        FlashMessages.add(redirect, FLASH_CREATED);
         return "redirect:/reviews/" + reviewId;
     }
 
@@ -70,7 +78,7 @@ public class ReviewController {
             FormErrors.reject(result, ex);
             return detailView(model, reviewService.get(reviewId), form);
         }
-        redirect.addFlashAttribute("flashMessage", "개선점을 저장했습니다.");
+        FlashMessages.add(redirect, FLASH_IMPROVEMENT_SAVED);
         return "redirect:/reviews/" + reviewId;
     }
 
@@ -83,6 +91,7 @@ public class ReviewController {
         model.addAttribute("review", review);
         model.addAttribute("plan", planService.get(review.getPlanId()));
         model.addAttribute("metric", metric);
+        model.addAttribute("metricKey", metric.key());
         model.addAttribute("summary", evidence.summary());
         model.addAttribute("todos", evidence.todos());
         model.addAttribute("logs", evidence.logs());
@@ -107,10 +116,11 @@ public class ReviewController {
                            BindingResult result, Model model, RedirectAttributes redirect) {
         ReviewRow review = reviewService.get(reviewId);
         if (review.isTransferred()) {
-            redirect.addFlashAttribute("flashMessage", "이미 다음 계획으로 넘긴 회고입니다. 새 계획은 만들지 않았습니다.");
+            FlashMessages.add(redirect, FLASH_ALREADY_TRANSFERRED);
             return "redirect:/plans/" + review.getNextPlanId();
         }
         if (result.hasErrors()) {
+            PlanController.rejectPeriod(form, result);
             return nextPlanView(model, review);
         }
         TransferResult transfer;
@@ -120,9 +130,7 @@ public class ReviewController {
             FormErrors.reject(result, ex);
             return nextPlanView(model, reviewService.get(reviewId));
         }
-        redirect.addFlashAttribute("flashMessage", transfer.created()
-                ? "개선점을 다음 계획으로 넘겼습니다."
-                : "이미 다음 계획으로 넘긴 회고입니다. 새 계획은 만들지 않았습니다.");
+        FlashMessages.add(redirect, transfer.created() ? FLASH_TRANSFERRED : FLASH_ALREADY_TRANSFERRED);
         return "redirect:/plans/" + transfer.nextPlanId();
     }
 
@@ -133,10 +141,20 @@ public class ReviewController {
         model.addAttribute("nextPlan", planService.findOwned(review.getNextPlanId()));
         model.addAttribute("summary", summary);
         model.addAttribute("improvementForm", form);
-        model.addAttribute("metrics", Arrays.stream(ReviewMetric.values())
-                .map(metric -> MetricLink.of(review.getId(), metric, summary))
-                .toList());
+        model.addAttribute("metricValues", metricValues(summary));
         return "reviews/detail";
+    }
+
+    /**
+     * metric key to value only. Labels, units, sign notation, card order, and evidence links are template concerns
+     * (ADR-13, web-contract revision 3).
+     */
+    static Map<String, Long> metricValues(ReviewSummary summary) {
+        Map<String, Long> values = new LinkedHashMap<>();
+        for (ReviewMetric metric : ReviewMetric.values()) {
+            values.put(metric.key(), metric.valueOf(summary));
+        }
+        return values;
     }
 
     private String nextPlanView(Model model, ReviewRow review) {

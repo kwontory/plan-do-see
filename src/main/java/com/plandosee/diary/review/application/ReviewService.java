@@ -33,6 +33,10 @@ import com.plandosee.diary.review.infrastructure.ReviewMapper;
 public class ReviewService {
 
     public static final int IMPROVEMENT_MAX_LENGTH = 1000;
+    public static final String IMPROVEMENT_ALREADY_TRANSFERRED = "review.improvement.alreadyTransferred";
+    public static final String IMPROVEMENT_MISSING = "review.improvement.missing";
+    /** Message argument {0}: IMPROVEMENT_MAX_LENGTH as a plain string (no number grouping). */
+    public static final String IMPROVEMENT_TOO_LONG = "review.improvement.tooLong";
 
     private final ReviewMapper reviewMapper;
     private final PlanService planService;
@@ -100,7 +104,7 @@ public class ReviewService {
             throw new NotFoundException("review");
         }
         if (review.isTransferred()) {
-            throw new DomainRuleException("improvement", "이미 다음 계획으로 넘긴 개선점은 수정할 수 없습니다.");
+            throw new DomainRuleException("improvement", IMPROVEMENT_ALREADY_TRANSFERRED);
         }
         if (reviewMapper.updateImprovementOwned(userId, reviewId, normalizeImprovement(improvement), now()) != 1) {
             throw new NotFoundException("review");
@@ -159,7 +163,7 @@ public class ReviewService {
         }
         String improvement = review.getImprovement();
         if (improvement == null || improvement.isBlank()) {
-            throw new DomainRuleException("improvement", "넘길 개선점이 없습니다. 회고에 개선점을 먼저 저장하세요.");
+            throw new DomainRuleException("improvement", IMPROVEMENT_MISSING);
         }
         UUID nextPlanId = planService.createWithImprovement(command, improvement);
         if (reviewMapper.markTransferredOwned(userId, reviewId, nextPlanId, now()) != 1) {
@@ -196,7 +200,7 @@ public class ReviewService {
             return null;
         }
         if (trimmed.length() > IMPROVEMENT_MAX_LENGTH) {
-            throw new DomainRuleException("improvement", "개선점은 " + IMPROVEMENT_MAX_LENGTH + "자 이하로 입력하세요.");
+            throw new DomainRuleException("improvement", IMPROVEMENT_TOO_LONG, String.valueOf(IMPROVEMENT_MAX_LENGTH));
         }
         return trimmed;
     }

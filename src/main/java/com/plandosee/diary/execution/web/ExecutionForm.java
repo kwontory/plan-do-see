@@ -15,11 +15,11 @@ import com.plandosee.diary.common.time.TimeConfig;
  */
 public class ExecutionForm {
 
-    @NotNull(message = "시작 시각을 입력하세요.")
+    @NotNull(message = "{validation.startedAt.required}")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime startedAt;
 
-    @NotNull(message = "종료 시각을 입력하세요.")
+    @NotNull(message = "{validation.endedAt.required}")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime endedAt;
 

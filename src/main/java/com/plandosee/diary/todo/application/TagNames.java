@@ -14,6 +14,8 @@ import com.plandosee.diary.common.error.DomainRuleException;
 public final class TagNames {
 
     public static final int MAX_LENGTH = 50;
+    /** Message argument {0}: MAX_LENGTH as a plain string (no number grouping). */
+    public static final String TOO_LONG = "todo.tags.tooLong";
 
     private TagNames() {
     }
@@ -29,7 +31,7 @@ public final class TagNames {
                 continue;
             }
             if (name.length() > MAX_LENGTH) {
-                throw new DomainRuleException("tags", "태그는 하나당 " + MAX_LENGTH + "자 이하로 입력하세요.");
+                throw new DomainRuleException("tags", TOO_LONG, String.valueOf(MAX_LENGTH));
             }
             unique.putIfAbsent(name.toLowerCase(Locale.ROOT), name);
         }

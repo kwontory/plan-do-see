@@ -18,6 +18,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.plandosee.diary.common.domain.Priority;
 import com.plandosee.diary.common.error.DomainRuleException;
+import com.plandosee.diary.common.web.FlashMessages;
 import com.plandosee.diary.common.web.FormErrors;
 import com.plandosee.diary.execution.web.ExecutionForm;
 import com.plandosee.diary.todo.application.TodoService;
@@ -28,6 +29,10 @@ import com.plandosee.diary.todo.domain.TodoRow;
  */
 @Controller
 public class TodoController {
+
+    public static final String FLASH_CREATED = "flash.todo.created";
+    public static final String FLASH_UPDATED = "flash.todo.updated";
+    public static final String FLASH_DELETED = "flash.todo.deleted";
 
     private final TodoService todoService;
     private final TodoPageModels pages;
@@ -43,7 +48,7 @@ public class TodoController {
     }
 
     /**
-     * The add form carries the current list state as hidden fields (개정 1 Q10). Because TodoForm owns the
+     * The add form carries the current list state as hidden fields (revision 1 Q10). Because TodoForm owns the
      * "priority" parameter, the list's priority filter arrives as hidden "listPriority" on this form only.
      */
     @PostMapping("/plans/{id}/todos")
@@ -62,7 +67,7 @@ public class TodoController {
             FormErrors.reject(result, ex);
             return pages.list(model, planId, filter, form);
         }
-        redirect.addFlashAttribute("flashMessage", "할 일을 추가했습니다.");
+        FlashMessages.add(redirect, FLASH_CREATED);
         return "redirect:" + filter.listUrl(planId);
     }
 
@@ -90,7 +95,7 @@ public class TodoController {
             FormErrors.reject(result, ex);
             return editView(model, todoService.get(todoId));
         }
-        redirect.addFlashAttribute("flashMessage", "할 일을 수정했습니다.");
+        FlashMessages.add(redirect, FLASH_UPDATED);
         return "redirect:/todos/" + todoId;
     }
 
@@ -98,7 +103,7 @@ public class TodoController {
     public String delete(@PathVariable("id") UUID todoId, @ModelAttribute("filter") TodoListQuery filter,
                          RedirectAttributes redirect) {
         UUID planId = todoService.delete(todoId);
-        redirect.addFlashAttribute("flashMessage", "할 일을 삭제했습니다.");
+        FlashMessages.add(redirect, FLASH_DELETED);
         return "redirect:" + filter.listUrl(planId);
     }
 

@@ -2,49 +2,50 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org"
       th:with="formError=${#fields.hasErrors('${planForm.*}')},
                hasImprovement=${review.improvement != null and !#strings.isEmpty(#strings.trim(review.improvement))}">
-<head th:replace="~{fragments/layout :: head('다음 계획 만들기', ${formError})}">
+<head th:replace="~{fragments/layout :: head(#{reviews.nextPlan.title}, ${formError})}">
     <meta charset="UTF-8">
-    <title>다음 계획 만들기</title>
+    <title>next plan</title>
 </head>
 <body>
 <header th:replace="~{fragments/layout :: header('plans')}"></header>
 
 <main id="main" tabindex="-1">
-    <nav class="breadcrumb" aria-label="현재 위치">
+    <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
         <ol>
-            <li><a th:href="@{/plans}" href="/plans">계획</a></li>
-            <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">계획 제목</a></li>
-            <li><a th:href="@{/reviews/{id}(id=${review.id})}" href="#">회고</a></li>
-            <li aria-current="page">다음 계획 만들기</li>
+            <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
+            <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">plan</a></li>
+            <li><a th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{breadcrumb.review}">review</a></li>
+            <li aria-current="page" th:text="#{reviews.nextPlan.title}">next plan</li>
         </ol>
     </nav>
     <div th:replace="~{fragments/layout :: flash}"></div>
-    <h1>다음 계획 만들기</h1>
+    <h1 th:text="#{reviews.nextPlan.title}">next plan</h1>
 
+    <!--/* Same text as the server rule error (D1): review.improvement.missing */-->
     <th:block th:unless="${hasImprovement}">
-        <p class="empty">넘길 개선점이 없습니다. 회고에 개선점을 먼저 저장하세요.</p>
-        <p><a class="btn btn--secondary" th:href="@{/reviews/{id}(id=${review.id})}" href="#">회고로 돌아가기</a></p>
+        <p class="empty" th:text="#{review.improvement.missing}">missing</p>
+        <p><a class="btn btn--secondary" th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{common.backToReview}">back</a></p>
     </th:block>
 
     <th:block th:if="${hasImprovement}">
         <section class="section" aria-labelledby="carry-heading">
-            <h2 id="carry-heading">넘길 개선점</h2>
+            <h2 id="carry-heading" th:text="#{reviews.nextPlan.carry.heading}">carry</h2>
             <div class="readonly-box">
-                <p class="pre-wrap" th:text="${review.improvement}">개선점</p>
-                <p class="muted" th:text="|출처: ${plan.title} 회고(${review.periodStart} ~ ${review.periodEnd})|">출처</p>
+                <p class="pre-wrap" th:text="${review.improvement}">improvement</p>
+                <p class="muted" th:text="#{reviews.nextPlan.carry.source(${plan.title}, ${review.periodStart}, ${review.periodEnd})}">source</p>
             </div>
-            <p class="muted">이 개선점은 서버가 회고에서 그대로 복사합니다. 여기서 고칠 수 없습니다.</p>
+            <p class="muted" th:text="#{reviews.nextPlan.carry.note}">note</p>
         </section>
 
         <section class="section" aria-labelledby="new-plan-heading">
-            <h2 id="new-plan-heading">새 계획</h2>
+            <h2 id="new-plan-heading" th:text="#{reviews.nextPlan.newPlan.heading}">new plan</h2>
             <form method="post" novalidate class="form"
                   th:action="@{/reviews/{id}/next-plan(id=${review.id})}" th:object="${planForm}">
                 <div th:replace="~{fragments/layout :: errorSummary}"></div>
                 <th:block th:replace="~{fragments/plan :: planFields(${priorities})}"></th:block>
                 <div class="form-actions">
-                    <button type="submit" class="btn">다음 계획 만들기</button>
-                    <a th:href="@{/reviews/{id}(id=${review.id})}" href="#">회고로 돌아가기</a>
+                    <button type="submit" class="btn" th:text="#{reviews.nextPlan.submit}">create</button>
+                    <a th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{common.backToReview}">back</a>
                 </div>
             </form>
         </section>

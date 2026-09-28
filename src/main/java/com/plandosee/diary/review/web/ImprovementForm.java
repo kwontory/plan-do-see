@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
  */
 public class ImprovementForm {
 
-    @Size(max = 1000, message = "개선점은 1000자 이하로 입력하세요.")
+    @Size(max = 1000, message = "{validation.improvement.max}")
     private String improvement;
 
     public static ImprovementForm of(String improvement) {

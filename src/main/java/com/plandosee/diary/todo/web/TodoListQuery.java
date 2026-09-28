@@ -13,7 +13,7 @@ import com.plandosee.diary.todo.domain.TodoStatus;
 
 /**
  * S02 search/filter/sort state (ADR-06). Bound from the query string on GET and from hidden fields on list POSTs
- * (web-contract 개정 1 Q10). Unknown values are dropped (sort falls back to DUE), so only allowlisted values
+ * (web-contract revision 1 Q10). Unknown values are dropped (sort falls back to DUE), so only allowlisted values
  * ever reach SQL or a redirect URL.
  */
 public class TodoListQuery {

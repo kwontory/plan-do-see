@@ -1,16 +1,9 @@
 package com.plandosee.diary.todo.domain;
 
+/**
+ * Display labels live in messages.properties as enum.TodoStatus.&lt;NAME&gt; (ADR-13).
+ */
 public enum TodoStatus {
-    IN_PROGRESS("진행 중"),
-    COMPLETED("완료");
-
-    private final String label;
-
-    TodoStatus(String label) {
-        this.label = label;
-    }
-
-    public String label() {
-        return label;
-    }
+    IN_PROGRESS,
+    COMPLETED
 }

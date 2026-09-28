@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('서버 오류가 발생했습니다', false)}">
+<head th:replace="~{fragments/layout :: head(#{error.500.title}, false)}">
     <meta charset="UTF-8">
-    <title>서버 오류가 발생했습니다</title>
+    <title>500</title>
 </head>
 <body>
 <header th:replace="~{fragments/layout :: header('none')}"></header>
 
 <main id="main" tabindex="-1">
-    <h1>서버 오류가 발생했습니다</h1>
-    <p>잠시 뒤 다시 시도하세요. 입력하던 내용은 저장되지 않았을 수 있습니다.</p>
+    <h1 th:text="#{error.500.title}">500</h1>
+    <p th:text="#{error.500.body}">error</p>
     <ul class="link-row">
-        <li><a class="btn btn--secondary" th:href="@{/}" href="/">홈으로</a></li>
-        <li><a class="btn btn--secondary" th:href="@{/plans}" href="/plans">계획 목록으로</a></li>
+        <li><a class="btn btn--secondary" th:href="@{/}" href="/" th:text="#{common.home}">home</a></li>
+        <li><a class="btn btn--secondary" th:href="@{/plans}" href="/plans" th:text="#{common.planList}">plans</a></li>
     </ul>
 </main>
 

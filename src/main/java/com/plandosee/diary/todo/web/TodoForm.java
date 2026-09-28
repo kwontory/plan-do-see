@@ -22,19 +22,19 @@ import com.plandosee.diary.todo.domain.TodoRow;
  */
 public class TodoForm {
 
-    @NotBlank(message = "제목을 입력하세요.")
-    @Size(max = 200, message = "제목은 200자 이하로 입력하세요.")
+    @NotBlank(message = "{validation.title.required}")
+    @Size(max = 200, message = "{validation.title.max}")
     private String title;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate dueDate;
 
-    @NotNull(message = "우선순위를 선택하세요.")
+    @NotNull(message = "{validation.priority.required}")
     private Priority priority;
 
-    @NotNull(message = "예상 시간(분)을 입력하세요.")
-    @Min(value = 0, message = "예상 시간은 0분 이상이어야 합니다.")
-    @Max(value = 525600, message = "예상 시간은 525600분 이하여야 합니다.")
+    @NotNull(message = "{validation.estimatedMinutes.required}")
+    @Min(value = 0, message = "{validation.estimatedMinutes.min}")
+    @Max(value = 525600, message = "{validation.estimatedMinutes.max}")
     private Integer estimatedMinutes;
 
     private String tags;

@@ -10,10 +10,12 @@
     --color-primary: #0b5cad;
     --color-primary-hover: #084a8c;
     --color-primary-bg: #eef4fb;
+    --color-on-primary: #ffffff;
     --color-focus: #0b5cad;
     --color-success: #116329;
     --color-success-bg: #eaf6ec;
     --color-danger: #b42318;
+    --color-danger-hover: #8f1c13;
     --color-danger-bg: #fef3f2;
     --color-notice-text: #6b4e00;
     --color-notice-bg: #fff8e1;
@@ -43,6 +45,7 @@
     --radius-sm: 4px;
     --radius-md: 8px;
     --border-width: 1px;
+    --border-width-strong: 2px;
     --border-accent: 4px;
     --focus-width: 3px;
     --focus-offset: 2px;
@@ -149,7 +152,7 @@ a:hover {
     padding: var(--space-2) var(--space-4);
     background: var(--color-bg);
     color: var(--color-primary);
-    border: 2px solid var(--color-primary);
+    border: var(--border-width-strong) solid var(--color-primary);
     border-radius: var(--radius-sm);
 }
 
@@ -166,7 +169,7 @@ a:hover {
     padding: var(--space-2) var(--page-gutter);
     background: var(--color-notice-bg);
     color: var(--color-notice-text);
-    border-bottom: 2px solid var(--color-notice-border);
+    border-bottom: var(--border-width-strong) solid var(--color-notice-border);
     font-size: var(--font-size-sm);
     white-space: normal;
 }
@@ -219,7 +222,7 @@ a:hover {
 .main-nav a.is-current {
     font-weight: var(--font-weight-bold);
     text-decoration: underline;
-    text-decoration-thickness: 2px;
+    text-decoration-thickness: var(--border-width-strong);
 }
 
 /* Main */
@@ -293,7 +296,7 @@ main {
     padding: var(--space-4);
     background: var(--color-notice-bg);
     color: var(--color-notice-text);
-    border: 2px solid var(--color-notice-border);
+    border: var(--border-width-strong) solid var(--color-notice-border);
     border-radius: var(--radius-md);
 }
 
@@ -348,16 +351,16 @@ main {
     font: inherit;
     font-weight: var(--font-weight-bold);
     line-height: 1.3;
-    color: #ffffff;
+    color: var(--color-on-primary);
     background: var(--color-primary);
-    border: 2px solid var(--color-primary);
+    border: var(--border-width-strong) solid var(--color-primary);
     border-radius: var(--radius-sm);
     text-decoration: none;
     cursor: pointer;
 }
 
 .btn:hover {
-    color: #ffffff;
+    color: var(--color-on-primary);
     background: var(--color-primary-hover);
     border-color: var(--color-primary-hover);
 }
@@ -375,20 +378,44 @@ main {
 }
 
 .btn--danger {
-    color: #ffffff;
+    color: var(--color-on-primary);
     background: var(--color-danger);
     border-color: var(--color-danger);
 }
 
 .btn--danger:hover {
-    background: #8f1c13;
-    border-color: #8f1c13;
+    background: var(--color-danger-hover);
+    border-color: var(--color-danger-hover);
 }
 
+/* Busy (JS submit lock, D7): no opacity, so the busy label keeps the normal button contrast
+   (on-primary on primary 6.67:1, primary on bg 6.67:1, on-primary on danger 6.57:1). The changed label text
+   and the progress cursor are the cues. Hover colors are not applied while busy. */
 .btn[disabled],
-.btn[aria-disabled="true"] {
+.btn[aria-disabled="true"],
+.btn[aria-busy="true"] {
     cursor: progress;
-    opacity: 0.75;
+}
+
+.btn[disabled]:hover,
+.btn[aria-busy="true"]:hover {
+    color: var(--color-on-primary);
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.btn--secondary[disabled]:hover,
+.btn--secondary[aria-busy="true"]:hover {
+    color: var(--color-primary);
+    background: var(--color-bg);
+    border-color: var(--color-border-strong);
+}
+
+.btn--danger[disabled]:hover,
+.btn--danger[aria-busy="true"]:hover {
+    color: var(--color-on-primary);
+    background: var(--color-danger);
+    border-color: var(--color-danger);
 }
 
 /* Badges */
@@ -654,8 +681,12 @@ textarea {
     resize: vertical;
 }
 
-[aria-invalid="true"] {
-    border: 2px solid var(--color-danger);
+/* Error state hook is the aria-invalid attribute itself (D11: no separate field--error class).
+   Element-qualified so it outranks input[type="..."] above (same specificity, later rule wins). */
+input[aria-invalid="true"],
+select[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+    border: var(--border-width-strong) solid var(--color-danger);
 }
 
 .input-unit {
@@ -708,7 +739,7 @@ fieldset.field-group > legend {
     padding: var(--space-4);
     background: var(--color-danger-bg);
     color: var(--color-danger);
-    border: 2px solid var(--color-danger);
+    border: var(--border-width-strong) solid var(--color-danger);
     border-radius: var(--radius-md);
 }
 
@@ -806,7 +837,7 @@ thead th {
 tfoot th,
 tfoot td {
     font-weight: var(--font-weight-bold);
-    border-top: 2px solid var(--color-border-strong);
+    border-top: var(--border-width-strong) solid var(--color-border-strong);
     border-bottom: 0;
 }
 
@@ -843,7 +874,7 @@ td time {
     padding: var(--space-4);
     color: var(--color-text);
     text-decoration: none;
-    border: 2px solid var(--color-border-strong);
+    border: var(--border-width-strong) solid var(--color-border-strong);
     border-radius: var(--radius-md);
 }
 
@@ -886,9 +917,9 @@ td time {
     color: var(--color-success);
 }
 
+/* D8: no underline (underline is the link cue). Bold text from <strong> plus the word itself carry the meaning. */
 .verdict--bad {
     color: var(--color-danger);
-    text-decoration: underline;
 }
 
 @media (prefers-reduced-motion: reduce) {

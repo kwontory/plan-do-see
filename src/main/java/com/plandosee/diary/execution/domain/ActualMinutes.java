@@ -11,32 +11,37 @@ import com.plandosee.diary.common.error.DomainRuleException;
  */
 public final class ActualMinutes {
 
+    public static final String STARTED_AT_REQUIRED = "execution.startedAt.required";
+    public static final String ENDED_AT_REQUIRED = "execution.endedAt.required";
+    public static final String END_BEFORE_START = "execution.period.endBeforeStart";
+    public static final String TOO_LONG = "execution.period.tooLong";
+
     private ActualMinutes() {
     }
 
     public static int between(OffsetDateTime startedAt, OffsetDateTime endedAt) {
         if (startedAt == null) {
-            throw new DomainRuleException("startedAt", "시작 시각을 입력하세요.");
+            throw new DomainRuleException("startedAt", STARTED_AT_REQUIRED);
         }
         if (endedAt == null) {
-            throw new DomainRuleException("endedAt", "종료 시각을 입력하세요.");
+            throw new DomainRuleException("endedAt", ENDED_AT_REQUIRED);
         }
         Duration elapsed = Duration.between(startedAt, endedAt);
         if (elapsed.isNegative()) {
-            throw new DomainRuleException("endedAt", "종료 시각은 시작 시각보다 빠를 수 없습니다.");
+            throw new DomainRuleException("endedAt", END_BEFORE_START);
         }
         return ofElapsed(elapsed);
     }
 
     static int ofElapsed(Duration elapsed) {
         if (elapsed.isNegative()) {
-            throw new DomainRuleException("endedAt", "종료 시각은 시작 시각보다 빠를 수 없습니다.");
+            throw new DomainRuleException("endedAt", END_BEFORE_START);
         }
         long wholeMinutes = elapsed.toMinutes();
         boolean remainder = elapsed.minusMinutes(wholeMinutes).compareTo(Duration.ZERO) > 0;
         long minutes = wholeMinutes + (remainder ? 1 : 0);
         if (minutes > Integer.MAX_VALUE) {
-            throw new DomainRuleException("endedAt", "실행 기간이 너무 깁니다. 시작·종료 시각의 연도와 날짜를 확인하세요.");
+            throw new DomainRuleException("endedAt", TOO_LONG);
         }
         return (int) minutes;
     }

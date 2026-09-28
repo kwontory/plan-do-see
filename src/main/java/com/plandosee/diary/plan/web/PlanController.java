@@ -16,8 +16,10 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.plandosee.diary.common.domain.Priority;
 import com.plandosee.diary.common.error.DomainRuleException;
+import com.plandosee.diary.common.web.FlashMessages;
 import com.plandosee.diary.common.web.FormErrors;
 import com.plandosee.diary.plan.application.PlanService;
+import com.plandosee.diary.plan.domain.PlanPeriod;
 import com.plandosee.diary.plan.domain.PlanRow;
 import com.plandosee.diary.review.application.ReviewService;
 
@@ -28,6 +30,8 @@ import com.plandosee.diary.review.application.ReviewService;
 public class PlanController {
 
     static final String FORM_VIEW = "plans/form";
+    public static final String FLASH_CREATED = "flash.plan.created";
+    public static final String FLASH_UPDATED = "flash.plan.updated";
 
     private final PlanService planService;
     private final ReviewService reviewService;
@@ -53,6 +57,7 @@ public class PlanController {
     public String create(@Valid @ModelAttribute("planForm") PlanForm form, BindingResult result, Model model,
                          RedirectAttributes redirect) {
         if (result.hasErrors()) {
+            rejectPeriod(form, result);
             return createView(model);
         }
         UUID planId;
@@ -62,7 +67,7 @@ public class PlanController {
             FormErrors.reject(result, ex);
             return createView(model);
         }
-        redirect.addFlashAttribute("flashMessage", "계획을 만들었습니다.");
+        FlashMessages.add(redirect, FLASH_CREATED);
         return "redirect:/plans/" + planId;
     }
 
@@ -86,6 +91,7 @@ public class PlanController {
     public String update(@PathVariable("id") UUID planId, @Valid @ModelAttribute("planForm") PlanForm form,
                          BindingResult result, Model model, RedirectAttributes redirect) {
         if (result.hasErrors()) {
+            rejectPeriod(form, result);
             return editView(model, planService.get(planId));
         }
         try {
@@ -94,8 +100,23 @@ public class PlanController {
             FormErrors.reject(result, ex);
             return editView(model, planService.get(planId));
         }
-        redirect.addFlashAttribute("flashMessage", "계획을 수정했습니다. 수정 전 값은 수정 이력에 남았습니다.");
+        FlashMessages.add(redirect, FLASH_UPDATED);
         return "redirect:/plans/" + planId;
+    }
+
+    /**
+     * QA-D5: when other fields already failed validation, the period rule is checked in the same response so the
+     * user does not discover it only on the next submit.
+     */
+    public static void rejectPeriod(PlanForm form, BindingResult result) {
+        if (result.hasFieldErrors("endDate")) {
+            return;
+        }
+        try {
+            PlanPeriod.check(form.getStartDate(), form.getEndDate());
+        } catch (DomainRuleException ex) {
+            FormErrors.reject(result, ex);
+        }
     }
 
     private String createView(Model model) {

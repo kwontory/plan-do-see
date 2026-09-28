@@ -9,10 +9,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.plandosee.diary.common.config.CurrentUserProvider;
-import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.error.NotFoundException;
 import com.plandosee.diary.common.id.IdGenerator;
 import com.plandosee.diary.common.time.SeoulDates;
+import com.plandosee.diary.plan.domain.PlanPeriod;
 import com.plandosee.diary.plan.domain.PlanRevisionRow;
 import com.plandosee.diary.plan.domain.PlanRow;
 import com.plandosee.diary.plan.infrastructure.PlanMapper;
@@ -128,9 +128,7 @@ public class PlanService {
     }
 
     private void validate(PlanCommand command) {
-        if (command.endDate().isBefore(command.startDate())) {
-            throw new DomainRuleException("endDate", "종료일은 시작일보다 빠를 수 없습니다.");
-        }
+        PlanPeriod.check(command.startDate(), command.endDate());
     }
 
     private OffsetDateTime now() {

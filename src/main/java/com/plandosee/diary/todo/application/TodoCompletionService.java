@@ -25,6 +25,8 @@ import com.plandosee.diary.todo.infrastructure.TodoMapper;
 @Service
 public class TodoCompletionService {
 
+    public static final String KEY_MISSING = "todo.completion.keyMissing";
+
     private final TodoMapper todoMapper;
     private final CurrentUserProvider currentUserProvider;
     private final IdGenerator idGenerator;
@@ -43,7 +45,7 @@ public class TodoCompletionService {
 
     public TransitionResult complete(UUID todoId, UUID idempotencyKey) {
         if (idempotencyKey == null) {
-            throw new DomainRuleException("idempotencyKey", "완료 요청을 확인할 수 없습니다. 화면을 새로고침한 뒤 완료 버튼을 다시 누르세요.");
+            throw new DomainRuleException("idempotencyKey", KEY_MISSING);
         }
         try {
             return transactionTemplate.execute(status -> completeInTransaction(todoId, idempotencyKey));

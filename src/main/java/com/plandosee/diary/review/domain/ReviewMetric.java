@@ -4,36 +4,26 @@ import java.util.Optional;
 
 /**
  * Review metrics and their drill-down keys (web-contract.md). The key is the only value accepted from the URL.
+ * Labels and units live in messages.properties as metric.&lt;key&gt;.label / metric.&lt;key&gt;.unit, and the
+ * card order is decided by the template (ADR-13).
  */
 public enum ReviewMetric {
-    PLANNED("planned", "계획 수(할 일 수)", "건"),
-    COMPLETED("completed", "완료 수", "건"),
-    OVERDUE("overdue", "지연 수", "건"),
-    BLOCKED("blocked", "막힘 수", "건"),
-    ESTIMATED("estimated", "예상 시간", "분"),
-    ACTUAL("actual", "실제 시간", "분"),
-    VARIANCE("variance", "차이(실제 - 예상)", "분");
+    PLANNED("planned"),
+    COMPLETED("completed"),
+    OVERDUE("overdue"),
+    BLOCKED("blocked"),
+    ESTIMATED("estimated"),
+    ACTUAL("actual"),
+    VARIANCE("variance");
 
     private final String key;
-    private final String label;
-    private final String unit;
 
-    ReviewMetric(String key, String label, String unit) {
+    ReviewMetric(String key) {
         this.key = key;
-        this.label = label;
-        this.unit = unit;
     }
 
     public String key() {
         return key;
-    }
-
-    public String label() {
-        return label;
-    }
-
-    public String unit() {
-        return unit;
     }
 
     public long valueOf(ReviewSummary summary) {

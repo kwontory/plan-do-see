@@ -4,125 +4,129 @@
 
 <!--/* Plan list (S00, S01). plans: List<PlanRow> */-->
 <th:block th:fragment="planList(plans)">
-    <p class="sort-note">최근에 만든 계획이 위에 옵니다.</p>
+    <p class="sort-note" th:text="#{plans.list.sortNote}">sort</p>
     <div class="empty" th:if="${plans == null or plans.isEmpty()}">
-        <p>아직 계획이 없습니다. 첫 계획을 만들어 보세요.</p>
-        <a class="btn" th:href="@{/plans/new}" href="/plans/new">새 계획 만들기</a>
+        <p th:text="#{plans.list.empty}">empty</p>
+        <a class="btn" th:href="@{/plans/new}" href="/plans/new" th:text="#{plans.new}">new</a>
     </div>
     <ul class="plan-list" th:unless="${plans == null or plans.isEmpty()}">
         <li th:each="p : ${plans}">
             <article class="plan-item">
-                <h3 class="plan-item__title"><a th:href="@{/plans/{id}(id=${p.id})}" href="#" th:text="${p.title}">계획 제목</a></h3>
+                <h3 class="plan-item__title"><a th:href="@{/plans/{id}(id=${p.id})}" href="#" th:text="${p.title}">title</a></h3>
                 <p class="plan-item__meta">
-                    <span th:text="|${p.startDate} ~ ${p.endDate}|">2026-01-01 ~ 2026-01-31</span>
-                    <span th:text="|우선순위 ${p.priority.label()}|">우선순위 보통</span>
-                    <span th:text="|예상 ${p.estimatedMinutes}분|">예상 0분</span>
-                    <span class="badge badge--carried" th:if="${p.carriedImprovement != null and !#strings.isEmpty(p.carriedImprovement)}">이전 회고에서 넘어옴</span>
+                    <span th:text="#{common.period(${p.startDate}, ${p.endDate})}">period</span>
+                    <span th:text="#{plans.item.priority(${#messages.msg('enum.Priority.' + p.priority)})}">priority</span>
+                    <span th:text="#{plans.item.estimated(${p.estimatedMinutes})}">estimated</span>
+                    <span class="badge badge--carried" th:if="${p.carriedImprovement != null and !#strings.isEmpty(p.carriedImprovement)}"
+                          th:text="#{badge.carried}">carried</span>
                 </p>
                 <p class="plan-item__actions">
-                    <a class="btn btn--secondary" th:href="@{/plans/{id}/todos(id=${p.id})}" href="#">할 일<span class="visually-hidden" th:text="|: ${p.title}|"></span></a>
-                    <a class="btn btn--secondary" th:href="@{/plans/{id}(id=${p.id})} + '#reviews'" href="#">회고<span class="visually-hidden" th:text="|: ${p.title}|"></span></a>
+                    <a class="btn btn--secondary" th:href="@{/plans/{id}/todos(id=${p.id})}" href="#"><th:block th:text="#{plans.item.todos}">todos</th:block><span
+                            class="visually-hidden" th:text="#{common.srContext(${p.title})}"></span></a>
+                    <a class="btn btn--secondary" th:href="@{/plans/{id}(id=${p.id})} + '#reviews'" href="#"><th:block th:text="#{plans.item.reviews}">reviews</th:block><span
+                            class="visually-hidden" th:text="#{common.srContext(${p.title})}"></span></a>
                 </p>
             </article>
         </li>
     </ul>
 </th:block>
 
-<!--/* PlanForm fields. Must be included inside a form with th:object="${planForm}". priorities: enum values */-->
+<!--/* PlanForm fields. Must be included inside a form with th:object="${planForm}". priorities: enum values.
+       Error state is carried by aria-invalid (styled in CSS) and the field error text (D11). */-->
 <th:block th:fragment="planFields(priorities)">
-    <div class="field" th:classappend="${#fields.hasErrors('title')} ? 'field--error'">
-        <label for="title">계획 제목</label>
-        <p class="field-help" id="title-help">200자 이하</p>
+    <div class="field">
+        <label for="title" th:text="#{form.plan.title.label}">title</label>
+        <p class="field-help" id="title-help" th:text="#{form.title.help}">help</p>
         <p th:replace="~{fragments/layout :: fieldError('title')}"></p>
         <input type="text" th:field="*{title}" maxlength="200" required
                th:attr="aria-describedby=${#fields.hasErrors('title')} ? 'title-help title-error' : 'title-help',aria-invalid=${#fields.hasErrors('title')} ? 'true' : null">
     </div>
 
     <fieldset class="field-group field-group--pair">
-        <legend>기간</legend>
-        <div class="field" th:classappend="${#fields.hasErrors('startDate')} ? 'field--error'">
-            <label for="startDate">시작일</label>
+        <legend th:text="#{form.plan.period.legend}">period</legend>
+        <div class="field">
+            <label for="startDate" th:text="#{form.plan.startDate.label}">start</label>
             <p th:replace="~{fragments/layout :: fieldError('startDate')}"></p>
             <input type="date" th:field="*{startDate}" required
                    th:attr="aria-describedby=${#fields.hasErrors('startDate')} ? 'startDate-error' : null,aria-invalid=${#fields.hasErrors('startDate')} ? 'true' : null">
         </div>
-        <div class="field" th:classappend="${#fields.hasErrors('endDate')} ? 'field--error'">
-            <label for="endDate">종료일</label>
-            <p class="field-help" id="endDate-help">시작일과 같거나 뒤여야 합니다.</p>
+        <div class="field">
+            <label for="endDate" th:text="#{form.plan.endDate.label}">end</label>
+            <p class="field-help" id="endDate-help" th:text="#{form.plan.endDate.help}">help</p>
             <p th:replace="~{fragments/layout :: fieldError('endDate')}"></p>
             <input type="date" th:field="*{endDate}" required
                    th:attr="aria-describedby=${#fields.hasErrors('endDate')} ? 'endDate-help endDate-error' : 'endDate-help',aria-invalid=${#fields.hasErrors('endDate')} ? 'true' : null">
         </div>
     </fieldset>
 
-    <div class="field" th:classappend="${#fields.hasErrors('priority')} ? 'field--error'">
-        <label for="priority">우선순위</label>
+    <div class="field">
+        <label for="priority" th:text="#{form.priority.label}">priority</label>
         <p th:replace="~{fragments/layout :: fieldError('priority')}"></p>
         <select th:field="*{priority}" required
                 th:attr="aria-describedby=${#fields.hasErrors('priority')} ? 'priority-error' : null,aria-invalid=${#fields.hasErrors('priority')} ? 'true' : null">
-            <option value="">선택하세요</option>
-            <option th:each="pr : ${priorities}" th:value="${pr}" th:text="${pr.label()}">보통</option>
+            <option value="" th:text="#{common.select.placeholder}">select</option>
+            <option th:each="pr : ${priorities}" th:value="${pr}" th:text="${#messages.msg('enum.Priority.' + pr)}">priority</option>
         </select>
     </div>
 
-    <div class="field" th:classappend="${#fields.hasErrors('successCriteria')} ? 'field--error'">
-        <label for="successCriteria">성공 기준</label>
-        <p class="field-help" id="successCriteria-help">무엇을 보면 이 계획이 성공했다고 판단할지 적습니다. 1000자 이하</p>
+    <div class="field">
+        <label for="successCriteria" th:text="#{form.plan.successCriteria.label}">criteria</label>
+        <p class="field-help" id="successCriteria-help" th:text="#{form.plan.successCriteria.help}">help</p>
         <p th:replace="~{fragments/layout :: fieldError('successCriteria')}"></p>
         <textarea th:field="*{successCriteria}" rows="4" maxlength="1000" required
                   th:attr="aria-describedby=${#fields.hasErrors('successCriteria')} ? 'successCriteria-help successCriteria-error' : 'successCriteria-help',aria-invalid=${#fields.hasErrors('successCriteria')} ? 'true' : null"></textarea>
     </div>
 
-    <div class="field" th:classappend="${#fields.hasErrors('estimatedMinutes')} ? 'field--error'">
-        <label for="estimatedMinutes">예상 시간(분)</label>
-        <p class="field-help" id="estimatedMinutes-help">정수 분으로 입력합니다. 예: 1시간 30분이면 90. 0~525600</p>
+    <div class="field">
+        <label for="estimatedMinutes" th:text="#{form.estimatedMinutes.label}">minutes</label>
+        <p class="field-help" id="estimatedMinutes-help" th:text="#{form.plan.estimatedMinutes.help}">help</p>
         <p th:replace="~{fragments/layout :: fieldError('estimatedMinutes')}"></p>
         <span class="input-unit">
             <input type="number" th:field="*{estimatedMinutes}" min="0" max="525600" step="1" inputmode="numeric" required
                    th:attr="aria-describedby=${#fields.hasErrors('estimatedMinutes')} ? 'estimatedMinutes-help estimatedMinutes-error' : 'estimatedMinutes-help',aria-invalid=${#fields.hasErrors('estimatedMinutes')} ? 'true' : null">
-            <span aria-hidden="true">분</span>
+            <span aria-hidden="true" th:text="#{form.unit.minutes}">min</span>
         </span>
     </div>
 </th:block>
 
 <!--/* TodoForm fields. Must be included inside a form with th:object="${todoForm}". */-->
 <th:block th:fragment="todoFields(priorities)">
-    <div class="field" th:classappend="${#fields.hasErrors('title')} ? 'field--error'">
-        <label for="title">할 일 제목</label>
-        <p class="field-help" id="title-help">200자 이하</p>
+    <div class="field">
+        <label for="title" th:text="#{form.todo.title.label}">title</label>
+        <p class="field-help" id="title-help" th:text="#{form.title.help}">help</p>
         <p th:replace="~{fragments/layout :: fieldError('title')}"></p>
         <input type="text" th:field="*{title}" maxlength="200" required
                th:attr="aria-describedby=${#fields.hasErrors('title')} ? 'title-help title-error' : 'title-help',aria-invalid=${#fields.hasErrors('title')} ? 'true' : null">
     </div>
-    <div class="field" th:classappend="${#fields.hasErrors('dueDate')} ? 'field--error'">
-        <label for="dueDate">마감일(선택)</label>
-        <p class="field-help" id="dueDate-help">비워 두면 마감일 없음으로 저장되고 지연으로 세지 않습니다.</p>
+    <div class="field">
+        <label for="dueDate" th:text="#{form.todo.dueDate.label}">due</label>
+        <p class="field-help" id="dueDate-help" th:text="#{form.todo.dueDate.help}">help</p>
         <p th:replace="~{fragments/layout :: fieldError('dueDate')}"></p>
         <input type="date" th:field="*{dueDate}"
                th:attr="aria-describedby=${#fields.hasErrors('dueDate')} ? 'dueDate-help dueDate-error' : 'dueDate-help',aria-invalid=${#fields.hasErrors('dueDate')} ? 'true' : null">
     </div>
-    <div class="field" th:classappend="${#fields.hasErrors('priority')} ? 'field--error'">
-        <label for="priority">우선순위</label>
+    <div class="field">
+        <label for="priority" th:text="#{form.priority.label}">priority</label>
         <p th:replace="~{fragments/layout :: fieldError('priority')}"></p>
         <select th:field="*{priority}" required
                 th:attr="aria-describedby=${#fields.hasErrors('priority')} ? 'priority-error' : null,aria-invalid=${#fields.hasErrors('priority')} ? 'true' : null">
-            <option value="">선택하세요</option>
-            <option th:each="pr : ${priorities}" th:value="${pr}" th:text="${pr.label()}">보통</option>
+            <option value="" th:text="#{common.select.placeholder}">select</option>
+            <option th:each="pr : ${priorities}" th:value="${pr}" th:text="${#messages.msg('enum.Priority.' + pr)}">priority</option>
         </select>
     </div>
-    <div class="field" th:classappend="${#fields.hasErrors('estimatedMinutes')} ? 'field--error'">
-        <label for="estimatedMinutes">예상 시간(분)</label>
-        <p class="field-help" id="estimatedMinutes-help">정수 분. 0~525600</p>
+    <div class="field">
+        <label for="estimatedMinutes" th:text="#{form.estimatedMinutes.label}">minutes</label>
+        <p class="field-help" id="estimatedMinutes-help" th:text="#{form.todo.estimatedMinutes.help}">help</p>
         <p th:replace="~{fragments/layout :: fieldError('estimatedMinutes')}"></p>
         <span class="input-unit">
             <input type="number" th:field="*{estimatedMinutes}" min="0" max="525600" step="1" inputmode="numeric" required
                    th:attr="aria-describedby=${#fields.hasErrors('estimatedMinutes')} ? 'estimatedMinutes-help estimatedMinutes-error' : 'estimatedMinutes-help',aria-invalid=${#fields.hasErrors('estimatedMinutes')} ? 'true' : null">
-            <span aria-hidden="true">분</span>
+            <span aria-hidden="true" th:text="#{form.unit.minutes}">min</span>
         </span>
     </div>
-    <div class="field" th:classappend="${#fields.hasErrors('tags')} ? 'field--error'">
-        <label for="tags">태그(선택)</label>
-        <p class="field-help" id="tags-help">쉼표(,)로 구분합니다. 예: 운동, 아침. 대소문자만 다른 이름은 같은 태그로 합칩니다. 태그 하나는 50자 이하</p>
+    <div class="field">
+        <label for="tags" th:text="#{form.todo.tags.label}">tags</label>
+        <p class="field-help" id="tags-help" th:text="#{form.todo.tags.help}">help</p>
         <p th:replace="~{fragments/layout :: fieldError('tags')}"></p>
         <input type="text" th:field="*{tags}"
                th:attr="aria-describedby=${#fields.hasErrors('tags')} ? 'tags-help tags-error' : 'tags-help',aria-invalid=${#fields.hasErrors('tags')} ? 'true' : null">

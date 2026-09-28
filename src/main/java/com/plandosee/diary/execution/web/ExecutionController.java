@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.plandosee.diary.common.error.DomainRuleException;
+import com.plandosee.diary.common.web.FlashMessages;
 import com.plandosee.diary.common.web.FormErrors;
 import com.plandosee.diary.execution.application.ExecutionService;
 import com.plandosee.diary.todo.web.TodoPageModels;
@@ -22,6 +23,8 @@ import com.plandosee.diary.todo.web.TodoPageModels;
  */
 @Controller
 public class ExecutionController {
+
+    public static final String FLASH_RECORDED = "flash.execution.recorded";
 
     private final ExecutionService executionService;
     private final TodoPageModels pages;
@@ -43,7 +46,7 @@ public class ExecutionController {
             FormErrors.reject(result, ex);
             return pages.detail(model, todoId, form);
         }
-        redirect.addFlashAttribute("flashMessage", "실행 기록을 저장했습니다. 계획의 예상 시간은 바뀌지 않습니다.");
+        FlashMessages.add(redirect, FLASH_RECORDED);
         return "redirect:/todos/" + todoId;
     }
 }
