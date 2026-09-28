@@ -36,6 +36,11 @@ public class TodoPageModels {
     private final ExecutionService executionService;
     private final IdGenerator idGenerator;
 
+    /** ADR-18 E8 view: the todo was deleted while a form for it was being submitted (template owned by Frontend). */
+    public static final String DELETED_VIEW = "todos/deleted";
+    public static final String DELETED_FROM_EDIT = "edit";
+    public static final String DELETED_FROM_EXECUTION = "execution";
+
     public TodoPageModels(TodoService todoService, PlanService planService, ExecutionService executionService,
                           IdGenerator idGenerator) {
         this.todoService = todoService;
@@ -81,6 +86,21 @@ public class TodoPageModels {
      * reopens merged in time order, query parameter historyPage, model historyPage), completionCount, reopenCount
      * (all events). events (completion events only) is kept until the template moves to completionHistory.
      */
+    /**
+     * ADR-18 E8: HTTP 409 and the todos/deleted view. Nothing was stored. The submitted form stays in the model under
+     * its usual name (todoForm or executionForm) so the page can show the input read-only for copying. Model:
+     * todoId, planId (the plan the todo belonged to, for the list link), deletedFrom ("edit" or "execution").
+     * No database read.
+     */
+    public String deleted(Model model, jakarta.servlet.http.HttpServletResponse response, UUID todoId, UUID planId,
+                          String from) {
+        response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_CONFLICT);
+        model.addAttribute("todoId", todoId);
+        model.addAttribute("planId", planId);
+        model.addAttribute("deletedFrom", from);
+        return DELETED_VIEW;
+    }
+
     public String detail(Model model, UUID todoId, ExecutionForm executionForm, int logPage, int historyPage) {
         TodoRow todo = todoService.get(todoId);
         model.addAttribute("todo", todo);

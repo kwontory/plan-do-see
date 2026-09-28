@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.plandosee.diary.common.domain.EditOutcome;
 import com.plandosee.diary.common.domain.Priority;
 import com.plandosee.diary.common.error.RetryLaterException;
 import com.plandosee.diary.common.error.DomainRuleException;
@@ -25,12 +26,15 @@ import com.plandosee.diary.common.error.NotFoundException;
 import com.plandosee.diary.common.paging.PageRequest;
 import com.plandosee.diary.common.web.ConflictKeys;
 import com.plandosee.diary.common.web.ConflictResponses;
+import com.plandosee.diary.common.web.EditConflicts;
 import com.plandosee.diary.common.web.FlashMessages;
 import com.plandosee.diary.common.web.FormErrors;
 import com.plandosee.diary.plan.web.PlanForm;
 import com.plandosee.diary.review.application.ReviewDetail;
 import com.plandosee.diary.review.application.ReviewEvidencePage;
+import com.plandosee.diary.review.application.ImprovementTransferredException;
 import com.plandosee.diary.review.application.ReviewService;
+import com.plandosee.diary.review.application.ReviewStaleException;
 import com.plandosee.diary.review.application.TransferResult;
 import com.plandosee.diary.review.domain.ReviewEvidence;
 import com.plandosee.diary.review.domain.ReviewMetric;
@@ -47,7 +51,13 @@ public class ReviewController {
     public static final String FLASH_CREATED = "flash.review.created";
     public static final String FLASH_IMPROVEMENT_SAVED = "flash.review.improvementSaved";
     public static final String FLASH_TRANSFERRED = "flash.review.transferred";
-    public static final String FLASH_ALREADY_TRANSFERRED = "flash.review.alreadyTransferred";
+    /** ADR-18 E5: the saved improvement equals the stored one; nothing changed. */
+    public static final String FLASH_IMPROVEMENT_UNCHANGED = "flash.review.improvementUnchanged";
+    /**
+     * ADR-18 E10: the next-plan form was submitted for a review whose improvement had already been carried to a next
+     * plan. Global form error; the page is shown again (409) with the input and the existing next plan.
+     */
+    public static final String NEXT_PLAN_ALREADY_TRANSFERRED = "review.nextPlan.alreadyTransferred";
 
     private final ReviewService reviewService;
 
@@ -72,7 +82,7 @@ public class ReviewController {
     @GetMapping("/reviews/{id}")
     public String detail(@PathVariable("id") UUID reviewId, Model model) {
         ReviewDetail detail = reviewService.detail(reviewId);
-        return detailView(model, detail, ImprovementForm.of(detail.review().getImprovement()));
+        return detailView(model, detail, ImprovementForm.of(detail.review()));
     }
 
     @PutMapping("/reviews/{id}/improvement")
@@ -83,8 +93,22 @@ public class ReviewController {
         if (result.hasErrors()) {
             return detailView(model, reviewService.detail(reviewId), form);
         }
+        EditOutcome outcome;
         try {
-            reviewService.updateImprovement(reviewId, form.getImprovement());
+            outcome = reviewService.updateImprovement(reviewId, form.getImprovement(), form.getVersion());
+        } catch (ReviewStaleException ex) {
+            // ADR-18: 409, input kept, the latest review and what differs; hidden version = latest.
+            form.setVersion(ex.latestVersion());
+            EditConflicts.rejectStale(result, response, model, ex, ex.latest());
+            return detailView(model, reviewService.detail(reviewId), form);
+        } catch (ImprovementTransferredException ex) {
+            // ADR-18 E10 / 11.5.5: already carried to a next plan. 409 with the transferred improvement (review,
+            // latest) and the next plan (nextPlan); the input is kept for copying.
+            FormErrors.reject(result, ex);
+            response.setStatus(HttpServletResponse.SC_CONFLICT);
+            ReviewDetail detail = reviewService.detail(reviewId);
+            EditConflicts.showLatest(model, detail.review(), java.util.List.of());
+            return detailView(model, detail, form);
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
             return detailView(model, reviewService.detail(reviewId), form);
@@ -92,7 +116,7 @@ public class ReviewController {
             ConflictResponses.rejectForm(result, response, ex);
             return detailView(model, reviewService.detail(reviewId), form);
         }
-        FlashMessages.add(redirect, FLASH_IMPROVEMENT_SAVED);
+        FlashMessages.add(redirect, outcome == EditOutcome.UNCHANGED ? FLASH_IMPROVEMENT_UNCHANGED : FLASH_IMPROVEMENT_SAVED);
         return "redirect:/reviews/" + reviewId;
     }
 
@@ -134,8 +158,10 @@ public class ReviewController {
 
     /**
      * A valid form always goes to the service, which decides under the review lock whether a plan is created
-     * (TransferResult.created). An invalid form is shown again, unless the page it came from is already out of
-     * date because the improvement was transferred meanwhile; then the user is taken to that plan, as the GET does.
+     * (TransferResult.created). ADR-18 E10: when the improvement had already been carried to a next plan (the page
+     * was out of date, or the form was sent twice), nothing is created and the form is shown again with HTTP 409,
+     * the input kept, the global error {@link #NEXT_PLAN_ALREADY_TRANSFERRED}, and the existing next plan
+     * (model nextPlan). The GET still goes straight to that plan (no input to keep).
      */
     @PostMapping("/reviews/{id}/next-plan")
     public String transfer(@PathVariable("id") UUID reviewId, @Valid @ModelAttribute("planForm") PlanForm form,
@@ -144,8 +170,7 @@ public class ReviewController {
         if (result.hasErrors()) {
             ReviewDetail detail = reviewService.detail(reviewId);
             if (detail.review().isTransferred()) {
-                FlashMessages.add(redirect, FLASH_ALREADY_TRANSFERRED);
-                return "redirect:/plans/" + detail.review().getNextPlanId();
+                return alreadyTransferred(model, result, response, detail);
             }
             return nextPlanView(model, detail);
         }
@@ -159,8 +184,19 @@ public class ReviewController {
             ConflictResponses.rejectForm(result, response, ex);
             return nextPlanView(model, reviewService.detail(reviewId));
         }
-        FlashMessages.add(redirect, transfer.created() ? FLASH_TRANSFERRED : FLASH_ALREADY_TRANSFERRED);
+        if (!transfer.created()) {
+            return alreadyTransferred(model, result, response, reviewService.detail(reviewId));
+        }
+        FlashMessages.add(redirect, FLASH_TRANSFERRED);
         return "redirect:/plans/" + transfer.nextPlanId();
+    }
+
+    private String alreadyTransferred(Model model, BindingResult result, HttpServletResponse response,
+                                      ReviewDetail detail) {
+        result.reject(NEXT_PLAN_ALREADY_TRANSFERRED, null, NEXT_PLAN_ALREADY_TRANSFERRED);
+        response.setStatus(HttpServletResponse.SC_CONFLICT);
+        model.addAttribute("nextPlan", detail.nextPlan());
+        return nextPlanView(model, detail);
     }
 
     private String detailView(Model model, ReviewDetail detail, ImprovementForm form) {

@@ -48,6 +48,8 @@ public class PlanForm {
     @Max(value = PlanRules.ESTIMATED_MINUTES_MAX, message = "{validation.estimatedMinutes.max}")
     private Integer estimatedMinutes;
 
+    private Integer version;
+
     public static PlanForm from(PlanRow plan) {
         PlanForm form = new PlanForm();
         form.setTitle(plan.getTitle());
@@ -56,6 +58,7 @@ public class PlanForm {
         form.setPriority(plan.getPriority());
         form.setSuccessCriteria(plan.getSuccessCriteria());
         form.setEstimatedMinutes(plan.getEstimatedMinutes());
+        form.setVersion(plan.getVersion());
         return form;
     }
 
@@ -109,5 +112,17 @@ public class PlanForm {
 
     public void setEstimatedMinutes(Integer estimatedMinutes) {
         this.estimatedMinutes = estimatedMinutes;
+    }
+
+    /**
+     * ADR-18 hidden field: the version the edit form was opened with (after a stale-version conflict, the latest
+     * version). Only compared to detect an out-of-date save; never an authorization value. Absent: no check.
+     */
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 }

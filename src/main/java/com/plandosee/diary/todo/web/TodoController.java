@@ -19,7 +19,10 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.plandosee.diary.common.domain.EditOutcome;
 import com.plandosee.diary.common.domain.Priority;
+import com.plandosee.diary.common.domain.EditSnapshot;
 import com.plandosee.diary.common.error.RetryLaterException;
+import com.plandosee.diary.common.error.ServiceBusyException;
+import com.plandosee.diary.common.web.EditConflicts;
 import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.paging.PageRequest;
 import com.plandosee.diary.common.web.ConflictKeys;
@@ -27,7 +30,9 @@ import com.plandosee.diary.common.web.ConflictResponses;
 import com.plandosee.diary.common.web.FlashMessages;
 import com.plandosee.diary.common.web.FormErrors;
 import com.plandosee.diary.execution.web.ExecutionForm;
+import com.plandosee.diary.todo.application.TodoDeletedException;
 import com.plandosee.diary.todo.application.TodoService;
+import com.plandosee.diary.todo.application.TodoStaleException;
 import com.plandosee.diary.todo.domain.TodoRow;
 
 /**
@@ -106,13 +111,24 @@ public class TodoController {
         }
         EditOutcome outcome;
         try {
-            outcome = todoService.update(todoId, form.toCommand());
+            outcome = todoService.update(todoId, form.toCommand(), form.getVersion());
+        } catch (TodoStaleException ex) {
+            // ADR-18: 409, input kept, latest todo (with tags and status) and what differs; hidden version = latest.
+            form.setVersion(ex.latestVersion());
+            EditConflicts.rejectStale(result, response, model, ex, ex.latest());
+            return editView(model, ex.latest());
+        } catch (TodoDeletedException ex) {
+            return pages.deleted(model, response, todoId, ex.planId(), TodoPageModels.DELETED_FROM_EDIT);
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
             return editView(model, todoService.get(todoId));
+        } catch (ServiceBusyException ex) {
+            ConflictResponses.rejectForm(result, response, ex);
+            EditConflicts.markSnapshotUnavailable(model);
+            return editView(model, standIn(todoId, form));
         } catch (RetryLaterException ex) {
             ConflictResponses.rejectForm(result, response, ex);
-            return editView(model, todoService.get(todoId));
+            return editViewWithLatest(model, todoId, form);
         }
         FlashMessages.add(redirect, outcome == EditOutcome.UNCHANGED ? FLASH_UNCHANGED : FLASH_UPDATED);
         return "redirect:/todos/" + todoId;
@@ -124,6 +140,10 @@ public class TodoController {
         UUID planId;
         try {
             planId = todoService.delete(todoId);
+        } catch (TodoDeletedException ex) {
+            // ADR-18 E4: already deleted (another tab): the result the user wanted; back to the list with a notice.
+            FlashMessages.add(redirect, ConflictKeys.FLASH_TODO_ALREADY_DELETED);
+            return "redirect:" + filter.listUrl(ex.planId());
         } catch (RetryLaterException ex) {
             // Nothing changed; back to the list the request came from (the plan id only builds the URL).
             FlashMessages.add(redirect, ConflictResponses.flashKey(ex, ConflictKeys.FLASH_RETRY));
@@ -131,6 +151,31 @@ public class TodoController {
         }
         FlashMessages.add(redirect, FLASH_DELETED);
         return "redirect:" + filter.listUrl(planId);
+    }
+
+    /** After a collision (ADR-15): the latest todo and what differs, or the stand-in if even the read fails. */
+    private String editViewWithLatest(Model model, UUID todoId, TodoForm form) {
+        EditSnapshot<TodoRow> snapshot;
+        try {
+            snapshot = todoService.latestForEdit(todoId, form.toCommand());
+        } catch (RetryLaterException readFailed) {
+            EditConflicts.markSnapshotUnavailable(model);
+            return editView(model, standIn(todoId, form));
+        }
+        EditConflicts.showLatest(model, snapshot.latest(), snapshot.changedFields());
+        return editView(model, snapshot.latest());
+    }
+
+    /**
+     * The todo as far as it is known without the database: its id and the submitted title. planId is unknown (null);
+     * the page says snapshotUnavailable.
+     */
+    private static TodoRow standIn(UUID todoId, TodoForm form) {
+        TodoRow todo = new TodoRow();
+        todo.setId(todoId);
+        todo.setTitle(form.getTitle());
+        todo.setVersion(form.getVersion() == null ? 0 : form.getVersion());
+        return todo;
     }
 
     private String editView(Model model, TodoRow todo) {

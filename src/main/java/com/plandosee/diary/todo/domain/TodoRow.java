@@ -21,6 +21,7 @@ public class TodoRow {
     private OffsetDateTime completedAt;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
+    private int version;
     private List<TagRow> tags = new ArrayList<>();
     private boolean overdue;
     private boolean dueToday;
@@ -148,5 +149,14 @@ public class TodoRow {
 
     public void setDueToday(boolean dueToday) {
         this.dueToday = dueToday;
+    }
+
+    /** ADR-18 edit version: +1 only when an edit form changes the content (E5, E7). */
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
     }
 }

@@ -41,6 +41,8 @@ public class TodoForm {
 
     private String tags;
 
+    private Integer version;
+
     public static TodoForm from(TodoRow todo) {
         TodoForm form = new TodoForm();
         form.setTitle(todo.getTitle());
@@ -48,6 +50,7 @@ public class TodoForm {
         form.setPriority(todo.getPriority());
         form.setEstimatedMinutes(todo.getEstimatedMinutes());
         form.setTags(TagNames.join(todo.getTags().stream().map(TagRow::getName).toList()));
+        form.setVersion(todo.getVersion());
         return form;
     }
 
@@ -94,5 +97,17 @@ public class TodoForm {
 
     public void setTags(String tags) {
         this.tags = tags;
+    }
+
+    /**
+     * ADR-18 hidden field: the version the edit form was opened with (after a stale-version conflict, the latest
+     * version). Only compared to detect an out-of-date save; never an authorization value. Absent: no check.
+     */
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
     }
 }

@@ -14,6 +14,7 @@
         <result property="carriedImprovement" column="carried_improvement"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
+        <result property="version" column="version"/>
     </resultMap>
 
     <resultMap id="planRevisionRow" type="com.plandosee.diary.plan.domain.PlanRevisionRow">
@@ -41,14 +42,15 @@
         p.estimated_minutes,
         p.carried_improvement,
         p.created_at,
-        p.updated_at
+        p.updated_at,
+        p.version
     </sql>
 
     <insert id="insert" parameterType="com.plandosee.diary.plan.domain.PlanRow">
         INSERT INTO plans (id, user_id, title, start_date, end_date, priority, success_criteria,
-                           estimated_minutes, carried_improvement, created_at, updated_at)
+                           estimated_minutes, carried_improvement, created_at, updated_at, version)
         VALUES (#{id}, #{userId}, #{title}, #{startDate}, #{endDate}, #{priority}, #{successCriteria},
-                #{estimatedMinutes}, #{carriedImprovement}, #{createdAt}, #{updatedAt})
+                #{estimatedMinutes}, #{carriedImprovement}, #{createdAt}, #{updatedAt}, 0)
     </insert>
 
     <select id="findActiveOwned" resultMap="planRow">
@@ -93,6 +95,11 @@
         LIMIT #{limit} OFFSET #{offset}
     </select>
 
+    <!--
+      ADR-18: a content edit moves the version on by one. #{version} is the version read under the plan row lock in
+      the same transaction; the service has already compared it with the form's version, so 0 rows here means the
+      row changed or disappeared underneath the lock (never expected).
+    -->
     <update id="updateOwned" parameterType="com.plandosee.diary.plan.domain.PlanRow">
         UPDATE plans
         SET title = #{title},
@@ -101,10 +108,12 @@
             priority = #{priority},
             success_criteria = #{successCriteria},
             estimated_minutes = #{estimatedMinutes},
-            updated_at = #{updatedAt}
+            updated_at = #{updatedAt},
+            version = version + 1
         WHERE id = #{id}
           AND user_id = #{userId}
           AND deleted_at IS NULL
+          AND version = #{version}
     </update>
 
     <select id="nextRevisionNo" resultType="int">

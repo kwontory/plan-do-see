@@ -29,7 +29,8 @@ public interface ReviewMapper {
     ReviewRow findByNextPlanOwned(@Param("userId") UUID userId, @Param("nextPlanId") UUID nextPlanId);
 
     int updateImprovementOwned(@Param("userId") UUID userId, @Param("reviewId") UUID reviewId,
-                               @Param("improvement") String improvement, @Param("now") OffsetDateTime now);
+                               @Param("improvement") String improvement, @Param("now") OffsetDateTime now,
+                               @Param("version") int version);
 
     int markTransferredOwned(@Param("userId") UUID userId, @Param("reviewId") UUID reviewId,
                              @Param("nextPlanId") UUID nextPlanId, @Param("now") OffsetDateTime now);

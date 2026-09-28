@@ -19,6 +19,7 @@ public class PlanRow {
     private String carriedImprovement;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
+    private int version;
 
     public UUID getId() {
         return id;
@@ -106,5 +107,14 @@ public class PlanRow {
 
     public void setUpdatedAt(OffsetDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    /** ADR-18 edit version: +1 only when an edit form changes the content (E5, E7). */
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
     }
 }

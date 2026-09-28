@@ -14,6 +14,7 @@
         <result property="completedAt" column="completed_at"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
+        <result property="version" column="version"/>
         <result property="overdue" column="is_overdue"/>
         <result property="dueToday" column="is_due_today"/>
     </resultMap>
@@ -70,7 +71,8 @@
         t.completion_cycle,
         t.completed_at,
         t.created_at,
-        t.updated_at
+        t.updated_at,
+        t.version
     </sql>
 
     <!-- Display flags judged against #{today} (Seoul) with the shared predicates (ADR-17 F-2). -->
@@ -81,9 +83,9 @@
 
     <insert id="insert" parameterType="com.plandosee.diary.todo.domain.TodoRow">
         INSERT INTO todos (id, plan_id, title, due_date, priority, estimated_minutes, status,
-                           completion_cycle, completed_at, created_at, updated_at)
+                           completion_cycle, completed_at, created_at, updated_at, version)
         VALUES (#{id}, #{planId}, #{title}, #{dueDate}, #{priority}, #{estimatedMinutes}, #{status},
-                #{completionCycle}, #{completedAt}, #{createdAt}, #{updatedAt})
+                #{completionCycle}, #{completedAt}, #{createdAt}, #{updatedAt}, 0)
     </insert>
 
     <select id="findActiveOwned" resultMap="todoRow">
@@ -199,16 +201,19 @@
           AND p.user_id = #{userId}
     </select>
 
+    <!-- ADR-18: a content edit moves the version on by one; #{todo.version} was read under the row lock. -->
     <update id="updateContentOwned">
         UPDATE todos t
         SET title = #{todo.title},
             due_date = #{todo.dueDate},
             priority = #{todo.priority},
             estimated_minutes = #{todo.estimatedMinutes},
-            updated_at = #{todo.updatedAt}
+            updated_at = #{todo.updatedAt},
+            version = t.version + 1
         FROM plans p
         WHERE t.id = #{todo.id}
           AND t.plan_id = p.id
+          AND t.version = #{todo.version}
           AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
     </update>
 

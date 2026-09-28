@@ -18,7 +18,10 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.plandosee.diary.common.domain.EditOutcome;
 import com.plandosee.diary.common.domain.Priority;
+import com.plandosee.diary.common.domain.EditSnapshot;
 import com.plandosee.diary.common.error.RetryLaterException;
+import com.plandosee.diary.common.error.ServiceBusyException;
+import com.plandosee.diary.common.web.EditConflicts;
 import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.paging.Page;
 import com.plandosee.diary.common.paging.PageRequest;
@@ -26,6 +29,7 @@ import com.plandosee.diary.common.web.ConflictResponses;
 import com.plandosee.diary.common.web.FlashMessages;
 import com.plandosee.diary.common.web.FormErrors;
 import com.plandosee.diary.plan.application.PlanService;
+import com.plandosee.diary.plan.application.PlanStaleException;
 import com.plandosee.diary.plan.domain.PlanRow;
 import com.plandosee.diary.review.application.ReviewService;
 
@@ -108,16 +112,52 @@ public class PlanController {
         }
         EditOutcome outcome;
         try {
-            outcome = planService.revise(planId, form.toCommand());
+            outcome = planService.revise(planId, form.toCommand(), form.getVersion());
+        } catch (PlanStaleException ex) {
+            // ADR-18: 409, the input kept, the latest plan and what differs; the hidden version becomes the latest so
+            // saving again is a deliberate overwrite. No DB read here: the snapshot came with the failure.
+            form.setVersion(ex.latestVersion());
+            EditConflicts.rejectStale(result, response, model, ex, ex.latest());
+            return editView(model, ex.latest());
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
             return editView(model, planService.get(planId));
+        } catch (ServiceBusyException ex) {
+            // ADR-18/ADR-19: out of time or connections. Shown again without reading the database, input kept.
+            ConflictResponses.rejectForm(result, response, ex);
+            EditConflicts.markSnapshotUnavailable(model);
+            return editView(model, standIn(planId, form));
         } catch (RetryLaterException ex) {
             ConflictResponses.rejectForm(result, response, ex);
-            return editView(model, planService.get(planId));
+            return editViewWithLatest(model, planId, form);
         }
         FlashMessages.add(redirect, outcome == EditOutcome.UNCHANGED ? FLASH_UNCHANGED : FLASH_UPDATED);
         return "redirect:/plans/" + planId;
+    }
+
+    /** After a collision (ADR-15): the latest plan and what differs, or the stand-in if even the read fails. */
+    private String editViewWithLatest(Model model, UUID planId, PlanForm form) {
+        EditSnapshot<PlanRow> snapshot;
+        try {
+            snapshot = planService.latestForEdit(planId, form.toCommand());
+        } catch (RetryLaterException readFailed) {
+            EditConflicts.markSnapshotUnavailable(model);
+            return editView(model, standIn(planId, form));
+        }
+        EditConflicts.showLatest(model, snapshot.latest(), snapshot.changedFields());
+        return editView(model, snapshot.latest());
+    }
+
+    /**
+     * The plan as far as it is known without the database: its id from the path and the submitted title (shown in
+     * the breadcrumb). Everything else is empty; the page says snapshotUnavailable.
+     */
+    private static PlanRow standIn(UUID planId, PlanForm form) {
+        PlanRow plan = new PlanRow();
+        plan.setId(planId);
+        plan.setTitle(form.getTitle());
+        plan.setVersion(form.getVersion() == null ? 0 : form.getVersion());
+        return plan;
     }
 
     private String createView(Model model) {

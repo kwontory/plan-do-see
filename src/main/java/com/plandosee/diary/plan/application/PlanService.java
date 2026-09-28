@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.plandosee.diary.common.concurrency.WriteTransactions;
 import com.plandosee.diary.common.config.CurrentUserProvider;
 import com.plandosee.diary.common.domain.EditOutcome;
+import com.plandosee.diary.common.domain.EditSnapshot;
 import com.plandosee.diary.common.error.NotFoundException;
 import com.plandosee.diary.common.id.IdGenerator;
 import com.plandosee.diary.common.paging.Page;
@@ -114,6 +115,16 @@ public class PlanService {
         return new Page<>(rows, info);
     }
 
+    /**
+     * ADR-18: the latest stored plan and the PlanForm fields where the given input differs from it, for an edit form
+     * shown again after a failed save.
+     */
+    @Transactional(readOnly = true)
+    public EditSnapshot<PlanRow> latestForEdit(UUID planId, PlanCommand input) {
+        PlanRow latest = get(planId);
+        return new EditSnapshot<>(latest, changedFields(latest, input));
+    }
+
     @Transactional(readOnly = true)
     public List<PlanRevisionRow> revisions(UUID planId) {
         get(planId);
@@ -125,22 +136,37 @@ public class PlanService {
      * lock serializes concurrent revisions so revision numbers never repeat or skip (ADR-15).
      */
     public EditOutcome revise(UUID planId, PlanCommand command) {
-        validate(command);
-        return writes.run(() -> reviseLocked(planId, command));
+        return revise(planId, command, null);
     }
 
     /**
-     * ADR-18 E5 (with ADR-16): a save whose content equals the stored plan writes nothing, so no revision row is
-     * added and the result is UNCHANGED.
+     * ADR-18: expectedVersion is the version the edit form was opened with (null: no check, internal callers).
+     * Under the plan row lock, in this order:
+     * <ol>
+     *   <li>content equal to the stored plan: nothing is written, UNCHANGED (E5; also when the version moved on,
+     *       since there is nothing to lose)</li>
+     *   <li>version differs: {@link PlanStaleException} with the latest plan and the fields that differ; nothing is
+     *       written, so no revision (ADR-18 decision 6)</li>
+     *   <li>otherwise the revision and the update commit together and the version goes up by one</li>
+     * </ol>
      */
-    private EditOutcome reviseLocked(UUID planId, PlanCommand command) {
+    public EditOutcome revise(UUID planId, PlanCommand command, Integer expectedVersion) {
+        validate(command);
+        return writes.run(() -> reviseLocked(planId, command, expectedVersion));
+    }
+
+    private EditOutcome reviseLocked(UUID planId, PlanCommand command, Integer expectedVersion) {
         UUID userId = currentUserProvider.currentUserId();
         PlanRow current = planMapper.lockActiveOwned(userId, planId);
         if (current == null) {
             throw new NotFoundException("plan");
         }
-        if (sameContent(current, command)) {
+        List<String> changed = changedFields(current, command);
+        if (changed.isEmpty()) {
             return EditOutcome.UNCHANGED;
+        }
+        if (expectedVersion != null && expectedVersion != current.getVersion()) {
+            throw new PlanStaleException(current, changed);
         }
         OffsetDateTime now = now();
 
@@ -166,13 +192,36 @@ public class PlanService {
         return EditOutcome.UPDATED;
     }
 
-    static boolean sameContent(PlanRow plan, PlanCommand command) {
-        return plan.getTitle().equals(command.title().strip())
-                && plan.getStartDate().equals(command.startDate())
-                && plan.getEndDate().equals(command.endDate())
-                && plan.getPriority() == command.priority()
-                && plan.getSuccessCriteria().equals(command.successCriteria().strip())
-                && plan.getEstimatedMinutes() == command.estimatedMinutes();
+    /**
+     * PlanForm field names whose submitted value differs from the stored plan, in form order; "period" is added
+     * when either date differs (the latest panel shows the period as one line). Empty means the same content.
+     */
+    static List<String> changedFields(PlanRow plan, PlanCommand command) {
+        List<String> changed = new java.util.ArrayList<>();
+        if (!plan.getTitle().equals(command.title().strip())) {
+            changed.add("title");
+        }
+        boolean start = !plan.getStartDate().equals(command.startDate());
+        boolean end = !plan.getEndDate().equals(command.endDate());
+        if (start) {
+            changed.add("startDate");
+        }
+        if (end) {
+            changed.add("endDate");
+        }
+        if (start || end) {
+            changed.add("period");
+        }
+        if (plan.getPriority() != command.priority()) {
+            changed.add("priority");
+        }
+        if (!plan.getSuccessCriteria().equals(command.successCriteria().strip())) {
+            changed.add("successCriteria");
+        }
+        if (plan.getEstimatedMinutes() != command.estimatedMinutes()) {
+            changed.add("estimatedMinutes");
+        }
+        return changed;
     }
 
     private void apply(PlanRow plan, PlanCommand command) {

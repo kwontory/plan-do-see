@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.plandosee.diary.common.concurrency.WriteTransactions;
 import com.plandosee.diary.common.config.CurrentUserProvider;
 import com.plandosee.diary.common.db.StatementBudget;
+import com.plandosee.diary.common.domain.EditOutcome;
 import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.error.NotFoundException;
 import com.plandosee.diary.common.id.IdGenerator;
@@ -115,23 +116,40 @@ public class ReviewService {
      * The review row lock serializes this with a concurrent transfer: either the new text is saved first and then
      * carried, or the transfer wins and this is rejected (ADR-08, ADR-15).
      */
-    public void updateImprovement(UUID reviewId, String improvement) {
-        String normalized = normalizeImprovement(improvement);
-        writes.run(() -> updateImprovementLocked(reviewId, normalized));
+    public EditOutcome updateImprovement(UUID reviewId, String improvement) {
+        return updateImprovement(reviewId, improvement, null);
     }
 
-    private void updateImprovementLocked(UUID reviewId, String normalizedImprovement) {
+    /**
+     * ADR-18: expectedVersion is the version the form was opened with (null: no check). Under the review row lock:
+     * already transferred is {@link ImprovementTransferredException} (E10); the same text as stored is UNCHANGED
+     * (E5); a different version is {@link ReviewStaleException} with the latest review; otherwise the text is saved
+     * and the version goes up by one. The transfer itself never changes the version (E7).
+     */
+    public EditOutcome updateImprovement(UUID reviewId, String improvement, Integer expectedVersion) {
+        String normalized = normalizeImprovement(improvement);
+        return writes.run(() -> updateImprovementLocked(reviewId, normalized, expectedVersion));
+    }
+
+    private EditOutcome updateImprovementLocked(UUID reviewId, String normalizedImprovement, Integer expectedVersion) {
         UUID userId = currentUserProvider.currentUserId();
         ReviewRow review = reviewMapper.lockActiveOwned(userId, reviewId);
         if (review == null) {
             throw new NotFoundException("review");
         }
         if (review.isTransferred()) {
-            throw new DomainRuleException("improvement", IMPROVEMENT_ALREADY_TRANSFERRED);
+            throw new ImprovementTransferredException();
         }
-        if (reviewMapper.updateImprovementOwned(userId, reviewId, normalizedImprovement, now()) != 1) {
+        if (java.util.Objects.equals(review.getImprovement(), normalizedImprovement)) {
+            return EditOutcome.UNCHANGED;
+        }
+        if (expectedVersion != null && expectedVersion != review.getVersion()) {
+            throw new ReviewStaleException(review, List.of("improvement"));
+        }
+        if (reviewMapper.updateImprovementOwned(userId, reviewId, normalizedImprovement, now(), review.getVersion()) != 1) {
             throw new NotFoundException("review");
         }
+        return EditOutcome.UPDATED;
     }
 
     /**

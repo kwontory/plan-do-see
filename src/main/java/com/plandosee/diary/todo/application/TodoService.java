@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.plandosee.diary.common.concurrency.WriteTransactions;
 import com.plandosee.diary.common.config.CurrentUserProvider;
 import com.plandosee.diary.common.domain.EditOutcome;
+import com.plandosee.diary.common.domain.EditSnapshot;
 import com.plandosee.diary.common.domain.Priority;
 import com.plandosee.diary.common.error.NotFoundException;
 import com.plandosee.diary.common.id.IdGenerator;
@@ -93,20 +94,38 @@ public class TodoService {
      * compared by normalized name), nothing is written and the result is UNCHANGED.
      */
     public EditOutcome update(UUID todoId, TodoCommand command) {
+        return update(todoId, command, null);
+    }
+
+    /**
+     * ADR-18: expectedVersion is the version the edit form was opened with (null: no check). Under the todo row lock:
+     * unchanged content is UNCHANGED (E5); a different version is {@link TodoStaleException} with the latest todo
+     * (tags and status included) and the differing fields, and nothing is written (no revision). A todo deleted
+     * before the save (E8) is {@link TodoDeletedException}; one that never existed or is not owned is 404.
+     * Completion and reopen never change the version (E7), so they never make an open edit form stale.
+     */
+    public EditOutcome update(UUID todoId, TodoCommand command, Integer expectedVersion) {
         validate(command);
         return writes.run(() -> {
             UUID userId = currentUserProvider.currentUserId();
             TodoRow todo = todoMapper.lockActiveOwned(userId, todoId);
             if (todo == null) {
-                throw new NotFoundException("todo");
+                throw deletedOrMissing(userId, todoId);
             }
-            List<String> currentTags = tagNamesOf(userId, todoId);
+            List<TagRow> currentTagRows = tagMapper.listForTodos(userId, List.of(todoId));
+            List<String> currentTags = currentTagRows.stream().map(TagRow::getName).toList();
             List<String> newTags = tagNames(command);
-            if (sameContent(todo, currentTags, command, newTags)) {
+            List<String> changed = changedFields(todo, currentTags, command, newTags);
+            if (changed.isEmpty()) {
                 return EditOutcome.UNCHANGED;
+            }
+            if (expectedVersion != null && expectedVersion != todo.getVersion()) {
+                todo.setTags(new ArrayList<>(currentTagRows));
+                throw new TodoStaleException(todo, changed);
             }
             OffsetDateTime now = now();
             todoMapper.insertRevision(revisionOf(todo, currentTags, now));
+            // updateContentOwned guards on the version read under the lock and moves it on by one (ADR-18).
             applyContent(todo, command);
             todo.setUpdatedAt(now);
             if (todoMapper.updateContentOwned(userId, todo) != 1) {
@@ -131,18 +150,28 @@ public class TodoService {
         return revision;
     }
 
-    /** Display names of the todo's active tags, ordered by normalized name (the stored snapshot order). */
-    private List<String> tagNamesOf(UUID userId, UUID todoId) {
-        return tagMapper.listForTodos(userId, List.of(todoId)).stream().map(TagRow::getName).toList();
-    }
-
-    /** ADR-18 E5: the form content is the same as stored; tags compared as sets of normalized names. */
-    static boolean sameContent(TodoRow todo, List<String> currentTags, TodoCommand command, List<String> newTags) {
-        return todo.getTitle().equals(command.title().strip())
-                && java.util.Objects.equals(todo.getDueDate(), command.dueDate())
-                && todo.getPriority() == command.priority()
-                && todo.getEstimatedMinutes() == command.estimatedMinutes()
-                && normalizedSet(currentTags).equals(normalizedSet(newTags));
+    /**
+     * TodoForm field names whose submitted value differs from the stored todo, in form order (ADR-18 11.5.3); tags
+     * compared as sets of normalized names. Empty means the same content (E5).
+     */
+    static List<String> changedFields(TodoRow todo, List<String> currentTags, TodoCommand command, List<String> newTags) {
+        List<String> changed = new ArrayList<>();
+        if (!todo.getTitle().equals(command.title().strip())) {
+            changed.add("title");
+        }
+        if (!java.util.Objects.equals(todo.getDueDate(), command.dueDate())) {
+            changed.add("dueDate");
+        }
+        if (todo.getPriority() != command.priority()) {
+            changed.add("priority");
+        }
+        if (todo.getEstimatedMinutes() != command.estimatedMinutes()) {
+            changed.add("estimatedMinutes");
+        }
+        if (!normalizedSet(currentTags).equals(normalizedSet(newTags))) {
+            changed.add("tags");
+        }
+        return changed;
     }
 
     static java.util.Set<String> normalizedSet(List<String> names) {
@@ -153,12 +182,17 @@ public class TodoService {
         return set;
     }
 
+    /**
+     * Soft delete. ADR-18 E4: deleting a todo that is already deleted (another tab) is {@link TodoDeletedException},
+     * so the user is sent to the list with the "already deleted" notice instead of a 404; a todo that never existed
+     * or is not owned stays 404.
+     */
     public UUID delete(UUID todoId) {
         return writes.run(() -> {
             UUID userId = currentUserProvider.currentUserId();
             TodoRow todo = todoMapper.lockActiveOwned(userId, todoId);
             if (todo == null) {
-                throw new NotFoundException("todo");
+                throw deletedOrMissing(userId, todoId);
             }
             todoMapper.softDeleteOwned(userId, todoId, now());
             return todo.getPlanId();
@@ -264,6 +298,17 @@ public class TodoService {
         return todoMapper.listCompletionEventsOwned(userId, todoId);
     }
 
+    /**
+     * ADR-18: the latest stored todo (tags and status included) and the TodoForm fields where the given input differs
+     * from it, for an edit form shown again after a failed save.
+     */
+    @Transactional(readOnly = true)
+    public EditSnapshot<TodoRow> latestForEdit(UUID todoId, TodoCommand input) {
+        TodoRow latest = get(todoId);
+        List<String> tags = latest.getTags().stream().map(TagRow::getName).toList();
+        return new EditSnapshot<>(latest, changedFields(latest, tags, input, tagNames(input)));
+    }
+
     /** ADR-16: the owned active todo's edit history, newest first. NotFoundException otherwise. */
     @Transactional(readOnly = true)
     public List<TodoRevisionRow> revisions(UUID todoId) {
@@ -294,6 +339,11 @@ public class TodoService {
     @Transactional(readOnly = true)
     public List<TagRow> tags() {
         return tagMapper.listActiveOwned(currentUserProvider.currentUserId());
+    }
+
+    /** Owned but soft-deleted: TodoDeletedException(planId); never existed or not owned: NotFoundException. */
+    private NotFoundException deletedOrMissing(UUID userId, UUID todoId) {
+        return deletedMeanwhile(userId, todoId);
     }
 
     private NotFoundException deletedMeanwhile(UUID userId, UUID todoId) {
