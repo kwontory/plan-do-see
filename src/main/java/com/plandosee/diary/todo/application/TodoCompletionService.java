@@ -43,7 +43,7 @@ public class TodoCompletionService {
 
     public TransitionResult complete(UUID todoId, UUID idempotencyKey) {
         if (idempotencyKey == null) {
-            throw new DomainRuleException("idempotencyKey", "완료 요청 식별값이 없습니다. 화면을 새로고침한 뒤 다시 시도하세요.");
+            throw new DomainRuleException("idempotencyKey", "완료 요청을 확인할 수 없습니다. 화면을 새로고침한 뒤 완료 버튼을 다시 누르세요.");
         }
         try {
             return transactionTemplate.execute(status -> completeInTransaction(todoId, idempotencyKey));

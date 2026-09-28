@@ -26,7 +26,7 @@ public class TodoCompletionController {
     static final String ALREADY_COMPLETED = "이미 완료된 할 일입니다. 완료 기록은 추가되지 않았습니다.";
     static final String REPLAYED_NOW_IN_PROGRESS = "이미 처리한 완료 요청입니다. 이 할 일은 지금 진행 중입니다.";
     static final String REOPENED = "진행 중으로 되돌렸습니다.";
-    static final String ALREADY_IN_PROGRESS = "이미 진행 중입니다.";
+    static final String ALREADY_IN_PROGRESS = "이미 진행 중인 할 일입니다.";
 
     private final TodoCompletionService completionService;
     private final TodoService todoService;

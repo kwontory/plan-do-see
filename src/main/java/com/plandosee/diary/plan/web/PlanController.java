@@ -94,7 +94,7 @@ public class PlanController {
             FormErrors.reject(result, ex);
             return editView(model, planService.get(planId));
         }
-        redirect.addFlashAttribute("flashMessage", "계획을 수정했습니다. 이전 값은 수정 이력에 남았습니다.");
+        redirect.addFlashAttribute("flashMessage", "계획을 수정했습니다. 수정 전 값은 수정 이력에 남았습니다.");
         return "redirect:/plans/" + planId;
     }
 

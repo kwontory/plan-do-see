@@ -104,7 +104,7 @@
                         <dt>예상 시간</dt>
                         <dd class="num" th:text="|${rev.estimatedMinutes}분|">0분</dd>
                         <th:block th:if="${rev.carriedImprovement != null and !#strings.isEmpty(rev.carriedImprovement)}">
-                            <dt>이관받은 개선점</dt>
+                            <dt>이전 회고에서 넘어온 개선점</dt>
                             <dd class="pre-wrap" th:text="${rev.carriedImprovement}">개선점</dd>
                         </th:block>
                     </dl>

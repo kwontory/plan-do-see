@@ -36,7 +36,7 @@ public final class ActualMinutes {
         boolean remainder = elapsed.minusMinutes(wholeMinutes).compareTo(Duration.ZERO) > 0;
         long minutes = wholeMinutes + (remainder ? 1 : 0);
         if (minutes > Integer.MAX_VALUE) {
-            throw new DomainRuleException("endedAt", "실행 기간이 너무 깁니다.");
+            throw new DomainRuleException("endedAt", "실행 기간이 너무 깁니다. 시작·종료 시각의 연도와 날짜를 확인하세요.");
         }
         return (int) minutes;
     }
