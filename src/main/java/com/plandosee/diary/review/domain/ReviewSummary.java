@@ -1,0 +1,29 @@
+package com.plandosee.diary.review.domain;
+
+import java.time.LocalDate;
+
+/**
+ * Review aggregate for one ReviewScope. varianceMinutes = actualMinutes - estimatedMinutes. Empty scope is all zero.
+ */
+public record ReviewSummary(
+        int plannedCount,
+        int completedCount,
+        int overdueCount,
+        int blockedCount,
+        int estimatedMinutes,
+        int actualMinutes,
+        int varianceMinutes,
+        LocalDate today) {
+
+    public static ReviewSummary of(ReviewCounts counts, LocalDate today) {
+        return new ReviewSummary(
+                counts.getPlannedCount(),
+                counts.getCompletedCount(),
+                counts.getOverdueCount(),
+                counts.getBlockedCount(),
+                counts.getEstimatedMinutes(),
+                counts.getActualMinutes(),
+                counts.getVarianceMinutes(),
+                today);
+    }
+}

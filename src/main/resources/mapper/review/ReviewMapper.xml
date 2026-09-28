@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.plandosee.diary.review.infrastructure.ReviewMapper">
+
+    <resultMap id="reviewRow" type="com.plandosee.diary.review.domain.ReviewRow">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="planId" column="plan_id"/>
+        <result property="periodStart" column="period_start"/>
+        <result property="periodEnd" column="period_end"/>
+        <result property="improvement" column="improvement"/>
+        <result property="nextPlanId" column="next_plan_id"/>
+        <result property="transferredAt" column="transferred_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <resultMap id="reviewCounts" type="com.plandosee.diary.review.domain.ReviewCounts">
+        <result property="plannedCount" column="planned_count"/>
+        <result property="completedCount" column="completed_count"/>
+        <result property="overdueCount" column="overdue_count"/>
+        <result property="blockedCount" column="blocked_count"/>
+        <result property="estimatedMinutes" column="estimated_minutes"/>
+        <result property="actualMinutes" column="actual_minutes"/>
+        <result property="varianceMinutes" column="variance_minutes"/>
+    </resultMap>
+
+    <resultMap id="evidenceTodo" type="com.plandosee.diary.review.domain.EvidenceTodo">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="status" column="status"/>
+        <result property="dueDate" column="due_date"/>
+        <result property="priority" column="priority"/>
+        <result property="estimatedMinutes" column="estimated_minutes"/>
+        <result property="actualMinutes" column="actual_minutes"/>
+        <result property="blocked" column="blocked"/>
+    </resultMap>
+
+    <sql id="reviewColumns">
+        r.id,
+        r.user_id,
+        r.plan_id,
+        r.period_start,
+        r.period_end,
+        r.improvement,
+        r.next_plan_id,
+        r.transferred_at,
+        r.created_at,
+        r.updated_at
+    </sql>
+
+    <!-- An owned review is visible only while it and its plan are active and both belong to the server-resolved user. -->
+    <sql id="activeOwnedReview">
+        r.deleted_at IS NULL
+        AND r.user_id = #{userId}
+        AND p.deleted_at IS NULL
+        AND p.user_id = #{userId}
+    </sql>
+
+    <insert id="insert" parameterType="com.plandosee.diary.review.domain.ReviewRow">
+        INSERT INTO reviews (id, user_id, plan_id, period_start, period_end, improvement,
+                             next_plan_id, transferred_at, created_at, updated_at)
+        VALUES (#{id}, #{userId}, #{planId}, #{periodStart}, #{periodEnd}, #{improvement},
+                #{nextPlanId}, #{transferredAt}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="findActiveOwned" resultMap="reviewRow">
+        SELECT <include refid="reviewColumns"/>
+        FROM reviews r
+        JOIN plans p ON p.id = r.plan_id
+        WHERE r.id = #{reviewId}
+          AND <include refid="activeOwnedReview"/>
+    </select>
+
+    <select id="lockActiveOwned" resultMap="reviewRow">
+        SELECT <include refid="reviewColumns"/>
+        FROM reviews r
+        JOIN plans p ON p.id = r.plan_id
+        WHERE r.id = #{reviewId}
+          AND <include refid="activeOwnedReview"/>
+        FOR UPDATE OF r
+    </select>
+
+    <select id="listForPlanOwned" resultMap="reviewRow">
+        SELECT <include refid="reviewColumns"/>
+        FROM reviews r
+        JOIN plans p ON p.id = r.plan_id
+        WHERE r.plan_id = #{planId}
+          AND <include refid="activeOwnedReview"/>
+        ORDER BY r.period_start DESC, r.created_at DESC, r.id ASC
+    </select>
+
+    <!-- ux_reviews_next_plan guarantees at most one row. -->
+    <select id="findByNextPlanOwned" resultMap="reviewRow">
+        SELECT <include refid="reviewColumns"/>
+        FROM reviews r
+        JOIN plans p ON p.id = r.plan_id
+        WHERE r.next_plan_id = #{nextPlanId}
+          AND <include refid="activeOwnedReview"/>
+        ORDER BY r.id ASC
+    </select>
+
+    <!-- A transferred improvement is the source of a next plan and stays read-only (ADR-08). -->
+    <update id="updateImprovementOwned">
+        UPDATE reviews
+        SET improvement = #{improvement},
+            updated_at = #{now}
+        WHERE id = #{reviewId}
+          AND user_id = #{userId}
+          AND deleted_at IS NULL
+          AND next_plan_id IS NULL
+    </update>
+
+    <update id="markTransferredOwned">
+        UPDATE reviews
+        SET next_plan_id = #{nextPlanId},
+            transferred_at = #{now},
+            updated_at = #{now}
+        WHERE id = #{reviewId}
+          AND user_id = #{userId}
+          AND deleted_at IS NULL
+          AND next_plan_id IS NULL
+          AND EXISTS (
+              SELECT 1
+              FROM plans np
+              WHERE np.id = #{nextPlanId}
+                AND np.user_id = #{userId}
+                AND np.deleted_at IS NULL
+          )
+    </update>
+
+    <!--
+      Review scope (DEC-01, ADR-03), shared by summary and every evidence list:
+      scope_todos narrows to active owned todos of the plan and evaluates the shared predicates once per todo;
+      scope_logs collapses execution logs to one row per todo before any other join, so tags or multiple logs
+      can never multiply sums or counts. Parameters: userId, planId, today.
+    -->
+    <sql id="scopeCtes">
+        WITH scope_todos AS (
+            SELECT t.id,
+                   t.title,
+                   t.status,
+                   t.due_date,
+                   t.priority,
+                   t.estimated_minutes,
+                   t.created_at,
+                   (<include refid="com.plandosee.diary.common.sql.TodoPredicates.completed"/>) AS is_completed,
+                   (<include refid="com.plandosee.diary.common.sql.TodoPredicates.overdue"/>) AS is_overdue
+            FROM todos t
+            JOIN plans p ON p.id = t.plan_id
+            WHERE t.plan_id = #{planId}
+              AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+        ),
+        scope_logs AS (
+            SELECT e.todo_id,
+                   SUM(e.actual_minutes) AS actual_minutes,
+                   BOOL_OR(<include refid="com.plandosee.diary.common.sql.TodoPredicates.blockerPresent"/>) AS has_blocker
+            FROM execution_logs e
+            JOIN scope_todos st ON st.id = e.todo_id
+            GROUP BY e.todo_id
+        )
+    </sql>
+
+    <select id="summary" parameterType="com.plandosee.diary.review.domain.ReviewScope" resultMap="reviewCounts">
+        <include refid="scopeCtes"/>
+        SELECT COUNT(t.id) AS planned_count,
+               COUNT(t.id) FILTER (WHERE t.is_completed) AS completed_count,
+               COUNT(t.id) FILTER (WHERE t.is_overdue) AS overdue_count,
+               COUNT(t.id) FILTER (WHERE l.has_blocker) AS blocked_count,
+               COALESCE(SUM(t.estimated_minutes), 0) AS estimated_minutes,
+               COALESCE(SUM(l.actual_minutes), 0) AS actual_minutes,
+               COALESCE(SUM(l.actual_minutes), 0) - COALESCE(SUM(t.estimated_minutes), 0) AS variance_minutes
+        FROM scope_todos t
+        LEFT JOIN scope_logs l ON l.todo_id = t.id
+    </select>
+
+    <select id="evidenceTodos" parameterType="com.plandosee.diary.review.domain.EvidenceQuery" resultMap="evidenceTodo">
+        <include refid="scopeCtes"/>
+        SELECT t.id,
+               t.title,
+               t.status,
+               t.due_date,
+               t.priority,
+               t.estimated_minutes,
+               COALESCE(l.actual_minutes, 0) AS actual_minutes,
+               COALESCE(l.has_blocker, FALSE) AS blocked
+        FROM scope_todos t
+        LEFT JOIN scope_logs l ON l.todo_id = t.id
+        <choose>
+            <when test="metricKey == 'completed'">
+                WHERE t.is_completed
+            </when>
+            <when test="metricKey == 'overdue'">
+                WHERE t.is_overdue
+            </when>
+            <when test="metricKey == 'blocked'">
+                WHERE l.has_blocker
+            </when>
+        </choose>
+        ORDER BY <include refid="com.plandosee.diary.common.sql.TodoPredicates.defaultTodoOrder"/>
+    </select>
+
+    <select id="evidenceLogs" parameterType="com.plandosee.diary.review.domain.EvidenceQuery"
+            resultMap="com.plandosee.diary.execution.infrastructure.ExecutionLogMapper.executionLogRow">
+        <include refid="scopeCtes"/>
+        SELECT e.id,
+               e.todo_id,
+               t.title AS todo_title,
+               e.started_at,
+               e.ended_at,
+               e.actual_minutes,
+               e.blocker_reason,
+               e.created_at
+        FROM execution_logs e
+        JOIN scope_todos t ON t.id = e.todo_id
+        <if test="metricKey == 'blocked'">
+        WHERE <include refid="com.plandosee.diary.common.sql.TodoPredicates.blockerPresent"/>
+        </if>
+        ORDER BY e.started_at ASC, e.id ASC
+    </select>
+</mapper>
