@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.plandosee.diary.todo.infrastructure.TodoMapper">
+
+    <resultMap id="todoRow" type="com.plandosee.diary.todo.domain.TodoRow">
+        <id property="id" column="id"/>
+        <result property="planId" column="plan_id"/>
+        <result property="title" column="title"/>
+        <result property="dueDate" column="due_date"/>
+        <result property="priority" column="priority"/>
+        <result property="estimatedMinutes" column="estimated_minutes"/>
+        <result property="status" column="status"/>
+        <result property="completionCycle" column="completion_cycle"/>
+        <result property="completedAt" column="completed_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <resultMap id="completionEventRow" type="com.plandosee.diary.todo.domain.CompletionEventRow">
+        <id property="id" column="id"/>
+        <result property="todoId" column="todo_id"/>
+        <result property="idempotencyKey" column="idempotency_key"/>
+        <result property="cycleNo" column="cycle_no"/>
+        <result property="completedAt" column="completed_at"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <sql id="todoColumns">
+        t.id,
+        t.plan_id,
+        t.title,
+        t.due_date,
+        t.priority,
+        t.estimated_minutes,
+        t.status,
+        t.completion_cycle,
+        t.completed_at,
+        t.created_at,
+        t.updated_at
+    </sql>
+
+    <insert id="insert" parameterType="com.plandosee.diary.todo.domain.TodoRow">
+        INSERT INTO todos (id, plan_id, title, due_date, priority, estimated_minutes, status,
+                           completion_cycle, completed_at, created_at, updated_at)
+        VALUES (#{id}, #{planId}, #{title}, #{dueDate}, #{priority}, #{estimatedMinutes}, #{status},
+                #{completionCycle}, #{completedAt}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="findActiveOwned" resultMap="todoRow">
+        SELECT <include refid="todoColumns"/>
+        FROM todos t
+        JOIN plans p ON p.id = t.plan_id
+        WHERE t.id = #{todoId}
+          AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+    </select>
+
+    <select id="lockActiveOwned" resultMap="todoRow">
+        SELECT <include refid="todoColumns"/>
+        FROM todos t
+        JOIN plans p ON p.id = t.plan_id
+        WHERE t.id = #{todoId}
+          AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+        FOR UPDATE OF t
+    </select>
+
+    <select id="search" parameterType="com.plandosee.diary.todo.domain.TodoFilter" resultMap="todoRow">
+        SELECT <include refid="todoColumns"/>
+        FROM todos t
+        JOIN plans p ON p.id = t.plan_id
+        WHERE t.plan_id = #{planId}
+          AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+        <if test="query != null">
+          AND t.title ILIKE '%' || #{queryPattern} || '%' ESCAPE '\'
+        </if>
+        <if test="status != null">
+          AND t.status = #{status}
+        </if>
+        <if test="priority != null">
+          AND t.priority = #{priority}
+        </if>
+        <if test="tagId != null">
+          AND EXISTS (
+              SELECT 1
+              FROM todo_tags tt
+              JOIN tags g ON g.id = tt.tag_id
+              WHERE tt.todo_id = t.id
+                AND tt.tag_id = #{tagId}
+                AND g.user_id = #{userId}
+                AND g.deleted_at IS NULL
+          )
+        </if>
+        <choose>
+            <when test="dueKey == 'OVERDUE'">
+              AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.overdue"/>
+            </when>
+            <when test="dueKey == 'DUE_TODAY'">
+              AND t.due_date = #{today}
+            </when>
+            <when test="dueKey == 'UPCOMING'">
+              AND t.due_date &gt; #{today}
+            </when>
+            <when test="dueKey == 'NO_DUE_DATE'">
+              AND t.due_date IS NULL
+            </when>
+        </choose>
+        ORDER BY
+        <choose>
+            <when test="sortKey == 'PRIORITY'">
+                <include refid="com.plandosee.diary.common.sql.TodoPredicates.priorityRank"/> ASC,
+                t.due_date ASC NULLS LAST,
+                t.created_at ASC,
+                t.id ASC
+            </when>
+            <when test="sortKey == 'CREATED'">
+                t.created_at ASC,
+                t.id ASC
+            </when>
+            <otherwise>
+                <include refid="com.plandosee.diary.common.sql.TodoPredicates.defaultTodoOrder"/>
+            </otherwise>
+        </choose>
+    </select>
+
+    <update id="updateContentOwned">
+        UPDATE todos t
+        SET title = #{todo.title},
+            due_date = #{todo.dueDate},
+            priority = #{todo.priority},
+            estimated_minutes = #{todo.estimatedMinutes},
+            updated_at = #{todo.updatedAt}
+        FROM plans p
+        WHERE t.id = #{todo.id}
+          AND t.plan_id = p.id
+          AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+    </update>
+
+    <update id="softDeleteOwned">
+        UPDATE todos t
+        SET deleted_at = #{now},
+            updated_at = #{now}
+        FROM plans p
+        WHERE t.id = #{todoId}
+          AND t.plan_id = p.id
+          AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+    </update>
+
+    <!-- Called only after lockActiveOwned in the same transaction; the status guard keeps it a single transition. -->
+    <update id="markCompleted">
+        UPDATE todos
+        SET status = 'COMPLETED',
+            completion_cycle = #{cycleNo},
+            completed_at = #{completedAt},
+            updated_at = #{completedAt}
+        WHERE id = #{todoId}
+          AND status = 'IN_PROGRESS'
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="markInProgress">
+        UPDATE todos
+        SET status = 'IN_PROGRESS',
+            completed_at = NULL,
+            updated_at = #{now}
+        WHERE id = #{todoId}
+          AND status = 'COMPLETED'
+          AND deleted_at IS NULL
+    </update>
+
+    <select id="countEventsByKey" resultType="int">
+        SELECT COUNT(c.id) AS event_count
+        FROM completion_events c
+        WHERE c.todo_id = #{todoId}
+          AND c.idempotency_key = #{idempotencyKey}
+    </select>
+
+    <insert id="insertCompletionEvent" parameterType="com.plandosee.diary.todo.domain.CompletionEventRow">
+        INSERT INTO completion_events (id, todo_id, idempotency_key, cycle_no, completed_at, created_at)
+        VALUES (#{id}, #{todoId}, #{idempotencyKey}, #{cycleNo}, #{completedAt}, #{createdAt})
+    </insert>
+
+    <select id="listCompletionEventsOwned" resultMap="completionEventRow">
+        SELECT c.id,
+               c.todo_id,
+               c.idempotency_key,
+               c.cycle_no,
+               c.completed_at,
+               c.created_at
+        FROM completion_events c
+        JOIN todos t ON t.id = c.todo_id
+        JOIN plans p ON p.id = t.plan_id
+        WHERE c.todo_id = #{todoId}
+          AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+        ORDER BY c.cycle_no ASC, c.id ASC
+    </select>
+</mapper>

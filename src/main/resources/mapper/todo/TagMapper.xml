@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.plandosee.diary.todo.infrastructure.TagMapper">
+
+    <resultMap id="tagRow" type="com.plandosee.diary.todo.domain.TagRow">
+        <id property="id" column="id"/>
+        <result property="todoId" column="todo_id"/>
+        <result property="name" column="name"/>
+    </resultMap>
+
+    <!-- normalized_name is computed by PostgreSQL so lookup and the unique index use one normalization. -->
+    <insert id="insertIfAbsent">
+        INSERT INTO tags (id, user_id, name, normalized_name, created_at, updated_at)
+        VALUES (#{id}, #{userId}, btrim(#{name}), lower(btrim(#{name})), #{now}, #{now})
+        ON CONFLICT (user_id, normalized_name) WHERE deleted_at IS NULL DO NOTHING
+    </insert>
+
+    <select id="findActiveIdByName" resultType="java.util.UUID">
+        SELECT g.id
+        FROM tags g
+        WHERE g.user_id = #{userId}
+          AND g.normalized_name = lower(btrim(#{name}))
+          AND g.deleted_at IS NULL
+    </select>
+
+    <select id="listActiveOwned" resultMap="tagRow">
+        SELECT g.id,
+               NULL::uuid AS todo_id,
+               g.name
+        FROM tags g
+        WHERE g.user_id = #{userId}
+          AND g.deleted_at IS NULL
+        ORDER BY g.normalized_name ASC, g.id ASC
+    </select>
+
+    <select id="listForTodos" resultMap="tagRow">
+        SELECT g.id,
+               tt.todo_id,
+               g.name
+        FROM todo_tags tt
+        JOIN tags g ON g.id = tt.tag_id
+        WHERE g.user_id = #{userId}
+          AND g.deleted_at IS NULL
+          AND tt.todo_id IN
+          <foreach collection="todoIds" item="todoId" open="(" separator="," close=")">
+              #{todoId}
+          </foreach>
+        ORDER BY tt.todo_id ASC, g.normalized_name ASC, g.id ASC
+    </select>
+
+    <!-- Links are replaceable associations, not audit records. Ownership is checked by the caller's locked todo. -->
+    <delete id="deleteTodoLinks">
+        DELETE FROM todo_tags
+        WHERE todo_id = #{todoId}
+    </delete>
+
+    <insert id="insertTodoLink">
+        INSERT INTO todo_tags (todo_id, tag_id, created_at)
+        VALUES (#{todoId}, #{tagId}, #{now})
+        ON CONFLICT (todo_id, tag_id) DO NOTHING
+    </insert>
+</mapper>

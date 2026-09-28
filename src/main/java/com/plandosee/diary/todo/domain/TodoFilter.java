@@ -1,0 +1,87 @@
+package com.plandosee.diary.todo.domain;
+
+import java.time.LocalDate;
+import java.util.UUID;
+
+import com.plandosee.diary.common.domain.Priority;
+
+/**
+ * Server-built query object. userId always comes from CurrentUserProvider, never from the request.
+ */
+public class TodoFilter {
+
+    private final UUID userId;
+    private final UUID planId;
+    private final String query;
+    private final TodoStatus status;
+    private final Priority priority;
+    private final UUID tagId;
+    private final DueFilter due;
+    private final TodoSort sort;
+    private final LocalDate today;
+
+    public TodoFilter(UUID userId, UUID planId, String query, TodoStatus status, Priority priority,
+                      UUID tagId, DueFilter due, TodoSort sort, LocalDate today) {
+        this.userId = userId;
+        this.planId = planId;
+        this.query = query == null || query.isBlank() ? null : query.strip();
+        this.status = status;
+        this.priority = priority;
+        this.tagId = tagId;
+        this.due = due;
+        this.sort = sort == null ? TodoSort.DUE : sort;
+        this.today = today;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public UUID getPlanId() {
+        return planId;
+    }
+
+    public String getQuery() {
+        return query;
+    }
+
+    /** ILIKE pattern body with \, %, _ escaped (ESCAPE '\'). */
+    public String getQueryPattern() {
+        if (query == null) {
+            return null;
+        }
+        return query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+    }
+
+    public TodoStatus getStatus() {
+        return status;
+    }
+
+    public Priority getPriority() {
+        return priority;
+    }
+
+    public UUID getTagId() {
+        return tagId;
+    }
+
+    public DueFilter getDue() {
+        return due;
+    }
+
+    public String getDueKey() {
+        return due == null ? null : due.name();
+    }
+
+    public TodoSort getSort() {
+        return sort;
+    }
+
+    public String getSortKey() {
+        return sort.name();
+    }
+
+    public LocalDate getToday() {
+        return today;
+    }
+}
