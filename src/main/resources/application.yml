@@ -60,3 +60,5 @@ app:
 logging:
   level:
     root: INFO
+    # T06-C58 / QA-D4: Flyway logs "Database: <JDBC URL>" at INFO on every start. The DB address must not reach logs.
+    org.flywaydb.core.FlywayExecutor: WARN
