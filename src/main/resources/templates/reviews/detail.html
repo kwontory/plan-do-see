@@ -43,13 +43,14 @@
         <p>숫자를 누르면 그 숫자를 만든 근거 기록을 볼 수 있습니다.</p>
         <ul class="metric-grid">
             <li th:each="m : ${metrics}">
-                <a class="link-card" th:href="@{${m.href}}" href="#">
+                <a class="link-card" th:href="@{${m.href}}" href="#" th:attr="aria-describedby=|metric-desc-${m.key}|">
                     <span class="link-card__label" th:text="${m.label}">계획 수</span>
+                    <span class="visually-hidden"> </span>
                     <span class="link-card__value">
                         <th:block th:if="${m.key == 'variance'}"><th:block th:replace="~{fragments/layout :: signedMinutes(${m.value})}"></th:block></th:block>
                         <th:block th:unless="${m.key == 'variance'}" th:text="|${m.value}${m.unit}|">0건</th:block>
                     </span>
-                    <span class="link-card__desc" th:switch="${m.key}">
+                    <span class="link-card__desc" aria-hidden="true" th:id="|metric-desc-${m.key}|" th:switch="${m.key}">
                         <th:block th:case="'planned'">이 계획에서 삭제하지 않은 할 일 수</th:block>
                         <th:block th:case="'completed'">그중 지금 완료 상태인 할 일 수(완료 버튼을 누른 횟수가 아님)</th:block>
                         <th:block th:case="'overdue'">완료되지 않았고 마감일이 기준일보다 앞선 할 일 수</th:block>
@@ -58,7 +59,7 @@
                         <th:block th:case="'actual'">대상 할 일에 남긴 실행 기록의 실제 시간 합계</th:block>
                         <th:block th:case="'variance'">실제 시간 − 예상 시간(+는 더 걸림, -는 덜 걸림)</th:block>
                     </span>
-                    <span class="link-card__cta">근거 보기 →</span>
+                    <span class="link-card__cta"><span class="visually-hidden">, </span>근거 보기<span aria-hidden="true"> →</span></span>
                 </a>
             </li>
         </ul>

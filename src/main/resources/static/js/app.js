@@ -70,12 +70,29 @@
         });
     });
 
-    // Move focus to the validation error summary after a failed submit.
+    // Re-announce a flash message that was already present at load (after PRG redirect).
+    // Screen readers often skip live-region content that exists before load, so the region is
+    // emptied and the same nodes are put back shortly after. Nodes are moved, never re-parsed.
+    function reannounceFlash() {
+        var flash = document.querySelector('.flash[role="status"]:not(.flash--empty)');
+        if (!flash || !flash.firstChild) {
+            return;
+        }
+        var nodes = Array.prototype.slice.call(flash.childNodes);
+        flash.replaceChildren();
+        window.setTimeout(function () {
+            flash.replaceChildren.apply(flash, nodes);
+        }, 150);
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         var summary = document.getElementById('error-summary');
         if (summary) {
+            // Validation errors: focus the summary (role=alert) instead of re-announcing the flash.
             summary.focus();
+            return;
         }
+        reannounceFlash();
     });
 
     // Delete confirmation: Escape closes the open <details> and returns focus to its summary.
