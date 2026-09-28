@@ -2,6 +2,7 @@ package com.plandosee.diary.todo.web;
 
 import java.util.UUID;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
 import org.springframework.stereotype.Controller;
@@ -17,7 +18,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.plandosee.diary.common.domain.Priority;
+import com.plandosee.diary.common.error.ConcurrencyConflictException;
 import com.plandosee.diary.common.error.DomainRuleException;
+import com.plandosee.diary.common.web.ConflictKeys;
+import com.plandosee.diary.common.web.ConflictResponses;
 import com.plandosee.diary.common.web.FlashMessages;
 import com.plandosee.diary.common.web.FormErrors;
 import com.plandosee.diary.execution.web.ExecutionForm;
@@ -56,7 +60,7 @@ public class TodoController {
                          @Valid @ModelAttribute("todoForm") TodoForm form, BindingResult result,
                          @ModelAttribute("filter") TodoListQuery filter,
                          @RequestParam(name = "listPriority", required = false) String listPriority,
-                         Model model, RedirectAttributes redirect) {
+                         Model model, RedirectAttributes redirect, HttpServletResponse response) {
         filter.setPriority(listPriority);
         if (result.hasErrors()) {
             return pages.list(model, planId, filter, form);
@@ -65,6 +69,9 @@ public class TodoController {
             todoService.create(planId, form.toCommand());
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
+            return pages.list(model, planId, filter, form);
+        } catch (ConcurrencyConflictException ex) {
+            ConflictResponses.rejectForm(result, response);
             return pages.list(model, planId, filter, form);
         }
         FlashMessages.add(redirect, FLASH_CREATED);
@@ -85,7 +92,8 @@ public class TodoController {
 
     @PutMapping("/todos/{id}")
     public String update(@PathVariable("id") UUID todoId, @Valid @ModelAttribute("todoForm") TodoForm form,
-                         BindingResult result, Model model, RedirectAttributes redirect) {
+                         BindingResult result, Model model, RedirectAttributes redirect,
+                         HttpServletResponse response) {
         if (result.hasErrors()) {
             return editView(model, todoService.get(todoId));
         }
@@ -93,6 +101,9 @@ public class TodoController {
             todoService.update(todoId, form.toCommand());
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
+            return editView(model, todoService.get(todoId));
+        } catch (ConcurrencyConflictException ex) {
+            ConflictResponses.rejectForm(result, response);
             return editView(model, todoService.get(todoId));
         }
         FlashMessages.add(redirect, FLASH_UPDATED);
@@ -102,7 +113,14 @@ public class TodoController {
     @DeleteMapping("/todos/{id}")
     public String delete(@PathVariable("id") UUID todoId, @ModelAttribute("filter") TodoListQuery filter,
                          RedirectAttributes redirect) {
-        UUID planId = todoService.delete(todoId);
+        UUID planId;
+        try {
+            planId = todoService.delete(todoId);
+        } catch (ConcurrencyConflictException ex) {
+            // Nothing changed; back to the list the request came from (the plan id only builds the URL).
+            FlashMessages.add(redirect, ConflictKeys.FLASH_RETRY);
+            return "redirect:" + filter.listUrl(todoService.planIdForRedirect(todoId));
+        }
         FlashMessages.add(redirect, FLASH_DELETED);
         return "redirect:" + filter.listUrl(planId);
     }

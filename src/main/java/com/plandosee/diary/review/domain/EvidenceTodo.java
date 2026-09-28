@@ -22,6 +22,8 @@ public class EvidenceTodo {
     private int actualMinutes;
     private boolean blocked;
     private List<String> blockerReasons = new ArrayList<>();
+    private boolean overdue;
+    private boolean dueToday;
 
     public UUID getId() {
         return id;
@@ -93,5 +95,28 @@ public class EvidenceTodo {
 
     public void setBlockerReasons(List<String> blockerReasons) {
         this.blockerReasons = blockerReasons;
+    }
+
+    /** Status is COMPLETED. */
+    public boolean isCompleted() {
+        return status == TodoStatus.COMPLETED;
+    }
+
+    /** Same meaning as TodoRow.isOverdue: the review scope's is_overdue (TodoPredicates.overdue, T06-C30). */
+    public boolean isOverdue() {
+        return overdue;
+    }
+
+    public void setOverdue(boolean overdue) {
+        this.overdue = overdue;
+    }
+
+    /** Same meaning as TodoRow.isDueToday (TodoPredicates.dueToday). */
+    public boolean isDueToday() {
+        return dueToday;
+    }
+
+    public void setDueToday(boolean dueToday) {
+        this.dueToday = dueToday;
     }
 }

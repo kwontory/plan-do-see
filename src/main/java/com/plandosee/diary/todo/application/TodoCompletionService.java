@@ -6,21 +6,21 @@ import java.util.UUID;
 
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionTemplate;
 
+import com.plandosee.diary.common.concurrency.WriteTransactions;
 import com.plandosee.diary.common.config.CurrentUserProvider;
 import com.plandosee.diary.common.error.DomainRuleException;
-import com.plandosee.diary.common.error.NotFoundException;
 import com.plandosee.diary.common.id.IdGenerator;
 import com.plandosee.diary.common.time.SeoulDates;
+import com.plandosee.diary.todo.application.port.TodoMapper;
 import com.plandosee.diary.todo.domain.CompletionEventRow;
 import com.plandosee.diary.todo.domain.TodoRow;
 import com.plandosee.diary.todo.domain.TodoStatus;
-import com.plandosee.diary.todo.infrastructure.TodoMapper;
 
 /**
  * DEC-05 / ADR-05: completion is idempotent on the server. The todo row lock serializes concurrent requests,
- * and the unique constraints are the last line of defence.
+ * and the unique constraints are the last line of defence. Each request is one retrying write transaction
+ * (ADR-15): a retried attempt starts over from the lock, so the idempotency key still yields a single event.
  */
 @Service
 public class TodoCompletionService {
@@ -28,58 +28,82 @@ public class TodoCompletionService {
     public static final String KEY_MISSING = "todo.completion.keyMissing";
 
     private final TodoMapper todoMapper;
+    private final TodoService todoService;
     private final CurrentUserProvider currentUserProvider;
     private final IdGenerator idGenerator;
     private final SeoulDates seoulDates;
-    private final TransactionTemplate transactionTemplate;
+    private final WriteTransactions writes;
 
-    public TodoCompletionService(TodoMapper todoMapper, CurrentUserProvider currentUserProvider,
-                                 IdGenerator idGenerator, SeoulDates seoulDates,
-                                 TransactionTemplate transactionTemplate) {
+    public TodoCompletionService(TodoMapper todoMapper, TodoService todoService, CurrentUserProvider currentUserProvider,
+                                 IdGenerator idGenerator, SeoulDates seoulDates, WriteTransactions writes) {
         this.todoMapper = todoMapper;
+        this.todoService = todoService;
         this.currentUserProvider = currentUserProvider;
         this.idGenerator = idGenerator;
         this.seoulDates = seoulDates;
-        this.transactionTemplate = transactionTemplate;
+        this.writes = writes;
     }
 
     public TransitionResult complete(UUID todoId, UUID idempotencyKey) {
+        return completeWithOutcome(todoId, idempotencyKey).result();
+    }
+
+    public TransitionResult reopen(UUID todoId) {
+        return reopenWithOutcome(todoId).result();
+    }
+
+    /**
+     * Completion with the status and plan observed in the same transaction (ADR-14 C-1).
+     *
+     * @throws DomainRuleException {@link #KEY_MISSING} when the key is absent
+     * @throws TodoDeletedException when the todo was deleted before the lock was taken
+     */
+    public TransitionOutcome completeWithOutcome(UUID todoId, UUID idempotencyKey) {
         if (idempotencyKey == null) {
             throw new DomainRuleException("idempotencyKey", KEY_MISSING);
         }
         try {
-            return transactionTemplate.execute(status -> completeInTransaction(todoId, idempotencyKey));
+            return writes.run(() -> completeLocked(todoId, idempotencyKey));
         } catch (DuplicateKeyException duplicate) {
             // Reached only after the owned-todo lock succeeded: a concurrent request committed first.
             // Report the current state instead of a DB error.
-            Boolean sameKey = transactionTemplate.execute(status -> todoMapper.countEventsByKeyOwned(currentUserProvider.currentUserId(), todoId, idempotencyKey) > 0);
-            return Boolean.TRUE.equals(sameKey) ? TransitionResult.REPLAYED : TransitionResult.ALREADY_COMPLETED;
+            return writes.run(() -> {
+                TodoRow current = todoService.requireOwned(todoId);
+                boolean sameKey = todoMapper.countEventsByKeyOwned(currentUserProvider.currentUserId(), todoId, idempotencyKey) > 0;
+                return new TransitionOutcome(sameKey ? TransitionResult.REPLAYED : TransitionResult.ALREADY_COMPLETED,
+                        current.getStatus(), current.getPlanId());
+            });
         }
     }
 
-    public TransitionResult reopen(UUID todoId) {
-        return transactionTemplate.execute(status -> {
-            TodoRow todo = lock(todoId);
+    /**
+     * Reopen with the status and plan observed in the same transaction (ADR-14 C-1).
+     *
+     * @throws TodoDeletedException when the todo was deleted before the lock was taken
+     */
+    public TransitionOutcome reopenWithOutcome(UUID todoId) {
+        return writes.run(() -> {
+            TodoRow todo = todoService.lockOwned(todoId);
             if (todo.getStatus() == TodoStatus.IN_PROGRESS) {
-                return TransitionResult.ALREADY_IN_PROGRESS;
+                return new TransitionOutcome(TransitionResult.ALREADY_IN_PROGRESS, TodoStatus.IN_PROGRESS, todo.getPlanId());
             }
             todoMapper.markInProgress(todoId, now());
-            return TransitionResult.REOPENED;
+            return new TransitionOutcome(TransitionResult.REOPENED, TodoStatus.IN_PROGRESS, todo.getPlanId());
         });
     }
 
-    private TransitionResult completeInTransaction(UUID todoId, UUID idempotencyKey) {
-        TodoRow todo = lock(todoId);
+    private TransitionOutcome completeLocked(UUID todoId, UUID idempotencyKey) {
+        TodoRow todo = todoService.lockOwned(todoId);
         if (todoMapper.countEventsByKeyOwned(currentUserProvider.currentUserId(), todoId, idempotencyKey) > 0) {
-            return TransitionResult.REPLAYED;
+            return new TransitionOutcome(TransitionResult.REPLAYED, todo.getStatus(), todo.getPlanId());
         }
         if (todo.getStatus() == TodoStatus.COMPLETED) {
-            return TransitionResult.ALREADY_COMPLETED;
+            return new TransitionOutcome(TransitionResult.ALREADY_COMPLETED, TodoStatus.COMPLETED, todo.getPlanId());
         }
         OffsetDateTime now = now();
         int cycleNo = todo.getCompletionCycle() + 1;
         if (todoMapper.markCompleted(todoId, cycleNo, now) != 1) {
-            return TransitionResult.ALREADY_COMPLETED;
+            return new TransitionOutcome(TransitionResult.ALREADY_COMPLETED, TodoStatus.COMPLETED, todo.getPlanId());
         }
         CompletionEventRow event = new CompletionEventRow();
         event.setId(idGenerator.newId());
@@ -89,15 +113,7 @@ public class TodoCompletionService {
         event.setCompletedAt(now);
         event.setCreatedAt(now);
         todoMapper.insertCompletionEvent(event);
-        return TransitionResult.COMPLETED;
-    }
-
-    private TodoRow lock(UUID todoId) {
-        TodoRow todo = todoMapper.lockActiveOwned(currentUserProvider.currentUserId(), todoId);
-        if (todo == null) {
-            throw new NotFoundException("todo");
-        }
-        return todo;
+        return new TransitionOutcome(TransitionResult.COMPLETED, TodoStatus.COMPLETED, todo.getPlanId());
     }
 
     private OffsetDateTime now() {

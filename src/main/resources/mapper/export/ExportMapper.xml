@@ -4,7 +4,7 @@
   Export (T06-C35, T06-C36, ADR-04): owned by #{userId}, soft-deleted rows and children of soft-deleted parents
   excluded, every collection ordered by its unique key. Credential and email columns are never selected.
 -->
-<mapper namespace="com.plandosee.diary.export.infrastructure.ExportMapper">
+<mapper namespace="com.plandosee.diary.export.application.port.ExportMapper">
 
     <resultMap id="exportTagRow" type="com.plandosee.diary.export.domain.ExportTagRow">
         <id property="id" column="id"/>
@@ -21,7 +21,16 @@
         <result property="createdAt" column="created_at"/>
     </resultMap>
 
-    <select id="plans" resultMap="com.plandosee.diary.plan.infrastructure.PlanMapper.planRow">
+    <!-- Owner card: id and nickname only (T06-C58); email and credential columns are never selected. -->
+    <select id="owner" resultMap="com.plandosee.diary.user.application.port.UserMapper.userRow">
+        SELECT u.id,
+               u.nickname
+        FROM users u
+        WHERE u.id = #{userId}
+          AND u.deleted_at IS NULL
+    </select>
+
+    <select id="plans" resultMap="com.plandosee.diary.plan.application.port.PlanMapper.planRow">
         SELECT p.id,
                p.user_id,
                p.title,
@@ -39,7 +48,7 @@
         ORDER BY p.id ASC
     </select>
 
-    <select id="planRevisions" resultMap="com.plandosee.diary.plan.infrastructure.PlanMapper.planRevisionRow">
+    <select id="planRevisions" resultMap="com.plandosee.diary.plan.application.port.PlanMapper.planRevisionRow">
         SELECT r.id,
                r.plan_id,
                r.revision_no,
@@ -58,7 +67,7 @@
         ORDER BY r.id ASC
     </select>
 
-    <select id="todos" resultMap="com.plandosee.diary.todo.infrastructure.TodoMapper.todoRow">
+    <select id="todos" resultMap="com.plandosee.diary.todo.application.port.TodoMapper.todoRow">
         SELECT t.id,
                t.plan_id,
                t.title,
@@ -103,7 +112,7 @@
         ORDER BY tt.todo_id ASC, tt.tag_id ASC
     </select>
 
-    <select id="executionLogs" resultMap="com.plandosee.diary.execution.infrastructure.ExecutionLogMapper.executionLogRow">
+    <select id="executionLogs" resultMap="com.plandosee.diary.execution.application.port.ExecutionLogMapper.executionLogRow">
         SELECT e.id,
                e.todo_id,
                NULL AS todo_title,
@@ -119,7 +128,7 @@
         ORDER BY e.id ASC
     </select>
 
-    <select id="completionEvents" resultMap="com.plandosee.diary.todo.infrastructure.TodoMapper.completionEventRow">
+    <select id="completionEvents" resultMap="com.plandosee.diary.todo.application.port.TodoMapper.completionEventRow">
         SELECT c.id,
                c.todo_id,
                c.idempotency_key,
@@ -133,7 +142,7 @@
         ORDER BY c.id ASC
     </select>
 
-    <select id="reviews" resultMap="com.plandosee.diary.review.infrastructure.ReviewMapper.reviewRow">
+    <select id="reviews" resultMap="com.plandosee.diary.review.application.port.ReviewMapper.reviewRow">
         SELECT r.id,
                r.user_id,
                r.plan_id,

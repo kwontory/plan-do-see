@@ -2,6 +2,7 @@ package com.plandosee.diary.plan.web;
 
 import java.util.UUID;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
 import org.springframework.stereotype.Controller;
@@ -15,11 +16,12 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.plandosee.diary.common.domain.Priority;
+import com.plandosee.diary.common.error.ConcurrencyConflictException;
 import com.plandosee.diary.common.error.DomainRuleException;
+import com.plandosee.diary.common.web.ConflictResponses;
 import com.plandosee.diary.common.web.FlashMessages;
 import com.plandosee.diary.common.web.FormErrors;
 import com.plandosee.diary.plan.application.PlanService;
-import com.plandosee.diary.plan.domain.PlanPeriod;
 import com.plandosee.diary.plan.domain.PlanRow;
 import com.plandosee.diary.review.application.ReviewService;
 
@@ -55,9 +57,8 @@ public class PlanController {
 
     @PostMapping("/plans")
     public String create(@Valid @ModelAttribute("planForm") PlanForm form, BindingResult result, Model model,
-                         RedirectAttributes redirect) {
+                         RedirectAttributes redirect, HttpServletResponse response) {
         if (result.hasErrors()) {
-            rejectPeriod(form, result);
             return createView(model);
         }
         UUID planId;
@@ -65,6 +66,9 @@ public class PlanController {
             planId = planService.create(form.toCommand());
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
+            return createView(model);
+        } catch (ConcurrencyConflictException ex) {
+            ConflictResponses.rejectForm(result, response);
             return createView(model);
         }
         FlashMessages.add(redirect, FLASH_CREATED);
@@ -89,9 +93,9 @@ public class PlanController {
 
     @PutMapping("/plans/{id}")
     public String update(@PathVariable("id") UUID planId, @Valid @ModelAttribute("planForm") PlanForm form,
-                         BindingResult result, Model model, RedirectAttributes redirect) {
+                         BindingResult result, Model model, RedirectAttributes redirect,
+                         HttpServletResponse response) {
         if (result.hasErrors()) {
-            rejectPeriod(form, result);
             return editView(model, planService.get(planId));
         }
         try {
@@ -99,24 +103,12 @@ public class PlanController {
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
             return editView(model, planService.get(planId));
+        } catch (ConcurrencyConflictException ex) {
+            ConflictResponses.rejectForm(result, response);
+            return editView(model, planService.get(planId));
         }
         FlashMessages.add(redirect, FLASH_UPDATED);
         return "redirect:/plans/" + planId;
-    }
-
-    /**
-     * QA-D5: when other fields already failed validation, the period rule is checked in the same response so the
-     * user does not discover it only on the next submit.
-     */
-    public static void rejectPeriod(PlanForm form, BindingResult result) {
-        if (result.hasFieldErrors("endDate")) {
-            return;
-        }
-        try {
-            PlanPeriod.check(form.getStartDate(), form.getEndDate());
-        } catch (DomainRuleException ex) {
-            FormErrors.reject(result, ex);
-        }
     }
 
     private String createView(Model model) {

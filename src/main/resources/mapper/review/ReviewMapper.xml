@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.plandosee.diary.review.infrastructure.ReviewMapper">
+<mapper namespace="com.plandosee.diary.review.application.port.ReviewMapper">
 
     <resultMap id="reviewRow" type="com.plandosee.diary.review.domain.ReviewRow">
         <id property="id" column="id"/>
@@ -34,6 +34,8 @@
         <result property="estimatedMinutes" column="estimated_minutes"/>
         <result property="actualMinutes" column="actual_minutes"/>
         <result property="blocked" column="blocked"/>
+        <result property="overdue" column="is_overdue"/>
+        <result property="dueToday" column="is_due_today"/>
     </resultMap>
 
     <sql id="reviewColumns">
@@ -145,7 +147,8 @@
                    t.estimated_minutes,
                    t.created_at,
                    (<include refid="com.plandosee.diary.common.sql.TodoPredicates.completed"/>) AS is_completed,
-                   (<include refid="com.plandosee.diary.common.sql.TodoPredicates.overdue"/>) AS is_overdue
+                   (<include refid="com.plandosee.diary.common.sql.TodoPredicates.overdue"/>) AS is_overdue,
+                   (<include refid="com.plandosee.diary.common.sql.TodoPredicates.dueToday"/>) AS is_due_today
             FROM todos t
             JOIN plans p ON p.id = t.plan_id
             WHERE t.plan_id = #{planId}
@@ -183,7 +186,9 @@
                t.priority,
                t.estimated_minutes,
                COALESCE(l.actual_minutes, 0) AS actual_minutes,
-               COALESCE(l.has_blocker, FALSE) AS blocked
+               COALESCE(l.has_blocker, FALSE) AS blocked,
+               t.is_overdue,
+               t.is_due_today
         FROM scope_todos t
         LEFT JOIN scope_logs l ON l.todo_id = t.id
         <choose>
@@ -201,7 +206,7 @@
     </select>
 
     <select id="evidenceLogs" parameterType="com.plandosee.diary.review.domain.EvidenceQuery"
-            resultMap="com.plandosee.diary.execution.infrastructure.ExecutionLogMapper.executionLogRow">
+            resultMap="com.plandosee.diary.execution.application.port.ExecutionLogMapper.executionLogRow">
         <include refid="scopeCtes"/>
         SELECT e.id,
                e.todo_id,

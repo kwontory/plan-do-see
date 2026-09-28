@@ -4,6 +4,8 @@
   Shared todo predicates. The todo list filter, review summary, and review evidence all include these
   fragments so a metric and its drill-down can never use different definitions (CLAUDE.md 6장, ADR-03).
   Aliases: t = todos, p = plans, e = execution_logs. Parameters: userId, today.
+  The per-row display flags is_overdue / is_due_today (ADR-17 F-2) are these same fragments, so a badge and the
+  matching filter or metric can never disagree.
 -->
 <mapper namespace="com.plandosee.diary.common.sql.TodoPredicates">
 
@@ -21,6 +23,12 @@
         t.status &lt;&gt; 'COMPLETED'
         AND t.due_date IS NOT NULL
         AND t.due_date &lt; #{today}
+    </sql>
+
+    <!-- Date-only, like the DUE_TODAY filter (ADR-12 Q-E1): completed todos due today match too. -->
+    <sql id="dueToday">
+        t.due_date IS NOT NULL
+        AND t.due_date = #{today}
     </sql>
 
     <sql id="blockerPresent">

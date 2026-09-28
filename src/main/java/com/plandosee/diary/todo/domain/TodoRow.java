@@ -22,6 +22,8 @@ public class TodoRow {
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
     private List<TagRow> tags = new ArrayList<>();
+    private boolean overdue;
+    private boolean dueToday;
 
     public UUID getId() {
         return id;
@@ -117,5 +119,34 @@ public class TodoRow {
 
     public void setTags(List<TagRow> tags) {
         this.tags = tags;
+    }
+
+    /** Status is COMPLETED. */
+    public boolean isCompleted() {
+        return status == TodoStatus.COMPLETED;
+    }
+
+    /**
+     * Overdue in Asia/Seoul: not completed and due before today (TodoPredicates.overdue, T06-C30). Set by display
+     * reads (get, search); false on rows read for a write.
+     */
+    public boolean isOverdue() {
+        return overdue;
+    }
+
+    public void setOverdue(boolean overdue) {
+        this.overdue = overdue;
+    }
+
+    /**
+     * Due date equals today in Asia/Seoul, whatever the status (TodoPredicates.dueToday, same as the DUE_TODAY
+     * filter). Set by display reads (get, search); false on rows read for a write.
+     */
+    public boolean isDueToday() {
+        return dueToday;
+    }
+
+    public void setDueToday(boolean dueToday) {
+        this.dueToday = dueToday;
     }
 }

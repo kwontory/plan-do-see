@@ -34,6 +34,10 @@ spring:
     password: ${DB_PASSWORD}
     hikari:
       maximum-pool-size: ${DB_POOL_SIZE:5}
+      # ADR-15: upper bounds on waiting, set on every pooled session (also in production). A lock wait longer than
+      # lock_timeout fails with 55P03 and is retried by WriteTransactions; statement_timeout stops runaway queries.
+      # Needs a session-preserving connection (Direct or Session pooler, see README), not a transaction pooler.
+      connection-init-sql: "SELECT set_config('lock_timeout', '${app.db.lock-timeout}', false), set_config('statement_timeout', '${app.db.statement-timeout}', false)"
   flyway:
     enabled: true
     locations: classpath:db/migration
@@ -56,6 +60,16 @@ mybatis:
 
 app:
   demo-user-id: ${APP_DEMO_USER_ID:00000000-0000-4000-8000-000000000001}
+  db:
+    # PostgreSQL interval text, e.g. 5s, 500ms. 0 disables the limit.
+    lock-timeout: ${DB_LOCK_TIMEOUT:5s}
+    statement-timeout: ${DB_STATEMENT_TIMEOUT:15s}
+  retry:
+    # ADR-15: automatic re-runs of a whole write transaction after a deadlock (40P01), serialization failure
+    # (40001), or lock wait timeout (55P03). Delay before retry n = base-delay-ms * n + random(0..jitter-ms).
+    max-retries: ${APP_RETRY_MAX_RETRIES:2}
+    base-delay-ms: ${APP_RETRY_BASE_DELAY_MS:50}
+    jitter-ms: ${APP_RETRY_JITTER_MS:100}
 
 logging:
   level:

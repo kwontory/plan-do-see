@@ -27,4 +27,17 @@ public record ReviewEvidence(
     public long evidenceVarianceMinutes() {
         return evidenceActualMinutes - evidenceEstimatedMinutes;
     }
+
+    /**
+     * True when the page shows no evidence row at all (ADR-17 F-2): the lists the page shows for this metric are
+     * all empty. actual shows only logs, variance shows todos and logs, every other metric shows only todos
+     * (blocked logs are shown inside the todo rows).
+     */
+    public boolean empty() {
+        return switch (metric) {
+            case ACTUAL -> logs.isEmpty();
+            case VARIANCE -> todos.isEmpty() && logs.isEmpty();
+            default -> todos.isEmpty();
+        };
+    }
 }

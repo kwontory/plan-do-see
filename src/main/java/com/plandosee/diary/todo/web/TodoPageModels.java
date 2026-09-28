@@ -11,6 +11,7 @@ import org.springframework.ui.Model;
 import com.plandosee.diary.common.domain.Priority;
 import com.plandosee.diary.common.id.IdGenerator;
 import com.plandosee.diary.execution.application.ExecutionService;
+import com.plandosee.diary.execution.application.TodoExecutionLogs;
 import com.plandosee.diary.execution.web.ExecutionForm;
 import com.plandosee.diary.plan.application.PlanService;
 import com.plandosee.diary.plan.domain.PlanRow;
@@ -66,7 +67,9 @@ public class TodoPageModels {
         TodoRow todo = todoService.get(todoId);
         model.addAttribute("todo", todo);
         model.addAttribute("plan", planService.get(todo.getPlanId()));
-        model.addAttribute("logs", executionService.listForTodo(todoId));
+        TodoExecutionLogs logs = executionService.logsForTodo(todoId);
+        model.addAttribute("logs", logs.logs());
+        model.addAttribute("logsActualMinutes", logs.actualMinutes());
         model.addAttribute("events", todoService.completionEvents(todoId));
         model.addAttribute("executionForm", executionForm);
         model.addAttribute("completionKey", idGenerator.newId());

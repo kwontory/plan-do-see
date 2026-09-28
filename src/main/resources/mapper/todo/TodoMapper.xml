@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.plandosee.diary.todo.infrastructure.TodoMapper">
+<mapper namespace="com.plandosee.diary.todo.application.port.TodoMapper">
 
     <resultMap id="todoRow" type="com.plandosee.diary.todo.domain.TodoRow">
         <id property="id" column="id"/>
@@ -14,6 +14,8 @@
         <result property="completedAt" column="completed_at"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
+        <result property="overdue" column="is_overdue"/>
+        <result property="dueToday" column="is_due_today"/>
     </resultMap>
 
     <resultMap id="completionEventRow" type="com.plandosee.diary.todo.domain.CompletionEventRow">
@@ -39,6 +41,12 @@
         t.updated_at
     </sql>
 
+    <!-- Display flags judged against #{today} (Seoul) with the shared predicates (ADR-17 F-2). -->
+    <sql id="dueFlagColumns">
+        (<include refid="com.plandosee.diary.common.sql.TodoPredicates.overdue"/>) AS is_overdue,
+        (<include refid="com.plandosee.diary.common.sql.TodoPredicates.dueToday"/>) AS is_due_today
+    </sql>
+
     <insert id="insert" parameterType="com.plandosee.diary.todo.domain.TodoRow">
         INSERT INTO todos (id, plan_id, title, due_date, priority, estimated_minutes, status,
                            completion_cycle, completed_at, created_at, updated_at)
@@ -47,7 +55,8 @@
     </insert>
 
     <select id="findActiveOwned" resultMap="todoRow">
-        SELECT <include refid="todoColumns"/>
+        SELECT <include refid="todoColumns"/>,
+               <include refid="dueFlagColumns"/>
         FROM todos t
         JOIN plans p ON p.id = t.plan_id
         WHERE t.id = #{todoId}
@@ -64,7 +73,8 @@
     </select>
 
     <select id="search" parameterType="com.plandosee.diary.todo.domain.TodoFilter" resultMap="todoRow">
-        SELECT <include refid="todoColumns"/>
+        SELECT <include refid="todoColumns"/>,
+               <include refid="dueFlagColumns"/>
         FROM todos t
         JOIN plans p ON p.id = t.plan_id
         WHERE t.plan_id = #{planId}
@@ -94,7 +104,7 @@
               AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.overdue"/>
             </when>
             <when test="dueKey == 'DUE_TODAY'">
-              AND t.due_date = #{today}
+              AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.dueToday"/>
             </when>
             <when test="dueKey == 'UPCOMING'">
               AND t.due_date &gt; #{today}
@@ -119,6 +129,20 @@
                 <include refid="com.plandosee.diary.common.sql.TodoPredicates.defaultTodoOrder"/>
             </otherwise>
         </choose>
+    </select>
+
+    <!--
+      Plan of an owned todo whose plan is active, whether or not the todo itself is soft-deleted. Used only to
+      tell "deleted by a concurrent request" apart from "never existed / not yours" and to choose where to
+      redirect; never to read or change the deleted todo.
+    -->
+    <select id="findPlanIdOwnedIncludingDeleted" resultType="java.util.UUID">
+        SELECT t.plan_id
+        FROM todos t
+        JOIN plans p ON p.id = t.plan_id
+        WHERE t.id = #{todoId}
+          AND p.deleted_at IS NULL
+          AND p.user_id = #{userId}
     </select>
 
     <update id="updateContentOwned">

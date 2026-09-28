@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.plandosee.diary.todo.infrastructure.TagMapper">
+<mapper namespace="com.plandosee.diary.todo.application.port.TagMapper">
 
     <resultMap id="tagRow" type="com.plandosee.diary.todo.domain.TagRow">
         <id property="id" column="id"/>

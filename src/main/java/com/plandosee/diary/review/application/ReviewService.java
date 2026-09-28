@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.plandosee.diary.common.concurrency.WriteTransactions;
 import com.plandosee.diary.common.config.CurrentUserProvider;
 import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.error.NotFoundException;
@@ -20,6 +21,7 @@ import com.plandosee.diary.execution.domain.ExecutionLogRow;
 import com.plandosee.diary.plan.application.PlanCommand;
 import com.plandosee.diary.plan.application.PlanService;
 import com.plandosee.diary.plan.domain.PlanRow;
+import com.plandosee.diary.review.application.port.ReviewMapper;
 import com.plandosee.diary.review.domain.EvidenceQuery;
 import com.plandosee.diary.review.domain.EvidenceTodo;
 import com.plandosee.diary.review.domain.ReviewEvidence;
@@ -27,7 +29,6 @@ import com.plandosee.diary.review.domain.ReviewMetric;
 import com.plandosee.diary.review.domain.ReviewRow;
 import com.plandosee.diary.review.domain.ReviewScope;
 import com.plandosee.diary.review.domain.ReviewSummary;
-import com.plandosee.diary.review.infrastructure.ReviewMapper;
 
 @Service
 public class ReviewService {
@@ -43,22 +44,27 @@ public class ReviewService {
     private final CurrentUserProvider currentUserProvider;
     private final IdGenerator idGenerator;
     private final SeoulDates seoulDates;
+    private final WriteTransactions writes;
 
     public ReviewService(ReviewMapper reviewMapper, PlanService planService, CurrentUserProvider currentUserProvider,
-                         IdGenerator idGenerator, SeoulDates seoulDates) {
+                         IdGenerator idGenerator, SeoulDates seoulDates, WriteTransactions writes) {
         this.reviewMapper = reviewMapper;
         this.planService = planService;
         this.currentUserProvider = currentUserProvider;
         this.idGenerator = idGenerator;
         this.seoulDates = seoulDates;
+        this.writes = writes;
     }
 
     /**
      * DEC-01: a review belongs to one plan and copies the plan period for display and audit.
      */
-    @Transactional
     public UUID create(UUID planId, String improvement) {
-        PlanRow plan = planService.get(planId);
+        return writes.run(() -> insert(planId, improvement));
+    }
+
+    private UUID insert(UUID planId, String improvement) {
+        PlanRow plan = planService.requireOwned(planId);
         OffsetDateTime now = now();
         ReviewRow review = new ReviewRow();
         review.setId(idGenerator.newId());
@@ -96,8 +102,15 @@ public class ReviewService {
         return reviewMapper.findByNextPlanOwned(currentUserProvider.currentUserId(), nextPlanId);
     }
 
-    @Transactional
+    /**
+     * The review row lock serializes this with a concurrent transfer: either the new text is saved first and then
+     * carried, or the transfer wins and this is rejected (ADR-08, ADR-15).
+     */
     public void updateImprovement(UUID reviewId, String improvement) {
+        writes.run(() -> updateImprovementLocked(reviewId, improvement));
+    }
+
+    private void updateImprovementLocked(UUID reviewId, String improvement) {
         UUID userId = currentUserProvider.currentUserId();
         ReviewRow review = reviewMapper.lockActiveOwned(userId, reviewId);
         if (review == null) {
@@ -111,6 +124,26 @@ public class ReviewService {
         }
     }
 
+    /**
+     * The review page in one read-only snapshot (ADR-14 C-4): review, plan, next plan, and summary cannot come from
+     * different moments.
+     */
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public ReviewDetail detail(UUID reviewId) {
+        ReviewRow review = get(reviewId);
+        return new ReviewDetail(review, planService.get(review.getPlanId()), planService.findOwned(review.getNextPlanId()),
+                summary(scope(review)));
+    }
+
+    /**
+     * The evidence page in one repeatable-read snapshot: review, plan, summary, and evidence lists agree (T06-C83).
+     */
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public ReviewEvidencePage evidencePage(UUID reviewId, ReviewMetric metric) {
+        ReviewRow review = get(reviewId);
+        return new ReviewEvidencePage(review, planService.get(review.getPlanId()), evidence(review, metric));
+    }
+
     @Transactional(readOnly = true)
     public ReviewSummary summary(UUID reviewId) {
         return summary(scope(get(reviewId)));
@@ -121,7 +154,11 @@ public class ReviewService {
      */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ReviewEvidence evidence(UUID reviewId, ReviewMetric metric) {
-        ReviewScope scope = scope(get(reviewId));
+        return evidence(get(reviewId), metric);
+    }
+
+    private ReviewEvidence evidence(ReviewRow review, ReviewMetric metric) {
+        ReviewScope scope = scope(review);
         ReviewSummary summary = summary(scope);
         EvidenceQuery query = EvidenceQuery.of(scope, metric);
         List<EvidenceTodo> todos = List.of();
@@ -150,9 +187,13 @@ public class ReviewService {
     /**
      * ADR-08 / T06-C33: carries the review improvement into a new plan exactly once. The review row lock
      * serializes concurrent requests; a repeated request returns the existing next plan without creating another.
+     * created in the result is decided under that lock, so the caller never checks the transfer state itself.
      */
-    @Transactional
     public TransferResult transferImprovement(UUID reviewId, PlanCommand command) {
+        return writes.run(() -> transferLocked(reviewId, command));
+    }
+
+    private TransferResult transferLocked(UUID reviewId, PlanCommand command) {
         UUID userId = currentUserProvider.currentUserId();
         ReviewRow review = reviewMapper.lockActiveOwned(userId, reviewId);
         if (review == null) {

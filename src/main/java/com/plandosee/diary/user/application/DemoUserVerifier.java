@@ -5,7 +5,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import com.plandosee.diary.common.config.CurrentUserProvider;
-import com.plandosee.diary.user.infrastructure.UserMapper;
+import com.plandosee.diary.user.application.port.UserMapper;
 
 /**
  * ADR-10: the configured demo user must exist, otherwise every owned query would silently return nothing.

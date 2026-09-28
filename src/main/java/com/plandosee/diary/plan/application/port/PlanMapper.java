@@ -1,4 +1,4 @@
-package com.plandosee.diary.plan.infrastructure;
+package com.plandosee.diary.plan.application.port;
 
 import java.util.List;
 import java.util.UUID;

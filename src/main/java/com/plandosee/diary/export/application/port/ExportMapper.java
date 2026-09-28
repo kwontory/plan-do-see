@@ -1,4 +1,4 @@
-package com.plandosee.diary.export.infrastructure;
+package com.plandosee.diary.export.application.port;
 
 import java.util.List;
 import java.util.UUID;
@@ -14,6 +14,7 @@ import com.plandosee.diary.plan.domain.PlanRow;
 import com.plandosee.diary.review.domain.ReviewRow;
 import com.plandosee.diary.todo.domain.CompletionEventRow;
 import com.plandosee.diary.todo.domain.TodoRow;
+import com.plandosee.diary.user.domain.UserRow;
 
 /**
  * Export reads. Every query is owned by the server-resolved user, excludes soft-deleted rows and the children
@@ -21,6 +22,8 @@ import com.plandosee.diary.todo.domain.TodoRow;
  */
 @Mapper
 public interface ExportMapper {
+
+    UserRow owner(@Param("userId") UUID userId);
 
     List<PlanRow> plans(@Param("userId") UUID userId);
 

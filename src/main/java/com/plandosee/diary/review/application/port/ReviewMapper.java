@@ -1,4 +1,4 @@
-package com.plandosee.diary.review.infrastructure;
+package com.plandosee.diary.review.application.port;
 
 import java.time.OffsetDateTime;
 import java.util.List;

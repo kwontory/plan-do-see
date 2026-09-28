@@ -8,14 +8,15 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.plandosee.diary.common.concurrency.WriteTransactions;
 import com.plandosee.diary.common.config.CurrentUserProvider;
 import com.plandosee.diary.common.error.NotFoundException;
 import com.plandosee.diary.common.id.IdGenerator;
 import com.plandosee.diary.common.time.SeoulDates;
+import com.plandosee.diary.plan.application.port.PlanMapper;
 import com.plandosee.diary.plan.domain.PlanPeriod;
 import com.plandosee.diary.plan.domain.PlanRevisionRow;
 import com.plandosee.diary.plan.domain.PlanRow;
-import com.plandosee.diary.plan.infrastructure.PlanMapper;
 
 @Service
 public class PlanService {
@@ -24,26 +25,31 @@ public class PlanService {
     private final CurrentUserProvider currentUserProvider;
     private final IdGenerator idGenerator;
     private final SeoulDates seoulDates;
+    private final WriteTransactions writes;
 
     public PlanService(PlanMapper planMapper, CurrentUserProvider currentUserProvider,
-                       IdGenerator idGenerator, SeoulDates seoulDates) {
+                       IdGenerator idGenerator, SeoulDates seoulDates, WriteTransactions writes) {
         this.planMapper = planMapper;
         this.currentUserProvider = currentUserProvider;
         this.idGenerator = idGenerator;
         this.seoulDates = seoulDates;
+        this.writes = writes;
     }
 
-    @Transactional
     public UUID create(PlanCommand command) {
         return createWithImprovement(command, null);
     }
 
     /**
-     * Used by the improvement transfer inside its own transaction; the carried text never comes from the client.
+     * Used by the improvement transfer inside its transaction (joins it); the carried text never comes from the
+     * client.
      */
-    @Transactional
     public UUID createWithImprovement(PlanCommand command, String carriedImprovement) {
         validate(command);
+        return writes.run(() -> insert(command, carriedImprovement));
+    }
+
+    private UUID insert(PlanCommand command, String carriedImprovement) {
         OffsetDateTime now = now();
         PlanRow plan = new PlanRow();
         plan.setId(idGenerator.newId());
@@ -54,6 +60,15 @@ public class PlanService {
         plan.setUpdatedAt(now);
         planMapper.insert(plan);
         return plan.getId();
+    }
+
+    /**
+     * Ownership check for other features (ADR-14): the owned active plan, or NotFoundException. Joins the caller's
+     * transaction when there is one.
+     */
+    @Transactional(readOnly = true)
+    public PlanRow requireOwned(UUID planId) {
+        return get(planId);
     }
 
     @Transactional(readOnly = true)
@@ -85,11 +100,15 @@ public class PlanService {
     }
 
     /**
-     * Snapshot of the previous values and the update of the current row commit or roll back together.
+     * Snapshot of the previous values and the update of the current row commit or roll back together. The plan row
+     * lock serializes concurrent revisions so revision numbers never repeat or skip (ADR-15).
      */
-    @Transactional
     public void revise(UUID planId, PlanCommand command) {
         validate(command);
+        writes.run(() -> reviseLocked(planId, command));
+    }
+
+    private void reviseLocked(UUID planId, PlanCommand command) {
         UUID userId = currentUserProvider.currentUserId();
         PlanRow current = planMapper.lockActiveOwned(userId, planId);
         if (current == null) {

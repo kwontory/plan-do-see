@@ -1,5 +1,6 @@
-package com.plandosee.diary.todo.infrastructure;
+package com.plandosee.diary.todo.application.port;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -16,8 +17,13 @@ public interface TodoMapper {
 
     int insert(TodoRow todo);
 
-    TodoRow findActiveOwned(@Param("userId") UUID userId, @Param("todoId") UUID todoId);
+    /** Includes the display flags overdue / dueToday judged against today (Seoul). */
+    TodoRow findActiveOwned(@Param("userId") UUID userId, @Param("todoId") UUID todoId, @Param("today") LocalDate today);
 
+    /** Plan id of an owned todo in an active plan, deleted or not; null when it never existed or is not owned. */
+    UUID findPlanIdOwnedIncludingDeleted(@Param("userId") UUID userId, @Param("todoId") UUID todoId);
+
+    /** Row lock for writes; the display flags are not computed (always false). */
     TodoRow lockActiveOwned(@Param("userId") UUID userId, @Param("todoId") UUID todoId);
 
     List<TodoRow> search(TodoFilter filter);

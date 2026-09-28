@@ -15,9 +15,11 @@ import com.plandosee.diary.plan.application.PlanCommand;
 import com.plandosee.diary.plan.domain.PlanRow;
 
 /**
- * Plan create/edit form (web-contract.md). Strings arrive trimmed; blank becomes null (FormBindingAdvice).
- * endDate >= startDate is a domain rule checked by PlanService and shown on the endDate field.
+ * Plan create/edit/next-plan form (web-contract.md). Strings arrive trimmed; blank becomes null (FormBindingAdvice).
+ * endDate >= startDate is the PlanPeriod rule, checked here as a form-level constraint and shown on the endDate
+ * field together with the other field errors (QA-D5); PlanService checks it again for direct calls.
  */
+@ValidPlanPeriod
 public class PlanForm {
 
     @NotBlank(message = "{validation.title.required}")

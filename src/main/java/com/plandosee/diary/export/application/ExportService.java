@@ -18,16 +18,15 @@ import com.plandosee.diary.common.config.CurrentUserProvider;
 import com.plandosee.diary.common.time.SeoulDates;
 import com.plandosee.diary.common.time.TimeConfig;
 import com.plandosee.diary.execution.domain.ExecutionLogRow;
+import com.plandosee.diary.export.application.port.ExportMapper;
 import com.plandosee.diary.export.domain.ExportTagRow;
 import com.plandosee.diary.export.domain.ExportTodoTagRow;
-import com.plandosee.diary.export.infrastructure.ExportMapper;
 import com.plandosee.diary.plan.domain.PlanRevisionRow;
 import com.plandosee.diary.plan.domain.PlanRow;
 import com.plandosee.diary.review.domain.ReviewRow;
 import com.plandosee.diary.todo.domain.CompletionEventRow;
 import com.plandosee.diary.todo.domain.TodoRow;
 import com.plandosee.diary.user.domain.UserRow;
-import com.plandosee.diary.user.infrastructure.UserMapper;
 
 /**
  * DEC-08 / T06-C35, T06-C36, T06-C58: one UTF-8 JSON document of every active owned record.
@@ -41,14 +40,11 @@ public class ExportService {
     public static final String SCHEMA_VERSION = "2.0.0";
 
     private final ExportMapper exportMapper;
-    private final UserMapper userMapper;
     private final CurrentUserProvider currentUserProvider;
     private final SeoulDates seoulDates;
 
-    public ExportService(ExportMapper exportMapper, UserMapper userMapper, CurrentUserProvider currentUserProvider,
-                         SeoulDates seoulDates) {
+    public ExportService(ExportMapper exportMapper, CurrentUserProvider currentUserProvider, SeoulDates seoulDates) {
         this.exportMapper = exportMapper;
-        this.userMapper = userMapper;
         this.currentUserProvider = currentUserProvider;
         this.seoulDates = seoulDates;
     }
@@ -56,7 +52,7 @@ public class ExportService {
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public Map<String, Object> export() {
         UUID userId = currentUserProvider.currentUserId();
-        UserRow owner = userMapper.findActiveById(userId);
+        UserRow owner = exportMapper.owner(userId);
         if (owner == null) {
             throw new IllegalStateException("export owner is not an active user");
         }
