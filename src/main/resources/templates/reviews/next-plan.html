@@ -22,7 +22,7 @@
     <h1>다음 계획 만들기</h1>
 
     <th:block th:unless="${hasImprovement}">
-        <p class="empty">넘길 개선점이 없습니다. 회고에서 개선점을 먼저 저장하세요.</p>
+        <p class="empty">넘길 개선점이 없습니다. 회고에 개선점을 먼저 저장하세요.</p>
         <p><a class="btn btn--secondary" th:href="@{/reviews/{id}(id=${review.id})}" href="#">회고로 돌아가기</a></p>
     </th:block>
 
