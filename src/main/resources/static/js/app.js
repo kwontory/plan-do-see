@@ -1,5 +1,5 @@
 /*
- * PlanDoSee Diary - progressive enhancement only.
+ * PlanDoSee Note - progressive enhancement only.
  * Every feature works without this file. Button locking here is a UX aid; duplicate
  * completion is prevented on the server (idempotency key, row lock, unique constraint).
  * Never write user strings through innerHTML; this file only moves existing DOM nodes

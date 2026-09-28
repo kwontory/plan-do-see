@@ -2,35 +2,37 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/layout :: head(#{home.heading}, false)}">
     <meta charset="UTF-8">
-    <title>PlanDoSee Diary</title>
+    <title>PlanDoSee Note</title>
 </head>
 <body>
 <header th:replace="~{fragments/layout :: header('home')}"></header>
 
-<main id="main" tabindex="-1">
-    <div th:replace="~{fragments/layout :: flash}"></div>
-    <h1 th:text="#{home.heading}">PlanDoSee Diary</h1>
+<main id="main" tabindex="-1" class="wrap home">
+    <div class="page-head">
+        <div th:replace="~{fragments/layout :: flash}"></div>
+        <h1 class="home-title"><span class="brand__main" th:text="#{layout.brand.main}">PlanDoSee</span> <span
+                class="brand__sub" th:text="#{layout.brand.sub}">Note</span></h1>
+        <p class="subtitle" th:text="#{home.intro}">intro</p>
+    </div>
 
     <section aria-labelledby="notice-heading" class="section">
         <h2 id="notice-heading" th:text="#{home.notice.heading}">notice</h2>
         <div class="notice-box">
             <p id="public-notice" class="notice-box__text" data-test="public-notice" th:text="${publicNotice}">notice text</p>
+            <p class="notice-box__advice" th:text="#{home.notice.advice}">advice</p>
         </div>
-        <p class="muted" th:text="#{home.notice.advice}">advice</p>
     </section>
 
     <section aria-labelledby="steps-heading" class="section">
         <h2 id="steps-heading" th:text="#{home.steps.heading}">steps</h2>
-        <ol class="steps">
-            <li th:text="#{home.steps.plan}">plan</li>
-            <li th:text="#{home.steps.do}">do</li>
-            <li th:text="#{home.steps.see}">see</li>
-        </ol>
+        <ol th:replace="~{fragments/layout :: flowIntro}"></ol>
     </section>
 
     <section aria-labelledby="plans-heading" class="section">
-        <h2 id="plans-heading" th:text="#{home.plans.heading}">plans</h2>
-        <p><a class="btn" th:href="@{/plans/new}" href="/plans/new" th:text="#{plans.new}">new</a></p>
+        <div class="section-head">
+            <h2 id="plans-heading" th:text="#{home.plans.heading}">plans</h2>
+            <a class="btn" th:href="@{/plans/new}" href="/plans/new" th:text="#{plans.new}">new</a>
+        </div>
         <th:block th:replace="~{fragments/plan :: planList(${plans})}"></th:block>
         <div th:replace="~{fragments/layout :: pager(${pageNav}, 'page', @{/}, '#plans-heading', #{plans.list.pagerLabel})}"></div>
     </section>

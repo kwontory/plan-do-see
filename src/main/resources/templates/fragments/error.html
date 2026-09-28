@@ -10,11 +10,13 @@
 <body>
 <header th:replace="~{fragments/layout :: header('none')}"></header>
 
-<main id="main" tabindex="-1">
-    <h1 th:text="${errorTitle}">error</h1>
-    <p th:text="${#messages.msg(bodyKey)}">error</p>
+<main id="main" tabindex="-1" class="wrap">
+    <div class="page-head">
+        <h1 th:text="${errorTitle}">error</h1>
+        <p class="subtitle subtitle--body" th:text="${#messages.msg(bodyKey)}">error</p>
+    </div>
     <ul class="link-row">
-        <li><a class="btn btn--secondary" th:href="@{/}" href="/" th:text="#{common.home}">home</a></li>
+        <li><a class="btn" th:href="@{/}" href="/" th:text="#{common.home}">home</a></li>
         <li><a class="btn btn--secondary" th:href="@{/plans}" href="/plans" th:text="#{common.planList}">plans</a></li>
     </ul>
 </main>

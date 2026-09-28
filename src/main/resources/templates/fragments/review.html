@@ -20,5 +20,21 @@
     </th:block>
 </dl>
 
+<!--/* One metric card of the review screen (S04). key: metric key, v: server value, reviewId: review id.
+       Labels, units and the sign of the variance are chosen here (ADR-13); the card links to the evidence (T06-C83). */-->
+<a th:fragment="metricCard(key, v, reviewId)" class="link-card"
+   th:href="@{/reviews/{id}/evidence(id=${reviewId},metric=${key})}" href="#"
+   th:attr="aria-describedby=|metric-desc-${key}|">
+    <span class="link-card__label" th:text="${#messages.msg('metric.' + key + '.label')}">label</span>
+    <span class="visually-hidden"> </span>
+    <span class="link-card__value num" th:attr="data-test=|metric-value-${key}|" th:data-value="${v}"><th:block
+            th:if="${key == 'variance'}"><th:block th:replace="~{fragments/layout :: signedMinutes(${v})}"></th:block></th:block><th:block
+            th:unless="${key == 'variance'}" th:text="#{reviews.detail.metrics.value(${v}, ${#messages.msg('metric.' + key + '.unit')})}">0</th:block></span>
+    <span class="link-card__desc" aria-hidden="true" th:id="|metric-desc-${key}|"
+          th:text="${#messages.msg('metric.' + key + '.description')}">description</span>
+    <span class="link-card__cta"><span class="visually-hidden">, </span><th:block
+            th:text="#{reviews.detail.metrics.cta}">evidence</th:block><span aria-hidden="true"> →</span></span>
+</a>
+
 </body>
 </html>

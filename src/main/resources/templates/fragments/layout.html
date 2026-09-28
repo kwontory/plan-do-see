@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="referrer" content="same-origin">
     <meta name="pds-busy-text" th:content="#{common.busy}" content="...">
-    <title th:text="${hasError} ? #{layout.title.error(${pageTitle})} : #{layout.title.normal(${pageTitle})}">PlanDoSee Diary</title>
+    <title th:text="${hasError} ? #{layout.title.error(${pageTitle})} : #{layout.title.normal(${pageTitle})}">PlanDoSee Note</title>
+    <link rel="stylesheet" th:href="@{/css/fonts.css}" href="/css/fonts.css">
     <link rel="stylesheet" th:href="@{/css/app.css}" href="/css/app.css">
     <script th:src="@{/js/app.js}" src="/js/app.js" defer></script>
 </head>
@@ -14,12 +15,15 @@
 <header th:fragment="header(activeNav)" class="site-header">
     <a class="skip-link" href="#main" th:text="#{layout.skipLink}">skip</a>
     <div class="public-banner">
-        <strong class="public-banner__label" th:text="#{layout.banner.label}">notice</strong>
-        <span class="public-banner__text" data-test="public-banner"
-              th:text="${publicNotice} ?: #{public.notice}">notice text</span>
+        <div class="wrap"><strong class="public-banner__label" th:text="#{layout.banner.label}">notice</strong>
+            <span class="public-banner__text" data-test="public-banner"
+                  th:text="${publicNotice} ?: #{public.notice}">notice text</span></div>
     </div>
     <div class="site-bar">
-        <a class="brand" th:href="@{/}" href="/" th:text="#{layout.brand}">PlanDoSee Diary</a>
+        <div class="wrap site-bar__inner">
+        <!--/* Wordmark: two spans with one space between them, so it reads as two words. */-->
+        <a class="brand" th:href="@{/}" href="/"><span class="brand__main" th:text="#{layout.brand.main}">PlanDoSee</span> <span
+                class="brand__sub" th:text="#{layout.brand.sub}">Note</span></a>
         <nav class="main-nav" th:attr="aria-label=#{layout.nav.label}">
             <ul>
                 <li><a th:href="@{/}" href="/"
@@ -36,6 +40,7 @@
                        th:text="#{layout.nav.export}">export</a></li>
             </ul>
         </nav>
+        </div>
     </div>
 </header>
 
@@ -48,9 +53,49 @@
           th:text="${flashArgs == null} ? ${#messages.msg(flashKey)} : ${#messages.msgWithParams(flashKey, flashArgs)}">message</span></th:block></div>
 
 <footer th:fragment="footer" class="site-footer">
-    <p><span th:text="#{layout.footer.zone}">zone</span><th:block th:if="${today != null}"> <span
-            th:text="#{layout.footer.todayLabel}">today</span> <time th:attr="datetime=${today}" th:text="${today}">2026-01-01</time></th:block></p>
+    <div class="wrap"><p><span th:text="#{layout.footer.zone}">zone</span><th:block th:if="${today != null}"> <span
+            th:text="#{layout.footer.todayLabel}">today</span> <time th:attr="datetime=${today}" th:text="${today}">2026-01-01</time></th:block></p></div>
 </footer>
+
+<!--/* Plan -> Do -> See -> Next step indicator. current: 'plan' | 'do' | 'see' | 'next' (template constant),
+       planId: plan id or null (null = no step is a link). The only place that builds flow.* keys and step URLs.
+       The current step is text with aria-current="step"; "next" is never a link (no single target). */-->
+<nav th:fragment="flowSteps(current, planId)" class="flow" th:attr="aria-label=#{flow.label}">
+    <ol class="flow__list">
+        <li th:each="s, st : ${#strings.arraySplit('plan,do,see,next', ',')}" class="flow__step"
+            th:classappend="${s == current} ? 'flow__step--current'"
+            th:with="linked=${s != current and planId != null and s != 'next'}">
+            <a th:if="${linked}" class="flow__item"
+               th:href="${s == 'plan'} ? @{/plans/{id}(id=${planId})} : (${s == 'do'} ? @{/plans/{id}/todos(id=${planId})} : @{/plans/{id}(id=${planId})} + '#reviews')"
+               href="#"><th:block th:replace="~{fragments/layout :: flowStepParts(${s}, ${st.count})}"></th:block></a>
+            <span th:unless="${linked}" class="flow__item" th:attr="aria-current=${s == current} ? 'step' : null"><th:block
+                    th:replace="~{fragments/layout :: flowStepParts(${s}, ${st.count})}"></th:block></span>
+        </li>
+    </ol>
+</nav>
+
+<!--/* Inside of one flowSteps item: decorative number, step name, decorative English alias. */-->
+<th:block th:fragment="flowStepParts(s, n)"><span class="flow__num" aria-hidden="true" th:text="${n}">1</span><span
+        class="flow__name" th:text="${#messages.msg('flow.step.' + s)}">plan</span><span class="flow__alias" aria-hidden="true"
+        th:text="${#messages.msg('flow.alias.' + s)}">Plan</span></th:block>
+
+<!--/* Home "how to use" list: the same four steps as flowSteps, each with its description (home.steps.*).
+       Numbers and aliases are decorative. */-->
+<ol th:fragment="flowIntro" class="flow-intro">
+    <li th:each="s, st : ${#strings.arraySplit('plan,do,see,next', ',')}" class="flow-intro__item">
+        <span class="flow__num" aria-hidden="true" th:text="${st.count}">1</span>
+        <div class="flow-intro__body">
+            <h3><th:block th:text="${#messages.msg('flow.step.' + s)}">plan</th:block> <span class="flow__alias"
+                    aria-hidden="true" th:text="${#messages.msg('flow.alias.' + s)}">Plan</span></h3>
+            <p th:text="${#messages.msg('home.steps.' + s)}">description</p>
+        </div>
+    </li>
+</ol>
+
+<!--/* Decorative step tag above a section heading (plan detail, review). n: fixed number in the template, s: step.
+       Shows the English alias so it does not repeat the Korean h2 below it. */-->
+<p th:fragment="stepTag(n, s)" class="step-tag" aria-hidden="true"><span class="flow__num" th:text="${n}">1</span><span
+        th:text="${#messages.msg('flow.alias.' + s)}">Plan</span></p>
 
 <!--/* Seoul date-time display. value: OffsetDateTime. displayZone: common model attribute (Asia/Seoul) */-->
 <time th:fragment="datetime(value)"
@@ -63,10 +108,11 @@
         th:if="${v < 0}" th:text="#{common.minutes.under(${-v})}">-0</th:block><th:block
         th:if="${v == 0}" th:text="#{common.minutes.zero}">0</th:block></th:block>
 
-<!--/* Evidence reconciliation verdict. ok: boolean. Text is the cue; color is secondary (D8: no underline) */-->
-<strong th:fragment="verdict(ok)" class="verdict" data-test="evidence-verdict" th:data-value="${ok}"
-        th:classappend="${ok} ? 'verdict--ok' : 'verdict--bad'"
-        th:text="${ok} ? #{common.verdict.ok} : #{common.verdict.bad}">ok</strong>
+<!--/* Evidence reconciliation verdict. ok: boolean. Text is the cue; color and the decorative mark are secondary
+       (D8: no underline). The mark sits outside the data-test element so its text stays the verdict word only. */-->
+<span th:fragment="verdict(ok)" class="verdict-line" th:classappend="${ok} ? 'verdict--ok' : 'verdict--bad'"><span
+        aria-hidden="true" th:text="${ok} ? '✓ ' : '✕ '">✓ </span><strong class="verdict" data-test="evidence-verdict" th:data-value="${ok}"
+        th:text="${ok} ? #{common.verdict.ok} : #{common.verdict.bad}">ok</strong></span>
 
 <!--/* Enum label (ADR-17 F-4). The only place that builds enum.<Type>.<NAME> keys.
        type: enum simple name (Priority, TodoStatus, DueFilter, TodoSort), value: enum constant or its name. */-->
@@ -120,7 +166,7 @@
        loadUrl: GET URL of a fresh edit form or null (null = nothing can be edited, so no load link and no
        "nothing differs" line), fields: fragment expression printing the latest values. */-->
 <section th:fragment="conflictLatest(level, updatedAt, loadUrl, fields)" id="latest" tabindex="-1"
-         class="current conflict-panel" data-test="conflict-latest" aria-labelledby="latest-heading">
+         class="card conflict-panel" data-test="conflict-latest" aria-labelledby="latest-heading">
     <h2 th:if="${level == 2}" id="latest-heading" th:text="#{conflict.latest.heading}">latest</h2>
     <h3 th:unless="${level == 2}" id="latest-heading" th:text="#{conflict.latest.heading}">latest</h3>
     <p th:text="#{conflict.latest.intro}">intro</p>
@@ -163,7 +209,7 @@
        th:text="#{pager.range(${nav.firstItem}, ${nav.lastItem}, ${nav.totalCount})}">1-50 / 50</p>
     <nav class="pager__nav" th:if="${nav.navigable}" th:attr="aria-label=${label}" data-test="pager">
         <ul class="pager__list">
-            <li th:if="${nav.hasPrevious}" th:with="n=${nav.previousNumber}"><a class="btn btn--secondary" rel="prev"
+            <li th:if="${nav.hasPrevious}" th:with="n=${nav.previousNumber}"><a class="pager__link pager__link--text" rel="prev"
                     th:href="${n == 1} ? ${base + anchor} : ${pre + n + anchor}" href="#"><th:block
                     th:text="#{pager.previous}">prev</th:block><span class="visually-hidden"
                     th:text="#{common.srContext(${#messages.msg('pager.page.sr', n)})}"></span></a></li>
@@ -174,7 +220,7 @@
             <li th:if="${nav.gapAfter}" class="pager__gap" aria-hidden="true" th:text="#{pager.gap}">...</li>
             <li th:if="${nav.showLast}"><a
                     th:replace="~{fragments/layout :: pagerNumber(${nav.lastNumber}, false, ${pre + nav.lastNumber + anchor})}"></a></li>
-            <li th:if="${nav.hasNext}" th:with="n=${nav.nextNumber}"><a class="btn btn--secondary" rel="next"
+            <li th:if="${nav.hasNext}" th:with="n=${nav.nextNumber}"><a class="pager__link pager__link--text" rel="next"
                     th:href="${pre + n + anchor}" href="#"><th:block th:text="#{pager.next}">next</th:block><span
                     class="visually-hidden" th:text="#{common.srContext(${#messages.msg('pager.page.sr', n)})}"></span></a></li>
         </ul>
@@ -182,7 +228,7 @@
 </div>
 
 <!--/* One page number link. The current page keeps a link with aria-current="page". */-->
-<a th:fragment="pagerNumber(n, current, href)" class="btn" th:classappend="${current} ? 'pager__current' : 'btn--secondary'"
+<a th:fragment="pagerNumber(n, current, href)" class="pager__link" th:classappend="${current} ? 'pager__link--current'"
    th:href="${href}" href="#" th:attr="aria-current=${current} ? 'page' : null"><span aria-hidden="true"
         th:text="#{pager.number(${n})}">1</span><span class="visually-hidden" th:text="#{pager.page.sr(${n})}">1</span></a>
 

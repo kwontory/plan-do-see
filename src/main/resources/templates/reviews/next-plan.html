@@ -12,25 +12,30 @@
 <body>
 <header th:replace="~{fragments/layout :: header('plans')}"></header>
 
-<main id="main" tabindex="-1">
-    <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
-        <ol>
-            <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
-            <!--/* ADR-19 stand-in (snapshotUnavailable): the plan is unknown; its step is left out. */-->
-            <li th:unless="${unavailable}"><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">plan</a></li>
-            <li><a th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{breadcrumb.review}">review</a></li>
-            <li aria-current="page" th:text="#{reviews.nextPlan.title}">next plan</li>
-        </ol>
-    </nav>
-    <div th:replace="~{fragments/layout :: flash}"></div>
-    <h1 th:text="#{reviews.nextPlan.title}">next plan</h1>
+<main id="main" tabindex="-1" class="wrap">
+    <div class="page-head">
+        <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
+            <ol>
+                <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
+                <!--/* ADR-19 stand-in (snapshotUnavailable): the plan is unknown; its step is left out. */-->
+                <li th:unless="${unavailable}"><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">plan</a></li>
+                <li><a th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{breadcrumb.review}">review</a></li>
+                <li aria-current="page" th:text="#{reviews.nextPlan.title}">next plan</li>
+            </ol>
+        </nav>
+        <div th:replace="~{fragments/layout :: flash}"></div>
+        <h1 th:text="#{reviews.nextPlan.title}">next plan</h1>
+        <nav th:replace="~{fragments/layout :: flowSteps('next', ${unavailable ? null : plan.id})}"></nav>
+    </div>
     <p class="note" th:if="${unavailable}" data-test="snapshot-unavailable" th:text="#{conflict.latest.unavailable}">unavailable</p>
 
     <!--/* Same text as the server rule error (D1): review.improvement.missing. On the ADR-19 stand-in the improvement is
            unknown (null), not missing, so the form is still shown. */-->
     <th:block th:unless="${showForm}">
-        <p class="empty" th:text="#{review.improvement.missing}">missing</p>
-        <p><a class="btn btn--secondary" th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{common.backToReview}">back</a></p>
+        <div class="empty">
+            <p th:text="#{review.improvement.missing}">missing</p>
+            <p><a class="btn btn--secondary" th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{common.backToReview}">back</a></p>
+        </div>
     </th:block>
 
     <th:block th:if="${showForm}">
@@ -48,7 +53,7 @@
                     <dl th:replace="~{fragments/plan :: planInputReadonly(${planForm})}"></dl>
                 </div>
             </section>
-            <p><a class="btn btn--secondary" th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{common.backToReview}">back</a></p>
+            <p class="back-row"><a class="btn btn--secondary" th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{common.backToReview}">back</a></p>
         </th:block>
 
         <th:block th:unless="${conflict}">
@@ -56,22 +61,22 @@
                 <h2 id="carry-heading" th:text="#{reviews.nextPlan.carry.heading}">carry</h2>
                 <p class="note" th:if="${unavailable}" data-test="section-unavailable" th:text="#{conflict.section.unavailable}">unavailable</p>
                 <th:block th:unless="${unavailable}">
-                    <div class="readonly-box">
+                    <div class="card card--handoff">
                         <p class="pre-wrap" th:text="${review.improvement}">improvement</p>
-                        <p class="muted" th:text="#{reviews.nextPlan.carry.source(${plan.title}, ${review.periodStart}, ${review.periodEnd})}">source</p>
+                        <p class="card__foot muted" th:text="#{reviews.nextPlan.carry.source(${plan.title}, ${review.periodStart}, ${review.periodEnd})}">source</p>
                     </div>
-                    <p class="muted" th:text="#{reviews.nextPlan.carry.note}">note</p>
+                    <p class="small-note" th:text="#{reviews.nextPlan.carry.note}">note</p>
                 </th:block>
             </section>
 
             <section class="section" aria-labelledby="new-plan-heading">
                 <h2 id="new-plan-heading" th:text="#{reviews.nextPlan.newPlan.heading}">new plan</h2>
-                <form method="post" novalidate class="form"
+                <form method="post" novalidate class="form form-area"
                       th:action="@{/reviews/{id}/next-plan(id=${review.id})}" th:object="${planForm}">
                     <th:block th:replace="~{fragments/plan :: planFields(${priorities})}"></th:block>
                     <div class="form-actions">
                         <button type="submit" class="btn" th:text="#{reviews.nextPlan.submit}">create</button>
-                        <a th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{common.backToReview}">back</a>
+                        <a class="btn--quiet" th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{common.backToReview}">back</a>
                     </div>
                 </form>
             </section>

@@ -7,54 +7,60 @@
 <body>
 <header th:replace="~{fragments/layout :: header('export')}"></header>
 
-<main id="main" tabindex="-1">
-    <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
-        <ol>
-            <li aria-current="page" th:text="#{layout.nav.export}">export</li>
-        </ol>
-    </nav>
-    <div th:replace="~{fragments/layout :: flash}"></div>
-    <h1 th:text="#{export.title}">export</h1>
-    <p th:text="#{export.intro}">intro</p>
+<main id="main" tabindex="-1" class="wrap">
+    <div class="page-head">
+        <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
+            <ol>
+                <li aria-current="page" th:text="#{layout.nav.export}">export</li>
+            </ol>
+        </nav>
+        <div th:replace="~{fragments/layout :: flash}"></div>
+        <h1 th:text="#{export.title}">export</h1>
+        <p class="subtitle" th:text="#{export.intro}">intro</p>
+    </div>
 
-    <section class="section" aria-labelledby="included-heading">
-        <h2 id="included-heading" th:text="#{export.included.heading}">included</h2>
-        <ul>
-            <li th:text="#{export.included.plans}">plans</li>
-            <li th:text="#{export.included.revisions}">revisions</li>
-            <li th:text="#{export.included.todos}">todos</li>
-            <li th:text="#{export.included.todoRevisions}">todo revisions</li>
-            <li th:text="#{export.included.tags}">tags</li>
-            <li th:text="#{export.included.executions}">executions</li>
-            <li th:text="#{export.included.completions}">completions</li>
-            <li th:text="#{export.included.reopens}">reopens</li>
-            <li th:text="#{export.included.reviews}">reviews</li>
-            <li th:text="#{export.included.ids}">ids</li>
-            <li th:text="#{export.included.dates}">dates</li>
-            <li th:text="#{export.included.minutes}">minutes</li>
-        </ul>
-    </section>
+    <!--/* The public warning sits right before the download button. */-->
+    <div class="export-download">
+        <p class="notice-box notice-box--inline" th:text="#{export.publicWarning}">warning</p>
+        <p><a class="btn" th:href="@{/export/download}" href="/export/download" th:text="#{export.download}">download</a></p>
+    </div>
 
-    <section class="section" aria-labelledby="excluded-heading">
-        <h2 id="excluded-heading" th:text="#{export.excluded.heading}">excluded</h2>
-        <ul>
-            <li th:text="#{export.excluded.deleted}">deleted</li>
-            <li th:text="#{export.excluded.secrets}">secrets</li>
-        </ul>
-    </section>
+    <div class="section export-grid">
+        <section class="export-col" aria-labelledby="included-heading">
+            <h2 id="included-heading" th:text="#{export.included.heading}">included</h2>
+            <ul class="plain-bullets">
+                <li th:text="#{export.included.plans}">plans</li>
+                <li th:text="#{export.included.revisions}">revisions</li>
+                <li th:text="#{export.included.todos}">todos</li>
+                <li th:text="#{export.included.todoRevisions}">todo revisions</li>
+                <li th:text="#{export.included.tags}">tags</li>
+                <li th:text="#{export.included.executions}">executions</li>
+                <li th:text="#{export.included.completions}">completions</li>
+                <li th:text="#{export.included.reopens}">reopens</li>
+                <li th:text="#{export.included.reviews}">reviews</li>
+                <li th:text="#{export.included.ids}">ids</li>
+                <li th:text="#{export.included.dates}">dates</li>
+                <li th:text="#{export.included.minutes}">minutes</li>
+            </ul>
+        </section>
 
-    <section class="section" aria-labelledby="format-heading">
-        <h2 id="format-heading" th:text="#{export.format.heading}">format</h2>
-        <ul>
-            <li th:text="#{export.format.fileName}">file name</li>
-            <li th:text="#{export.format.encoding}">encoding</li>
-            <li th:text="#{export.format.header}">header</li>
-        </ul>
-    </section>
+        <section class="export-col" aria-labelledby="excluded-heading">
+            <h2 id="excluded-heading" th:text="#{export.excluded.heading}">excluded</h2>
+            <ul class="plain-bullets">
+                <li th:text="#{export.excluded.deleted}">deleted</li>
+                <li th:text="#{export.excluded.secrets}">secrets</li>
+            </ul>
+        </section>
 
-    <p class="notice-box notice-box--inline" th:text="#{export.publicWarning}">warning</p>
-
-    <p><a class="btn" th:href="@{/export/download}" href="/export/download" th:text="#{export.download}">download</a></p>
+        <section class="export-col" aria-labelledby="format-heading">
+            <h2 id="format-heading" th:text="#{export.format.heading}">format</h2>
+            <ul class="plain-bullets">
+                <li th:text="#{export.format.fileName}">file name</li>
+                <li th:text="#{export.format.encoding}">encoding</li>
+                <li th:text="#{export.format.header}">header</li>
+            </ul>
+        </section>
+    </div>
 </main>
 
 <footer th:replace="~{fragments/layout :: footer}"></footer>

@@ -11,14 +11,16 @@
 <body>
 <header th:replace="~{fragments/layout :: header('plans')}"></header>
 
-<main id="main" tabindex="-1">
-    <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
-        <ol>
-            <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
-            <li aria-current="page" th:text="#{breadcrumb.todos}">todos</li>
-        </ol>
-    </nav>
-    <h1 th:text="#{todos.deleted.title}">deleted</h1>
+<main id="main" tabindex="-1" class="wrap">
+    <div class="page-head">
+        <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
+            <ol>
+                <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
+                <li aria-current="page" th:text="#{breadcrumb.todos}">todos</li>
+            </ol>
+        </nav>
+        <h1 th:text="#{todos.deleted.title}">deleted</h1>
+    </div>
 
     <div class="error-summary" role="alert" tabindex="-1" id="error-summary" data-js="error-summary">
         <p data-test="todo-deleted" th:text="#{todos.deleted.body}">deleted</p>
@@ -36,9 +38,9 @@
         </div>
     </section>
 
-    <p th:if="${planId != null}"><a class="btn btn--secondary" th:href="@{/plans/{id}/todos(id=${planId})}" href="#"
+    <p class="back-row" th:if="${planId != null}"><a class="btn btn--secondary" th:href="@{/plans/{id}/todos(id=${planId})}" href="#"
                                     th:text="#{todos.deleted.toList}">list</a></p>
-    <p th:if="${planId == null}"><a class="btn btn--secondary" th:href="@{/plans}" href="/plans"
+    <p class="back-row" th:if="${planId == null}"><a class="btn btn--secondary" th:href="@{/plans}" href="/plans"
                                     th:text="#{common.planList}">plans</a></p>
 </main>
 

@@ -9,14 +9,15 @@
 <body>
 <header th:replace="~{fragments/layout :: header('plans')}"></header>
 
-<main id="main" tabindex="-1">
+<main id="main" tabindex="-1" class="wrap">
+    <div class="page-head">
     <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
         <ol>
             <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
             <!--/* planId is unknown on the ADR-19 stand-in (snapshotUnavailable): those two steps are left out. */-->
             <th:block th:if="${todo.planId != null}">
                 <li><a th:href="@{/plans/{id}(id=${todo.planId})}" href="#"
-                       th:text="${plan != null} ? ${plan.title} : #{breadcrumb.plans}">plan</a></li>
+                       th:text="${plan != null} ? ${plan.title} : #{breadcrumb.thisPlan}">plan</a></li>
                 <li><a th:href="@{/plans/{id}/todos(id=${todo.planId})}" href="#" th:text="#{breadcrumb.todos}">todos</a></li>
             </th:block>
             <li><a th:href="@{/todos/{id}(id=${todo.id})}" href="#" th:text="${todo.title}">todo</a></li>
@@ -25,6 +26,8 @@
     </nav>
     <div th:replace="~{fragments/layout :: flash}"></div>
     <h1 th:text="#{todos.form.heading}">edit</h1>
+    <nav th:replace="~{fragments/layout :: flowSteps('do', ${todo.planId})}"></nav>
+    </div>
     <!--/* ADR-18 (screens.md 11.5.2): summary -> latest (read-only) -> my input (kept, can be saved again). */-->
     <th:block th:object="${todoForm}" th:with="showJumps=${latest != null}">
         <div th:replace="~{fragments/layout :: errorSummary}"></div>
@@ -34,7 +37,7 @@
         <section th:replace="~{fragments/layout :: conflictLatest(2, ${latest.updatedAt}, @{/todos/{id}/edit(id=${todo.id})}, ~{fragments/todo :: todoLatestFields})}"></section>
     </th:block>
 
-    <div th:attr="id=${conflict} ? 'my-input' : null,tabindex=${conflict} ? '-1' : null,data-test=${conflict} ? 'conflict-mine' : null,aria-labelledby=${conflict} ? 'my-input-heading' : null,role=${conflict} ? 'region' : null">
+    <div class="form-area" th:attr="id=${conflict} ? 'my-input' : null,tabindex=${conflict} ? '-1' : null,data-test=${conflict} ? 'conflict-mine' : null,aria-labelledby=${conflict} ? 'my-input-heading' : null,role=${conflict} ? 'region' : null">
         <th:block th:if="${conflict}">
             <th:block th:replace="~{fragments/layout :: conflictMineHead(2, true)}"></th:block>
         </th:block>
@@ -47,11 +50,13 @@
               th:action="@{/todos/{id}(id=${todo.id})}" th:object="${todoForm}">
             <input type="hidden" name="_method" value="put">
             <input type="hidden" th:field="*{version}">
-            <th:block th:replace="~{fragments/todo :: todoFields(${priorities})}"></th:block>
+            <div class="form-grid form-grid--2">
+                <th:block th:replace="~{fragments/todo :: todoFields(${priorities})}"></th:block>
+            </div>
             <div class="form-actions">
                 <button type="submit" class="btn" th:attr="data-test=${conflict} ? 'conflict-resubmit' : null"
                         th:text="${conflict} ? #{conflict.mine.resubmit} : #{common.saveEdit}">save</button>
-                <a th:href="@{/todos/{id}(id=${todo.id})}" href="#" th:text="#{common.cancel}">cancel</a>
+                <a class="btn--quiet" th:href="@{/todos/{id}(id=${todo.id})}" href="#" th:text="#{common.cancel}">cancel</a>
             </div>
         </form>
     </div>

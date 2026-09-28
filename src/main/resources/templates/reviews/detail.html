@@ -11,17 +11,22 @@
 <body>
 <header th:replace="~{fragments/layout :: header('plans')}"></header>
 
-<main id="main" tabindex="-1">
-    <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
-        <ol>
-            <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
-            <!--/* ADR-19 stand-in (snapshotUnavailable): the plan is unknown; its step is left out. */-->
-            <li th:unless="${unavailable}"><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">plan</a></li>
-            <li aria-current="page" th:text="#{breadcrumb.review}">review</li>
-        </ol>
-    </nav>
-    <div th:replace="~{fragments/layout :: flash}"></div>
-    <h1 th:text="${unavailable} ? #{reviews.detail.headingUnknown} : #{reviews.detail.pageTitle(${plan.title})}">review</h1>
+<main id="main" tabindex="-1" class="wrap">
+    <div class="page-head">
+        <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
+            <ol>
+                <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
+                <!--/* ADR-19 stand-in (snapshotUnavailable): the plan is unknown; its step is left out. */-->
+                <li th:unless="${unavailable}"><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">plan</a></li>
+                <li aria-current="page" th:text="#{breadcrumb.review}">review</li>
+            </ol>
+        </nav>
+        <div th:replace="~{fragments/layout :: flash}"></div>
+        <h1 th:text="${unavailable} ? #{reviews.detail.headingUnknown} : #{reviews.detail.pageTitle(${plan.title})}">review</h1>
+        <p class="subtitle num" th:unless="${unavailable}"
+           th:text="#{plans.detail.reviewPeriod(${review.periodStart}, ${review.periodEnd})}">period</p>
+        <nav th:replace="~{fragments/layout :: flowSteps('see', ${unavailable ? null : plan.id})}"></nav>
+    </div>
     <p class="note" th:if="${unavailable}" data-test="snapshot-unavailable" th:text="#{conflict.latest.unavailable}">unavailable</p>
 
     <!--/* ADR-19 stand-in: plan, summary, metricValues and nextPlan are absent, so only the improvement form
@@ -38,33 +43,30 @@
             <dt th:text="#{reviews.detail.basis.target}">target</dt>
             <dd th:text="#{reviews.detail.basis.targetValue}">target</dd>
         </dl>
-        <p class="muted" th:text="#{reviews.detail.basis.snapshotNote}">snapshot</p>
-        <p class="muted" th:text="#{reviews.detail.basis.planEstimateNote(${plan.estimatedMinutes})}">plan estimate</p>
+        <p class="small-note" th:text="#{reviews.detail.basis.snapshotNote}">snapshot</p>
+        <p class="small-note" th:text="#{reviews.detail.basis.planEstimateNote(${plan.estimatedMinutes})}">plan estimate</p>
     </section>
 
-    <!--/* 2. Metrics. The server sends metricValues (key -> value); card order, labels, units, sign and links are
-           decided here (ADR-13, web-contract revision 3). */-->
+    <!--/* 2. Metrics. The server sends metricValues (key -> value); card order, groups, labels, units, sign and links are
+           decided here (ADR-13, web-contract revision 3). Two groups: counts, then time. */-->
     <section class="section" aria-labelledby="metrics-heading"
-             th:with="metricOrder=${#strings.arraySplit('planned,completed,overdue,blocked,estimated,actual,variance', ',')}">
+             th:with="countOrder=${#strings.arraySplit('planned,completed,overdue,blocked', ',')},
+                      timeOrder=${#strings.arraySplit('estimated,actual,variance', ',')}">
         <h2 id="metrics-heading" th:text="#{reviews.detail.metrics.heading}">metrics</h2>
         <p class="note" th:if="${summary.plannedCount == 0}" th:text="#{reviews.detail.metrics.allZero}">all zero</p>
         <p th:text="#{reviews.detail.metrics.intro}">intro</p>
-        <ul class="metric-grid">
-            <li th:each="key : ${metricOrder}" th:with="v=${metricValues.get(key)}">
-                <a class="link-card" th:href="@{/reviews/{id}/evidence(id=${review.id},metric=${key})}" href="#"
-                   th:attr="aria-describedby=|metric-desc-${key}|">
-                    <span class="link-card__label" th:text="${#messages.msg('metric.' + key + '.label')}">label</span>
-                    <span class="visually-hidden"> </span>
-                    <span class="link-card__value" th:attr="data-test=|metric-value-${key}|" th:data-value="${v}"><th:block
-                            th:if="${key == 'variance'}"><th:block th:replace="~{fragments/layout :: signedMinutes(${v})}"></th:block></th:block><th:block
-                            th:unless="${key == 'variance'}" th:text="#{reviews.detail.metrics.value(${v}, ${#messages.msg('metric.' + key + '.unit')})}">0</th:block></span>
-                    <span class="link-card__desc" aria-hidden="true" th:id="|metric-desc-${key}|"
-                          th:text="${#messages.msg('metric.' + key + '.description')}">description</span>
-                    <span class="link-card__cta"><span class="visually-hidden">, </span><th:block
-                            th:text="#{reviews.detail.metrics.cta}">evidence</th:block><span aria-hidden="true"> →</span></span>
-                </a>
-            </li>
-        </ul>
+        <div class="metric-group">
+            <h3 th:text="#{reviews.detail.metrics.group.count}">counts</h3>
+            <ul class="metric-grid metric-grid--4">
+                <li th:each="key : ${countOrder}"><a th:replace="~{fragments/review :: metricCard(${key}, ${metricValues.get(key)}, ${review.id})}"></a></li>
+            </ul>
+        </div>
+        <div class="metric-group">
+            <h3 th:text="#{reviews.detail.metrics.group.time}">time</h3>
+            <ul class="metric-grid metric-grid--3 metric-grid--flow">
+                <li th:each="key : ${timeOrder}"><a th:replace="~{fragments/review :: metricCard(${key}, ${metricValues.get(key)}, ${review.id})}"></a></li>
+            </ul>
+        </div>
     </section>
     </th:block>
 
@@ -89,27 +91,30 @@
             <th:block th:if="${conflict}">
                 <th:block th:replace="~{fragments/layout :: conflictMineHead(3, true)}"></th:block>
             </th:block>
-            <form method="post" novalidate class="form"
+            <form method="post" novalidate class="form form-area"
                   th:action="@{/reviews/{id}/improvement(id=${review.id})}" th:object="${improvementForm}">
                 <input type="hidden" name="_method" value="put">
                 <input type="hidden" th:field="*{version}">
                 <div class="field" th:with="err=${#fields.hasErrors('improvement')}, chg=${changedFields != null and changedFields.contains('improvement')}">
                     <label for="improvement" th:text="#{reviews.detail.improvement.label}">improvement</label>
                     <span th:replace="~{fragments/layout :: changedNote('improvement')}"></span>
-                    <p class="field-help" id="improvement-help" th:text="#{reviews.detail.improvement.help}">help</p>
                     <p th:replace="~{fragments/layout :: fieldError('improvement')}"></p>
                     <textarea th:field="*{improvement}" rows="5" maxlength="1000"
                               th:attr="aria-describedby=${'improvement-help' + (err ? ' improvement-error' : '') + (chg ? ' improvement-changed' : '')},aria-invalid=${err} ? 'true' : null"></textarea>
+                    <p class="field-help" id="improvement-help" th:text="#{reviews.detail.improvement.help}">help</p>
                 </div>
+                <!--/* Primary button follows the next step: once an improvement is saved (and not carried), the primary
+                       action is "create next plan" below, so saving again is secondary (except on a conflict). */-->
                 <div class="form-actions">
-                    <button type="submit" class="btn" th:attr="data-test=${conflict} ? 'conflict-resubmit' : null"
+                    <button type="submit" th:class="${conflict or !hasImprovement} ? 'btn' : 'btn btn--secondary'"
+                            th:attr="data-test=${conflict} ? 'conflict-resubmit' : null"
                             th:text="${conflict} ? #{conflict.mine.resubmit} : #{reviews.detail.improvement.submit}">save</button>
                 </div>
             </form>
         </div>
 
-        <div th:if="${transferred and !conflict}" class="readonly-box">
-            <p><span class="badge badge--transferred" th:text="#{badge.transferred}">transferred</span></p>
+        <div th:if="${transferred and !conflict}" class="card card--handoff">
+            <p class="status-transferred"><span aria-hidden="true">→ </span><th:block th:text="#{badge.transferred}">transferred</th:block></p>
             <p class="pre-wrap" th:text="${review.improvement}">improvement</p>
             <p class="muted" th:if="${review.transferredAt != null}"><th:block th:text="#{reviews.detail.improvement.transferredAt}">at</th:block> <time
                     th:replace="~{fragments/layout :: datetime(${review.transferredAt})}"></time></p>
@@ -128,11 +133,12 @@
 
     <!--/* 4. Next plan (left out on the ADR-19 stand-in: whether the review was carried is unknown) */-->
     <section class="section" aria-labelledby="next-heading" th:unless="${unavailable}">
+        <p th:replace="~{fragments/layout :: stepTag(4, 'next')}"></p>
         <h2 id="next-heading" th:text="#{reviews.detail.next.heading}">next</h2>
         <p th:if="${!transferred and !hasImprovement}" th:text="#{reviews.detail.next.needImprovement}">need</p>
         <th:block th:if="${!transferred and hasImprovement}">
             <p th:text="#{reviews.detail.next.ready}">ready</p>
-            <p><a class="btn" th:href="@{/reviews/{id}/next-plan(id=${review.id})}" href="#" th:text="#{reviews.detail.next.create}">create</a></p>
+            <p><a th:class="${latest != null} ? 'btn btn--secondary' : 'btn'" th:href="@{/reviews/{id}/next-plan(id=${review.id})}" href="#" th:text="#{reviews.detail.next.create}">create</a></p>
         </th:block>
         <th:block th:if="${transferred}">
             <p th:text="#{reviews.detail.next.done}">done</p>

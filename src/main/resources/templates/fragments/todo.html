@@ -20,32 +20,37 @@
 <!--/* Status + derived badges. todo: TodoRow or EvidenceTodo with the server flags completed, overdue, dueToday
        (web-contract revision 4, ADR-17 F-2: the template does not compare dates). dueToday looks at the date only,
        so the badge also checks !completed. */-->
+<!--/* Text + decorative mark (aria-hidden); color is secondary. */-->
 <th:block th:fragment="statusBadges(todo)">
-    <span th:if="${todo.completed}" class="badge badge--done"><span aria-hidden="true">✓ </span><th:block
+    <span th:if="${todo.completed}" class="status"><span aria-hidden="true">✓ </span><th:block
             th:text="#{enum.TodoStatus.COMPLETED}">done</th:block></span>
-    <span th:unless="${todo.completed}" class="badge badge--progress" th:text="#{enum.TodoStatus.IN_PROGRESS}">in progress</span>
-    <span th:if="${todo.overdue}" class="badge badge--overdue" th:text="#{badge.overdue}">overdue</span>
-    <span th:if="${!todo.completed and todo.dueToday}" class="badge badge--today" th:text="#{badge.dueToday}">today</span>
+    <span th:unless="${todo.completed}" class="status"><span aria-hidden="true">○ </span><th:block
+            th:text="#{enum.TodoStatus.IN_PROGRESS}">in progress</th:block></span>
+    <span th:if="${todo.overdue}" class="flag flag--overdue"><span aria-hidden="true">! </span><th:block
+            th:text="#{badge.overdue}">overdue</th:block></span>
+    <span th:if="${!todo.completed and todo.dueToday}" class="flag flag--today" th:text="#{badge.dueToday}">today</span>
 </th:block>
 
 <!--/* TodoForm fields. Must be included inside a form with th:object="${todoForm}". On an ADR-18 conflict page the
-       model changedFields adds a "differs from the latest" note (changedNote) to aria-describedby. */-->
+       model changedFields adds a "differs from the latest" note (changedNote) to aria-describedby.
+       Order inside a field: label -> changed note -> field error -> input -> help (help below the input).
+       The including page wraps these in its grid (form-grid--4 on the add form, form-grid--2 on the edit form). */-->
 <th:block th:fragment="todoFields(priorities)">
-    <div class="field" th:with="err=${#fields.hasErrors('title')}, chg=${changedFields != null and changedFields.contains('title')}">
+    <div class="field field--span2" th:with="err=${#fields.hasErrors('title')}, chg=${changedFields != null and changedFields.contains('title')}">
         <label for="title" th:text="#{form.todo.title.label}">title</label>
         <span th:replace="~{fragments/layout :: changedNote('title')}"></span>
-        <p class="field-help" id="title-help" th:text="#{form.title.help}">help</p>
         <p th:replace="~{fragments/layout :: fieldError('title')}"></p>
         <input type="text" th:field="*{title}" maxlength="200" required
                th:attr="aria-describedby=${'title-help' + (err ? ' title-error' : '') + (chg ? ' title-changed' : '')},aria-invalid=${err} ? 'true' : null">
+        <p class="field-help" id="title-help" th:text="#{form.title.help}">help</p>
     </div>
     <div class="field" th:with="err=${#fields.hasErrors('dueDate')}, chg=${changedFields != null and changedFields.contains('dueDate')}">
         <label for="dueDate" th:text="#{form.todo.dueDate.label}">due</label>
         <span th:replace="~{fragments/layout :: changedNote('dueDate')}"></span>
-        <p class="field-help" id="dueDate-help" th:text="#{form.todo.dueDate.help}">help</p>
         <p th:replace="~{fragments/layout :: fieldError('dueDate')}"></p>
         <input type="date" th:field="*{dueDate}"
                th:attr="aria-describedby=${'dueDate-help' + (err ? ' dueDate-error' : '') + (chg ? ' dueDate-changed' : '')},aria-invalid=${err} ? 'true' : null">
+        <p class="field-help" id="dueDate-help" th:text="#{form.todo.dueDate.help}">help</p>
     </div>
     <div class="field" th:with="err=${#fields.hasErrors('priority')}, chg=${changedFields != null and changedFields.contains('priority')},
                                 desc=${#strings.trim((err ? 'priority-error ' : '') + (chg ? 'priority-changed' : ''))}">
@@ -62,21 +67,21 @@
     <div class="field" th:with="err=${#fields.hasErrors('estimatedMinutes')}, chg=${changedFields != null and changedFields.contains('estimatedMinutes')}">
         <label for="estimatedMinutes" th:text="#{form.estimatedMinutes.label}">minutes</label>
         <span th:replace="~{fragments/layout :: changedNote('estimatedMinutes')}"></span>
-        <p class="field-help" id="estimatedMinutes-help" th:text="#{form.todo.estimatedMinutes.help}">help</p>
         <p th:replace="~{fragments/layout :: fieldError('estimatedMinutes')}"></p>
         <span class="input-unit">
             <input type="number" th:field="*{estimatedMinutes}" min="0" max="525600" step="1" inputmode="numeric" required
                    th:attr="aria-describedby=${'estimatedMinutes-help' + (err ? ' estimatedMinutes-error' : '') + (chg ? ' estimatedMinutes-changed' : '')},aria-invalid=${err} ? 'true' : null">
             <span aria-hidden="true" th:text="#{form.unit.minutes}">min</span>
         </span>
+        <p class="field-help" id="estimatedMinutes-help" th:text="#{form.todo.estimatedMinutes.help}">help</p>
     </div>
-    <div class="field" th:with="err=${#fields.hasErrors('tags')}, chg=${changedFields != null and changedFields.contains('tags')}">
+    <div class="field field--span3" th:with="err=${#fields.hasErrors('tags')}, chg=${changedFields != null and changedFields.contains('tags')}">
         <label for="tags" th:text="#{form.todo.tags.label}">tags</label>
         <span th:replace="~{fragments/layout :: changedNote('tags')}"></span>
-        <p class="field-help" id="tags-help" th:text="#{form.todo.tags.help}">help</p>
         <p th:replace="~{fragments/layout :: fieldError('tags')}"></p>
         <input type="text" th:field="*{tags}"
                th:attr="aria-describedby=${'tags-help' + (err ? ' tags-error' : '') + (chg ? ' tags-changed' : '')},aria-invalid=${err} ? 'true' : null">
+        <p class="field-help" id="tags-help" th:text="#{form.todo.tags.help}">help</p>
     </div>
 </th:block>
 

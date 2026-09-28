@@ -11,19 +11,22 @@
 <body>
 <header th:replace="~{fragments/layout :: header('plans')}"></header>
 
-<main id="main" tabindex="-1">
-    <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
-        <ol>
-            <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
-            <th:block th:if="${isEdit}">
-                <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">plan</a></li>
-                <li aria-current="page" th:text="#{breadcrumb.edit}">edit</li>
-            </th:block>
-            <li th:unless="${isEdit}" aria-current="page" th:text="#{breadcrumb.newPlan}">new</li>
-        </ol>
-    </nav>
-    <div th:replace="~{fragments/layout :: flash}"></div>
-    <h1 th:text="${pageHeading}">plan form</h1>
+<main id="main" tabindex="-1" class="wrap">
+    <div class="page-head">
+        <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
+            <ol>
+                <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
+                <th:block th:if="${isEdit}">
+                    <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">plan</a></li>
+                    <li aria-current="page" th:text="#{breadcrumb.edit}">edit</li>
+                </th:block>
+                <li th:unless="${isEdit}" aria-current="page" th:text="#{breadcrumb.newPlan}">new</li>
+            </ol>
+        </nav>
+        <div th:replace="~{fragments/layout :: flash}"></div>
+        <h1 th:text="${pageHeading}">plan form</h1>
+        <nav th:replace="~{fragments/layout :: flowSteps('plan', ${isEdit ? plan.id : null})}"></nav>
+    </div>
 
     <!--/* ADR-18 (screens.md 11.5.2): summary -> latest (read-only) -> my input (kept, can be saved again).
            Without a conflict only the summary (when there are errors) and the form are shown. */-->
@@ -35,7 +38,7 @@
         <section th:replace="~{fragments/layout :: conflictLatest(2, ${latest.updatedAt}, @{/plans/{id}/edit(id=${plan.id})}, ~{fragments/plan :: planLatestFields})}"></section>
     </th:block>
 
-    <div th:attr="id=${conflict} ? 'my-input' : null,tabindex=${conflict} ? '-1' : null,data-test=${conflict} ? 'conflict-mine' : null,aria-labelledby=${conflict} ? 'my-input-heading' : null,role=${conflict} ? 'region' : null">
+    <div class="form-area" th:attr="id=${conflict} ? 'my-input' : null,tabindex=${conflict} ? '-1' : null,data-test=${conflict} ? 'conflict-mine' : null,aria-labelledby=${conflict} ? 'my-input-heading' : null,role=${conflict} ? 'region' : null">
         <th:block th:if="${conflict}">
             <th:block th:replace="~{fragments/layout :: conflictMineHead(2, true)}"></th:block>
         </th:block>
@@ -43,7 +46,8 @@
 
         <div class="readonly-box"
              th:if="${isEdit and plan.carriedImprovement != null and !#strings.isEmpty(plan.carriedImprovement)}">
-            <p class="readonly-box__label"><span class="badge badge--carried" th:text="#{badge.carried}">carried</span>
+            <p class="readonly-box__label"><span class="status-carried"><span aria-hidden="true">↳ </span><th:block
+                    th:text="#{badge.carried}">carried</th:block></span>
                 <span class="muted" th:text="#{plans.form.carriedReadonly}">read only</span></p>
             <p class="pre-wrap" th:text="${plan.carriedImprovement}">improvement</p>
         </div>
@@ -57,7 +61,7 @@
             <div class="form-actions">
                 <button type="submit" class="btn" th:attr="data-test=${conflict} ? 'conflict-resubmit' : null"
                         th:text="${conflict} ? #{conflict.mine.resubmit} : (${isEdit} ? #{common.saveEdit} : #{plans.form.submitCreate})">save</button>
-                <a th:href="${isEdit} ? @{/plans/{id}(id=${plan.id})} : @{/plans}" href="/plans" th:text="#{common.cancel}">cancel</a>
+                <a class="btn--quiet" th:href="${isEdit} ? @{/plans/{id}(id=${plan.id})} : @{/plans}" href="/plans" th:text="#{common.cancel}">cancel</a>
             </div>
         </form>
     </div>

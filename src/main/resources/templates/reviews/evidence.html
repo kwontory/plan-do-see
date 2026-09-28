@@ -11,17 +11,20 @@
 <body>
 <header th:replace="~{fragments/layout :: header('plans')}"></header>
 
-<main id="main" tabindex="-1">
-    <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
-        <ol>
-            <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
-            <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">plan</a></li>
-            <li><a th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{breadcrumb.review}">review</a></li>
-            <li aria-current="page" th:text="#{evidence.pageTitle(${metricLabel})}">evidence</li>
-        </ol>
-    </nav>
-    <div th:replace="~{fragments/layout :: flash}"></div>
-    <h1 th:text="#{evidence.pageTitle(${metricLabel})}">evidence</h1>
+<main id="main" tabindex="-1" class="wrap">
+    <div class="page-head">
+        <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
+            <ol>
+                <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
+                <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">plan</a></li>
+                <li><a th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{breadcrumb.review}">review</a></li>
+                <li aria-current="page" th:text="#{evidence.pageTitle(${metricLabel})}">evidence</li>
+            </ol>
+        </nav>
+        <div th:replace="~{fragments/layout :: flash}"></div>
+        <h1 th:text="#{evidence.pageTitle(${metricLabel})}">evidence</h1>
+        <nav th:replace="~{fragments/layout :: flowSteps('see', ${plan.id})}"></nav>
+    </div>
 
     <!--/* 1. Condition */-->
     <section class="section" aria-labelledby="cond-heading">
@@ -38,39 +41,43 @@
     <!--/* 2. Reconciliation */-->
     <section class="section evidence-summary" aria-labelledby="check-heading">
         <h2 id="check-heading" th:text="#{evidence.check.heading}">check</h2>
-        <p th:switch="${mk}">
+        <!--/* Conclusion card: the comparison sentence, then the verdict on its own line (the separator just before the
+               verdict is hidden by CSS, so reading order equals visual order). */-->
+        <div class="card evidence-conclusion">
+        <p class="evidence-conclusion__text" th:switch="${mk}">
             <th:block th:case="'planned'" th:with="ok=${evidenceCount == summary.plannedCount}">
-                <span th:text="#{evidence.check.count(${evidenceCount}, ${summary.plannedCount})}"></span><span> · </span><strong
+                <span th:text="#{evidence.check.count(${evidenceCount}, ${summary.plannedCount})}"></span><span class="verdict-sep"> · </span><strong
                     th:replace="~{fragments/layout :: verdict(${ok})}"></strong>
             </th:block>
             <th:block th:case="'completed'" th:with="ok=${evidenceCount == summary.completedCount}">
-                <span th:text="#{evidence.check.count(${evidenceCount}, ${summary.completedCount})}"></span><span> · </span><strong
+                <span th:text="#{evidence.check.count(${evidenceCount}, ${summary.completedCount})}"></span><span class="verdict-sep"> · </span><strong
                     th:replace="~{fragments/layout :: verdict(${ok})}"></strong>
             </th:block>
             <th:block th:case="'overdue'" th:with="ok=${evidenceCount == summary.overdueCount}">
-                <span th:text="#{evidence.check.count(${evidenceCount}, ${summary.overdueCount})}"></span><span> · </span><strong
+                <span th:text="#{evidence.check.count(${evidenceCount}, ${summary.overdueCount})}"></span><span class="verdict-sep"> · </span><strong
                     th:replace="~{fragments/layout :: verdict(${ok})}"></strong>
             </th:block>
             <th:block th:case="'blocked'" th:with="ok=${evidenceCount == summary.blockedCount}">
-                <span th:text="#{evidence.check.count(${evidenceCount}, ${summary.blockedCount})}"></span><span> · </span><strong
+                <span th:text="#{evidence.check.count(${evidenceCount}, ${summary.blockedCount})}"></span><span class="verdict-sep"> · </span><strong
                     th:replace="~{fragments/layout :: verdict(${ok})}"></strong>
             </th:block>
             <th:block th:case="'estimated'" th:with="ok=${evidenceEstimatedMinutes == summary.estimatedMinutes}">
-                <span th:text="#{evidence.check.estimated(${evidenceCount}, ${evidenceEstimatedMinutes}, ${summary.estimatedMinutes})}"></span><span> · </span><strong
+                <span th:text="#{evidence.check.estimated(${evidenceCount}, ${evidenceEstimatedMinutes}, ${summary.estimatedMinutes})}"></span><span class="verdict-sep"> · </span><strong
                     th:replace="~{fragments/layout :: verdict(${ok})}"></strong>
             </th:block>
             <th:block th:case="'actual'" th:with="ok=${evidenceActualMinutes == summary.actualMinutes}">
-                <span th:text="#{evidence.check.actual(${evidenceCount}, ${evidenceActualMinutes}, ${summary.actualMinutes})}"></span><span> · </span><strong
+                <span th:text="#{evidence.check.actual(${evidenceCount}, ${evidenceActualMinutes}, ${summary.actualMinutes})}"></span><span class="verdict-sep"> · </span><strong
                     th:replace="~{fragments/layout :: verdict(${ok})}"></strong>
             </th:block>
             <th:block th:case="'variance'" th:with="ok=${evidenceVarianceMinutes == summary.varianceMinutes}">
                 <span th:text="#{evidence.check.variance(${evidenceActualMinutes}, ${evidenceEstimatedMinutes})}"></span> <th:block
                     th:replace="~{fragments/layout :: signedMinutes(${evidenceVarianceMinutes})}"></th:block><span> · </span><span
                     th:text="#{evidence.check.metric}"></span> <th:block
-                    th:replace="~{fragments/layout :: signedMinutes(${summary.varianceMinutes})}"></th:block><span> · </span><strong
+                    th:replace="~{fragments/layout :: signedMinutes(${summary.varianceMinutes})}"></th:block><span class="verdict-sep"> · </span><strong
                     th:replace="~{fragments/layout :: verdict(${ok})}"></strong>
             </th:block>
         </p>
+        </div>
         <p class="empty" th:if="${evidenceEmpty}"
            th:text="#{evidence.empty}">empty</p>
     </section>
@@ -78,10 +85,11 @@
     <!--/* 3. Todo evidence (default todo order, same as S02 DUE) */-->
     <section class="section" aria-labelledby="ev-todo-heading" th:if="${showTodos}">
         <h2 id="ev-todo-heading" th:text="#{evidence.todos.heading}">todos</h2>
-        <p class="sort-note"><th:block th:text="#{common.sortLabel}">sort:</th:block> <span th:text="#{sort.DUE.description}">sort</span></p>
+        <p class="sort-description"><strong th:text="#{common.sortLabel}">sort:</strong> <span th:text="#{sort.DUE.description}">sort</span></p>
         <p class="empty" th:if="${todos.isEmpty()}" th:text="#{evidence.todos.empty}">empty</p>
+        <p class="table-hint" th:unless="${todos.isEmpty()}" th:text="#{common.table.scrollHint}">scroll</p>
         <div class="table-wrap" tabindex="0" role="region" th:attr="aria-label=#{evidence.todos.region}" th:unless="${todos.isEmpty()}">
-            <table>
+            <table class="table--sticky">
                 <caption class="visually-hidden" th:text="#{evidence.todos.region}">todos</caption>
                 <thead>
                 <tr>
@@ -97,7 +105,7 @@
                 <tbody>
                 <tr th:each="t : ${todos}">
                     <td><a th:href="@{/todos/{id}(id=${t.id})}" href="#" th:text="${t.title}">todo</a></td>
-                    <td><th:block th:replace="~{fragments/todo :: statusBadges(${t})}"></th:block></td>
+                    <td class="status-cell"><th:block th:replace="~{fragments/todo :: statusBadges(${t})}"></th:block></td>
                     <td th:text="${t.dueDate != null} ? ${t.dueDate} : #{common.none}">none</td>
                     <td><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${t.priority})}">priority</th:block></td>
                     <td class="num" th:text="#{common.minutes(${t.estimatedMinutes})}">0</td>
@@ -131,8 +139,9 @@
         <h2 id="ev-log-heading" th:text="#{evidence.logs.heading}">logs</h2>
         <p class="sort-note" th:text="#{evidence.logs.sortNote}">sort</p>
         <p class="empty" th:if="${logs.isEmpty()}" th:text="#{evidence.logs.empty}">empty</p>
+        <p class="table-hint" th:unless="${logs.isEmpty()}" th:text="#{common.table.scrollHint}">scroll</p>
         <div class="table-wrap" tabindex="0" role="region" th:attr="aria-label=#{evidence.logs.region}" th:unless="${logs.isEmpty()}">
-            <table>
+            <table class="table--sticky">
                 <caption class="visually-hidden" th:text="#{evidence.logs.region}">logs</caption>
                 <thead>
                 <tr>
@@ -167,7 +176,7 @@
         </th:block>
     </section>
 
-    <p><a class="btn btn--secondary" th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{common.backToReview}">back</a></p>
+    <p class="back-row"><a class="btn btn--secondary" th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{common.backToReview}">back</a></p>
 
 </main>
 

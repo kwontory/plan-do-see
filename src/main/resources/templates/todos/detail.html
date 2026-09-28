@@ -10,66 +10,79 @@
 <body>
 <header th:replace="~{fragments/layout :: header('plans')}"></header>
 
-<main id="main" tabindex="-1">
-    <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
-        <ol>
-            <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
-            <!--/* ADR-19 stand-in (snapshotUnavailable): the plan and the todo title are unknown; those steps are left out. */-->
-            <th:block th:unless="${unavailable}">
-                <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">plan</a></li>
-                <li><a th:href="@{/plans/{id}/todos(id=${plan.id})}" href="#" th:text="#{breadcrumb.todos}">todos</a></li>
-            </th:block>
-            <li aria-current="page" th:text="${unavailable} ? #{todos.detail.headingUnknown} : ${todo.title}">todo</li>
-        </ol>
-    </nav>
-    <div th:replace="~{fragments/layout :: flash}"></div>
-    <h1 th:text="${unavailable} ? #{todos.detail.headingUnknown} : ${todo.title}">todo</h1>
+<main id="main" tabindex="-1" class="wrap"
+      th:with="hasRevisions=${!unavailable and todoRevisions != null and !todoRevisions.isEmpty()}">
+    <div class="page-head">
+        <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
+            <ol>
+                <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
+                <!--/* ADR-19 stand-in (snapshotUnavailable): the plan and the todo title are unknown; those steps are left out. */-->
+                <th:block th:unless="${unavailable}">
+                    <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">plan</a></li>
+                    <li><a th:href="@{/plans/{id}/todos(id=${plan.id})}" href="#" th:text="#{breadcrumb.todos}">todos</a></li>
+                </th:block>
+                <li aria-current="page" th:text="${unavailable} ? #{todos.detail.headingUnknown} : ${todo.title}">todo</li>
+            </ol>
+        </nav>
+        <div th:replace="~{fragments/layout :: flash}"></div>
+        <h1 th:text="${unavailable} ? #{todos.detail.headingUnknown} : ${todo.title}">todo</h1>
+        <p class="status-line" th:unless="${unavailable}"><th:block th:replace="~{fragments/todo :: statusBadges(${todo})}"></th:block></p>
+        <th:block th:unless="${unavailable}">
+            <nav th:replace="~{fragments/layout :: flowSteps('do', ${plan.id})}"></nav>
+        </th:block>
+    </div>
     <p class="note" th:if="${unavailable}" data-test="snapshot-unavailable" th:text="#{conflict.latest.unavailable}">unavailable</p>
 
     <!--/* ADR-19 stand-in: only the execution form (section 3) can be drawn; sections 1, 2 and 4-6 need the database. */-->
     <th:block th:unless="${unavailable}">
-    <!--/* 1. Current values (ADR-16, screens.md 11.2.1: same "current" card as the plan detail) */-->
+    <!--/* 1. Current values (ADR-16, screens.md 11.2.1: same "current" card as the plan detail). Plan value (estimate)
+           and Do value (sum of execution records, server value) sit side by side. */-->
     <section class="section" aria-labelledby="info-heading">
         <h2 id="info-heading"><th:block th:text="#{todos.detail.info.heading}">info</th:block> <span
                 class="badge badge--current" th:text="#{badge.current}">current value</span></h2>
-        <div class="current">
-            <p class="badges"><th:block th:replace="~{fragments/todo :: statusBadges(${todo})}"></th:block></p>
+        <div class="card" th:classappend="${hasRevisions} ? 'card--stacked'">
             <dl class="dl-grid">
                 <dt th:text="#{todos.field.dueDate}">due</dt>
-                <dd th:text="${todo.dueDate != null} ? ${todo.dueDate} : #{todos.item.noDue}">due</dd>
+                <dd class="num" th:text="${todo.dueDate != null} ? ${todo.dueDate} : #{todos.item.noDue}">due</dd>
                 <dt th:text="#{todos.field.priority}">priority</dt>
                 <dd><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${todo.priority})}">priority</th:block></dd>
                 <dt th:text="#{todos.field.estimatedPlanValue}">estimated</dt>
                 <dd><span class="num" data-test="todo-estimated-minutes" th:data-value="${todo.estimatedMinutes}"
                           th:text="#{common.minutes(${todo.estimatedMinutes})}">0</span>
-                    <span class="muted" th:text="#{todos.detail.estimatedNote}">note</span></dd>
+                    <span class="dd-note" th:text="#{todos.detail.estimatedNote}">note</span></dd>
+                <dt th:text="#{todos.detail.info.actualTotal}">actual</dt>
+                <dd class="num" th:text="#{common.minutes(${logsActualMinutes})}">0</dd>
                 <dt th:text="#{todos.field.tags}">tags</dt>
                 <dd th:text="${todo.tags != null and !todo.tags.isEmpty()} ? ${#strings.listJoin(todo.tags.![name], ', ')} : #{common.none}">tags</dd>
                 <th:block th:if="${done and todo.completedAt != null}">
                     <dt th:text="#{todos.field.completedAt}">completed</dt>
-                    <dd><time th:replace="~{fragments/layout :: datetime(${todo.completedAt})}"></time></dd>
+                    <dd class="num"><time th:replace="~{fragments/layout :: datetime(${todo.completedAt})}"></time></dd>
                 </th:block>
             </dl>
-            <p><a class="btn btn--secondary" th:href="@{/todos/{id}/edit(id=${todo.id})}" href="#" th:text="#{common.edit}">edit</a></p>
+            <p class="card-actions"><a class="btn btn--secondary" th:href="@{/todos/{id}/edit(id=${todo.id})}" href="#" th:text="#{common.edit}">edit</a>
+                <a th:if="${hasRevisions}" class="btn--quiet card-actions__end" href="#todo-revisions-heading"
+                   th:text="#{common.revision.jump}">revisions</a></p>
         </div>
     </section>
 
     <!--/* 2. Completion */-->
     <section class="section" aria-labelledby="completion-heading">
         <h2 id="completion-heading" th:text="#{todos.detail.completion.heading}">completion</h2>
-        <p class="field-help" id="completion-help" th:text="#{todos.detail.completion.help}">help</p>
-        <form th:unless="${done}" method="post" class="inline-form" aria-describedby="completion-help"
-              th:action="@{/todos/{id}/completion(id=${todo.id})}">
-            <input type="hidden" name="idempotencyKey" th:value="${completionKey}">
-            <input type="hidden" name="returnTo" value="detail">
-            <button type="submit" class="btn" th:text="#{todos.action.complete}">complete</button>
-        </form>
-        <form th:if="${done}" method="post" class="inline-form" aria-describedby="completion-help"
-              th:action="@{/todos/{id}/completion(id=${todo.id})}">
-            <input type="hidden" name="_method" value="delete">
-            <input type="hidden" name="returnTo" value="detail">
-            <button type="submit" class="btn btn--secondary" th:text="#{todos.action.reopen}">reopen</button>
-        </form>
+        <div class="completion-row">
+            <form th:unless="${done}" method="post" class="inline-form" aria-describedby="completion-help"
+                  th:action="@{/todos/{id}/completion(id=${todo.id})}">
+                <input type="hidden" name="idempotencyKey" th:value="${completionKey}">
+                <input type="hidden" name="returnTo" value="detail">
+                <button type="submit" class="btn" th:text="#{todos.action.complete}">complete</button>
+            </form>
+            <form th:if="${done}" method="post" class="inline-form" aria-describedby="completion-help"
+                  th:action="@{/todos/{id}/completion(id=${todo.id})}">
+                <input type="hidden" name="_method" value="delete">
+                <input type="hidden" name="returnTo" value="detail">
+                <button type="submit" class="btn btn--secondary" th:text="#{todos.action.reopen}">reopen</button>
+            </form>
+            <p class="field-help" id="completion-help" th:text="#{todos.detail.completion.help}">help</p>
+        </div>
     </section>
     </th:block>
 
@@ -80,10 +93,10 @@
             <p th:text="#{todos.detail.exec.zoneHelp}">zone</p>
             <p th:text="#{todos.detail.exec.calcHelp}">calc</p>
         </div>
-        <form method="post" novalidate class="form" aria-describedby="exec-help"
+        <form method="post" novalidate class="form form-area" aria-describedby="exec-help"
               th:action="@{/todos/{id}/executions(id=${todo.id})}" th:object="${executionForm}">
             <div th:replace="~{fragments/layout :: errorSummary}"></div>
-            <div class="field-group--pair">
+            <div class="form-grid form-grid--2">
                 <div class="field">
                     <label for="startedAt" th:text="#{todos.detail.exec.startedAt}">start</label>
                     <p th:replace="~{fragments/layout :: fieldError('startedAt')}"></p>
@@ -92,24 +105,24 @@
                 </div>
                 <div class="field">
                     <label for="endedAt" th:text="#{todos.detail.exec.endedAt}">end</label>
-                    <p class="field-help" id="endedAt-help" th:text="#{todos.detail.exec.endedAtHelp}">help</p>
                     <p th:replace="~{fragments/layout :: fieldError('endedAt')}"></p>
                     <input type="datetime-local" step="1" th:field="*{endedAt}" required
                            th:attr="aria-describedby=${#fields.hasErrors('endedAt')} ? 'endedAt-help endedAt-error' : 'endedAt-help',aria-invalid=${#fields.hasErrors('endedAt')} ? 'true' : null">
+                    <p class="field-help" id="endedAt-help" th:text="#{todos.detail.exec.endedAtHelp}">help</p>
                 </div>
-            </div>
-            <div class="field">
-                <label for="blockerReason" th:text="#{todos.detail.exec.blockerReason}">blocker</label>
-                <p class="field-help" id="blockerReason-help" th:text="#{todos.detail.exec.blockerReasonHelp}">help</p>
-                <p th:replace="~{fragments/layout :: fieldError('blockerReason')}"></p>
-                <textarea th:field="*{blockerReason}" rows="3"
-                          th:attr="aria-describedby=${#fields.hasErrors('blockerReason')} ? 'blockerReason-help blockerReason-error' : 'blockerReason-help',aria-invalid=${#fields.hasErrors('blockerReason')} ? 'true' : null"></textarea>
+                <div class="field field--span2">
+                    <label for="blockerReason" th:text="#{todos.detail.exec.blockerReason}">blocker</label>
+                    <p th:replace="~{fragments/layout :: fieldError('blockerReason')}"></p>
+                    <textarea th:field="*{blockerReason}" rows="3"
+                              th:attr="aria-describedby=${#fields.hasErrors('blockerReason')} ? 'blockerReason-help blockerReason-error' : 'blockerReason-help',aria-invalid=${#fields.hasErrors('blockerReason')} ? 'true' : null"></textarea>
+                    <p class="field-help" id="blockerReason-help" th:text="#{todos.detail.exec.blockerReasonHelp}">help</p>
+                </div>
             </div>
             <div class="form-actions">
                 <button type="submit" class="btn" th:text="#{todos.detail.exec.submit}">save</button>
             </div>
         </form>
-        <p class="muted" th:text="#{todos.detail.exec.auditNote}">audit</p>
+        <p class="audit-note" th:text="#{todos.detail.exec.auditNote}">audit</p>
     </section>
 
     <th:block th:unless="${unavailable}">
@@ -122,7 +135,7 @@
         <p class="sort-note" th:text="#{todos.detail.logs.sortNote}">sort</p>
         <p class="empty" th:if="${logs.isEmpty()}" th:text="#{todos.detail.logs.empty}">empty</p>
         <div class="table-wrap" tabindex="0" role="region" th:attr="aria-label=#{todos.detail.logs.heading}" th:unless="${logs.isEmpty()}">
-            <table>
+            <table class="table--fit">
                 <caption class="visually-hidden" th:text="#{todos.detail.logs.heading}">logs</caption>
                 <thead>
                 <tr>
@@ -165,6 +178,7 @@
         <p class="sort-note" th:text="#{todos.detail.history.sortNote}">sort</p>
         <p class="empty" th:if="${completionHistory.isEmpty()}" th:text="#{todos.detail.history.empty}">empty</p>
         <th:block th:unless="${completionHistory.isEmpty()}">
+            <p class="table-hint" th:text="#{common.table.scrollHint}">scroll</p>
             <div class="table-wrap" tabindex="0" role="region" th:attr="aria-label=#{todos.detail.history.heading}">
                 <table>
                     <caption class="visually-hidden" th:text="#{todos.detail.history.heading}">history</caption>
