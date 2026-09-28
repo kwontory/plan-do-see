@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.plandosee.diary.common.domain.Priority;
-import com.plandosee.diary.common.error.ConcurrencyConflictException;
+import com.plandosee.diary.common.error.RetryLaterException;
 import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.error.NotFoundException;
 import com.plandosee.diary.common.web.ConflictKeys;
@@ -60,8 +60,8 @@ public class ReviewController {
         UUID reviewId;
         try {
             reviewId = reviewService.create(planId, null);
-        } catch (ConcurrencyConflictException ex) {
-            FlashMessages.add(redirect, ConflictKeys.FLASH_RETRY);
+        } catch (RetryLaterException ex) {
+            FlashMessages.add(redirect, ConflictResponses.flashKey(ex, ConflictKeys.FLASH_RETRY));
             return "redirect:/plans/" + planId;
         }
         FlashMessages.add(redirect, FLASH_CREATED);
@@ -87,8 +87,8 @@ public class ReviewController {
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
             return detailView(model, reviewService.detail(reviewId), form);
-        } catch (ConcurrencyConflictException ex) {
-            ConflictResponses.rejectForm(result, response);
+        } catch (RetryLaterException ex) {
+            ConflictResponses.rejectForm(result, response, ex);
             return detailView(model, reviewService.detail(reviewId), form);
         }
         FlashMessages.add(redirect, FLASH_IMPROVEMENT_SAVED);
@@ -149,8 +149,8 @@ public class ReviewController {
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
             return nextPlanView(model, reviewService.detail(reviewId));
-        } catch (ConcurrencyConflictException ex) {
-            ConflictResponses.rejectForm(result, response);
+        } catch (RetryLaterException ex) {
+            ConflictResponses.rejectForm(result, response, ex);
             return nextPlanView(model, reviewService.detail(reviewId));
         }
         FlashMessages.add(redirect, transfer.created() ? FLASH_TRANSFERRED : FLASH_ALREADY_TRANSFERRED);

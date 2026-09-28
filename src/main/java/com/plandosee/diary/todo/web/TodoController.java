@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.plandosee.diary.common.domain.Priority;
-import com.plandosee.diary.common.error.ConcurrencyConflictException;
+import com.plandosee.diary.common.error.RetryLaterException;
 import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.web.ConflictKeys;
 import com.plandosee.diary.common.web.ConflictResponses;
@@ -70,8 +70,8 @@ public class TodoController {
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
             return pages.list(model, planId, filter, form);
-        } catch (ConcurrencyConflictException ex) {
-            ConflictResponses.rejectForm(result, response);
+        } catch (RetryLaterException ex) {
+            ConflictResponses.rejectForm(result, response, ex);
             return pages.list(model, planId, filter, form);
         }
         FlashMessages.add(redirect, FLASH_CREATED);
@@ -102,8 +102,8 @@ public class TodoController {
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
             return editView(model, todoService.get(todoId));
-        } catch (ConcurrencyConflictException ex) {
-            ConflictResponses.rejectForm(result, response);
+        } catch (RetryLaterException ex) {
+            ConflictResponses.rejectForm(result, response, ex);
             return editView(model, todoService.get(todoId));
         }
         FlashMessages.add(redirect, FLASH_UPDATED);
@@ -116,9 +116,9 @@ public class TodoController {
         UUID planId;
         try {
             planId = todoService.delete(todoId);
-        } catch (ConcurrencyConflictException ex) {
+        } catch (RetryLaterException ex) {
             // Nothing changed; back to the list the request came from (the plan id only builds the URL).
-            FlashMessages.add(redirect, ConflictKeys.FLASH_RETRY);
+            FlashMessages.add(redirect, ConflictResponses.flashKey(ex, ConflictKeys.FLASH_RETRY));
             return "redirect:" + filter.listUrl(todoService.planIdForRedirect(todoId));
         }
         FlashMessages.add(redirect, FLASH_DELETED);

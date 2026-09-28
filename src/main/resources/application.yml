@@ -34,13 +34,25 @@ spring:
     password: ${DB_PASSWORD}
     hikari:
       maximum-pool-size: ${DB_POOL_SIZE:5}
-      # ADR-15: upper bounds on waiting, set on every pooled session (also in production). A lock wait longer than
-      # lock_timeout fails with 55P03 and is retried by WriteTransactions; statement_timeout stops runaway queries.
-      # Needs a session-preserving connection (Direct or Session pooler, see README), not a transaction pooler.
+      # ADR-19: wait at most this many milliseconds for a pooled connection (Hikari default is 30 seconds); after
+      # that the request gets the "busy" notice instead of hanging.
+      connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT:500}
+      # ADR-15/ADR-19: time limits set on every pooled session (also in production). Explicit row locks use
+      # FOR UPDATE NOWAIT; lock_timeout cuts implicit lock waits (UPDATE, ON CONFLICT) short, before
+      # deadlock_timeout (1s), so collisions become an immediate notice. statement_timeout stops slow statements.
+      # Values are checked at start-up (DbTimeoutSettings). Needs a session-preserving connection (Direct or
+      # Session pooler, see README), not a transaction pooler.
       connection-init-sql: "SELECT set_config('lock_timeout', '${app.db.lock-timeout}', false), set_config('statement_timeout', '${app.db.statement-timeout}', false)"
+  transaction:
+    # ADR-19: every transaction (reads and writes) ends within the request budget. MyBatis-Spring passes the time
+    # left to each statement as its JDBC query timeout. Whole seconds; the budget must be at least 1000 ms.
+    default-timeout: ${app.request-budget-ms}ms
   flyway:
     enabled: true
     locations: classpath:db/migration
+    # ADR-19: migrations run on their own connection, outside the pool, so the 1s statement_timeout and 100ms
+    # lock_timeout of pooled sessions never cut a schema change short. Same URL and credentials as the app.
+    user: ${spring.datasource.username}
   mvc:
     hiddenmethod:
       filter:
@@ -61,13 +73,19 @@ mybatis:
 app:
   demo-user-id: ${APP_DEMO_USER_ID:00000000-0000-4000-8000-000000000001}
   db:
-    # PostgreSQL interval text, e.g. 5s, 500ms. 0 disables the limit.
-    lock-timeout: ${DB_LOCK_TIMEOUT:5s}
-    statement-timeout: ${DB_STATEMENT_TIMEOUT:15s}
+    # PostgreSQL duration: digits with an optional ms, s, or min unit (e.g. 100ms, 1s). 0 disables the limit.
+    lock-timeout: ${DB_LOCK_TIMEOUT:100ms}
+    statement-timeout: ${DB_STATEMENT_TIMEOUT:1s}
+    # ADR-19: SET LOCAL for aggregate and statistics reads only (review summary/detail, evidence, export).
+    aggregate-statement-timeout: ${DB_AGGREGATE_STATEMENT_TIMEOUT:2s}
+  # ADR-19: page budget in milliseconds. Transaction timeout (spring.transaction.default-timeout) and the
+  # slow-request WARN log (RequestBudgetFilter) both use it.
+  request-budget-ms: ${APP_REQUEST_BUDGET_MS:3000}
   retry:
     # ADR-15: automatic re-runs of a whole write transaction after a deadlock (40P01), serialization failure
-    # (40001), or lock wait timeout (55P03). Delay before retry n = base-delay-ms * n + random(0..jitter-ms).
-    max-retries: ${APP_RETRY_MAX_RETRIES:2}
+    # (40001), or lock failure (55P03). Delay before retry n = base-delay-ms * n + random(0..jitter-ms).
+    # ADR-19: 0 by default, because retrying makes the user wait; the notice asks the user to press again.
+    max-retries: ${APP_RETRY_MAX_RETRIES:0}
     base-delay-ms: ${APP_RETRY_BASE_DELAY_MS:50}
     jitter-ms: ${APP_RETRY_JITTER_MS:100}
 

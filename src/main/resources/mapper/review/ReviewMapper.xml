@@ -80,7 +80,7 @@
         JOIN plans p ON p.id = r.plan_id
         WHERE r.id = #{reviewId}
           AND <include refid="activeOwnedReview"/>
-        FOR UPDATE OF r
+        FOR UPDATE OF r NOWAIT
     </select>
 
     <select id="listForPlanOwned" resultMap="reviewRow">

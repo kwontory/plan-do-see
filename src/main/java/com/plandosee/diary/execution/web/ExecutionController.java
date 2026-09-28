@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.plandosee.diary.common.error.ConcurrencyConflictException;
+import com.plandosee.diary.common.error.RetryLaterException;
 import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.web.ConflictKeys;
 import com.plandosee.diary.common.web.ConflictResponses;
@@ -57,8 +57,8 @@ public class ExecutionController {
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
             return pages.detail(model, todoId, form);
-        } catch (ConcurrencyConflictException ex) {
-            ConflictResponses.rejectForm(result, response);
+        } catch (RetryLaterException ex) {
+            ConflictResponses.rejectForm(result, response, ex);
             return pages.detail(model, todoId, form);
         }
         FlashMessages.add(redirect, FLASH_RECORDED);

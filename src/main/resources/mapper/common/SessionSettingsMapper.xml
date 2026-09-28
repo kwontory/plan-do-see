@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  ADR-19: set_config(name, value, is_local = true) is the function form of SET LOCAL. It lasts until the end of
+  the current transaction, so a pooled connection goes back to the pool with its session default
+  (connection-init-sql). The value is a bound parameter validated at startup (DbTimeoutSettings).
+-->
+<mapper namespace="com.plandosee.diary.common.db.port.SessionSettingsMapper">
+
+    <select id="setLocalStatementTimeout" resultType="java.lang.String">
+        SELECT set_config('statement_timeout', #{value}, true) AS statement_timeout
+    </select>
+
+    <select id="showStatementTimeout" resultType="java.lang.String">
+        SELECT current_setting('statement_timeout') AS statement_timeout
+    </select>
+</mapper>

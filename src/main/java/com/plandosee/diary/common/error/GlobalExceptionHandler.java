@@ -1,5 +1,9 @@
 package com.plandosee.diary.common.error;
 
+import java.util.Optional;
+
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.PessimisticLockingFailureException;
@@ -12,6 +16,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import com.plandosee.diary.common.concurrency.BusyCause;
 import com.plandosee.diary.common.concurrency.TransientConflict;
 import com.plandosee.diary.common.web.ConflictKeys;
 
@@ -42,8 +47,8 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * ADR-15: a request that is not a form or a button (those handle conflicts themselves) and still collided with
-     * other requests. A raw lock failure reaches here only from a path without the retrying write boundary.
+     * ADR-15/ADR-19: a request that is not a form or a button (those handle conflicts themselves) and collided with
+     * another request. A raw lock failure reaches here only from a path without the write boundary.
      */
     @ExceptionHandler({ConcurrencyConflictException.class, PessimisticLockingFailureException.class})
     @ResponseStatus(HttpStatus.CONFLICT)
@@ -57,10 +62,31 @@ public class GlobalExceptionHandler {
         return ConflictKeys.CONFLICT_VIEW;
     }
 
+    /**
+     * ADR-19: the request did not fit in its time budget (statement or transaction timeout, no pooled connection
+     * within the pool wait limit). Not a server fault: HTTP 503 and the error/503 view ("open it again shortly").
+     */
+    @ExceptionHandler(ServiceBusyException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    public String busy(ServiceBusyException ex) {
+        log.warn("event=busy cause={}", ex.busyCause());
+        return ConflictKeys.BUSY_VIEW;
+    }
+
+    /**
+     * Anything else is a 500, except a budget failure raised outside the write boundary (plain reads), which is
+     * recognised anywhere in the cause chain and answered like {@link #busy}.
+     */
     @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public String serverError(Exception ex) {
+    public String serverError(Exception ex, HttpServletResponse response) {
+        Optional<BusyCause> busy = BusyCause.classify(ex);
+        if (busy.isPresent()) {
+            log.warn("event=busy cause={}", busy.get());
+            response.setStatus(HttpStatus.SERVICE_UNAVAILABLE.value());
+            return ConflictKeys.BUSY_VIEW;
+        }
         log.error("event=unhandled_error type={}", ex.getClass().getName());
+        response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
         return "error/500";
     }
 }

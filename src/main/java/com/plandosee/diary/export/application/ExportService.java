@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.plandosee.diary.common.config.CurrentUserProvider;
+import com.plandosee.diary.common.db.StatementBudget;
 import com.plandosee.diary.common.time.SeoulDates;
 import com.plandosee.diary.common.time.TimeConfig;
 import com.plandosee.diary.execution.domain.ExecutionLogRow;
@@ -30,7 +31,7 @@ import com.plandosee.diary.user.domain.UserRow;
 
 /**
  * DEC-08 / T06-C35, T06-C36, T06-C58: one UTF-8 JSON document of every active owned record.
- * All reads share one read-only repeatable-read snapshot. Field order follows exportContract.topLevelFields.
+ * All reads share one read-only repeatable-read snapshot under the aggregate statement timeout (ADR-19). Field order follows exportContract.topLevelFields.
  * Dates are YYYY-MM-DD; timestamps are ISO-8601 with the Asia/Seoul offset (same instant as stored).
  * The owner carries id and nickname only; email and credential data are never read.
  */
@@ -42,15 +43,19 @@ public class ExportService {
     private final ExportMapper exportMapper;
     private final CurrentUserProvider currentUserProvider;
     private final SeoulDates seoulDates;
+    private final StatementBudget statementBudget;
 
-    public ExportService(ExportMapper exportMapper, CurrentUserProvider currentUserProvider, SeoulDates seoulDates) {
+    public ExportService(ExportMapper exportMapper, CurrentUserProvider currentUserProvider, SeoulDates seoulDates,
+                         StatementBudget statementBudget) {
         this.exportMapper = exportMapper;
         this.currentUserProvider = currentUserProvider;
         this.seoulDates = seoulDates;
+        this.statementBudget = statementBudget;
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public Map<String, Object> export() {
+        statementBudget.useAggregateTimeout();
         UUID userId = currentUserProvider.currentUserId();
         UserRow owner = exportMapper.owner(userId);
         if (owner == null) {

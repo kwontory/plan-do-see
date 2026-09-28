@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.plandosee.diary.common.concurrency.WriteTransactions;
 import com.plandosee.diary.common.config.CurrentUserProvider;
+import com.plandosee.diary.common.db.StatementBudget;
 import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.error.NotFoundException;
 import com.plandosee.diary.common.id.IdGenerator;
@@ -45,15 +46,18 @@ public class ReviewService {
     private final IdGenerator idGenerator;
     private final SeoulDates seoulDates;
     private final WriteTransactions writes;
+    private final StatementBudget statementBudget;
 
     public ReviewService(ReviewMapper reviewMapper, PlanService planService, CurrentUserProvider currentUserProvider,
-                         IdGenerator idGenerator, SeoulDates seoulDates, WriteTransactions writes) {
+                         IdGenerator idGenerator, SeoulDates seoulDates, WriteTransactions writes,
+                         StatementBudget statementBudget) {
         this.reviewMapper = reviewMapper;
         this.planService = planService;
         this.currentUserProvider = currentUserProvider;
         this.idGenerator = idGenerator;
         this.seoulDates = seoulDates;
         this.writes = writes;
+        this.statementBudget = statementBudget;
     }
 
     /**
@@ -126,10 +130,11 @@ public class ReviewService {
 
     /**
      * The review page in one read-only snapshot (ADR-14 C-4): review, plan, next plan, and summary cannot come from
-     * different moments.
+     * different moments. Aggregate reads run under the wider aggregate statement timeout (ADR-19).
      */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ReviewDetail detail(UUID reviewId) {
+        statementBudget.useAggregateTimeout();
         ReviewRow review = get(reviewId);
         return new ReviewDetail(review, planService.get(review.getPlanId()), planService.findOwned(review.getNextPlanId()),
                 summary(scope(review)));
@@ -140,12 +145,14 @@ public class ReviewService {
      */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ReviewEvidencePage evidencePage(UUID reviewId, ReviewMetric metric) {
+        statementBudget.useAggregateTimeout();
         ReviewRow review = get(reviewId);
         return new ReviewEvidencePage(review, planService.get(review.getPlanId()), evidence(review, metric));
     }
 
     @Transactional(readOnly = true)
     public ReviewSummary summary(UUID reviewId) {
+        statementBudget.useAggregateTimeout();
         return summary(scope(get(reviewId)));
     }
 
@@ -154,6 +161,7 @@ public class ReviewService {
      */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ReviewEvidence evidence(UUID reviewId, ReviewMetric metric) {
+        statementBudget.useAggregateTimeout();
         return evidence(get(reviewId), metric);
     }
 

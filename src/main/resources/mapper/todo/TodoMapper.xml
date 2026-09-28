@@ -69,7 +69,7 @@
         JOIN plans p ON p.id = t.plan_id
         WHERE t.id = #{todoId}
           AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
-        FOR UPDATE OF t
+        FOR UPDATE OF t NOWAIT
     </select>
 
     <select id="search" parameterType="com.plandosee.diary.todo.domain.TodoFilter" resultMap="todoRow">

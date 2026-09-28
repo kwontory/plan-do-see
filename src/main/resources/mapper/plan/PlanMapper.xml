@@ -65,7 +65,7 @@
         WHERE p.id = #{planId}
           AND p.user_id = #{userId}
           AND p.deleted_at IS NULL
-        FOR UPDATE
+        FOR UPDATE NOWAIT
     </select>
 
     <select id="listActiveOwned" resultMap="planRow">

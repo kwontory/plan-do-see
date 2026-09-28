@@ -10,9 +10,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.plandosee.diary.common.error.ConcurrencyConflictException;
+import com.plandosee.diary.common.error.RetryLaterException;
 import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.web.ConflictKeys;
+import com.plandosee.diary.common.web.ConflictResponses;
 import com.plandosee.diary.common.web.FlashMessages;
 import com.plandosee.diary.todo.application.TodoCompletionService;
 import com.plandosee.diary.todo.application.TodoDeletedException;
@@ -56,8 +57,8 @@ public class TodoCompletionController {
             return deleted(ex, redirect, filter);
         } catch (DomainRuleException ex) {
             FlashMessages.add(redirect, ex.code(), ex.args());
-        } catch (ConcurrencyConflictException ex) {
-            FlashMessages.add(redirect, ConflictKeys.FLASH_COMPLETION_RETRY);
+        } catch (RetryLaterException ex) {
+            FlashMessages.add(redirect, ConflictResponses.flashKey(ex, ConflictKeys.FLASH_COMPLETION_RETRY));
         }
         return failedRedirect(todoId, returnTo, filter);
     }
@@ -72,8 +73,8 @@ public class TodoCompletionController {
             return redirect(todoId, outcome.planId(), returnTo, filter);
         } catch (TodoDeletedException ex) {
             return deleted(ex, redirect, filter);
-        } catch (ConcurrencyConflictException ex) {
-            FlashMessages.add(redirect, ConflictKeys.FLASH_RETRY);
+        } catch (RetryLaterException ex) {
+            FlashMessages.add(redirect, ConflictResponses.flashKey(ex, ConflictKeys.FLASH_RETRY));
         }
         return failedRedirect(todoId, returnTo, filter);
     }

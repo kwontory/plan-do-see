@@ -18,9 +18,10 @@ import com.plandosee.diary.todo.domain.TodoRow;
 import com.plandosee.diary.todo.domain.TodoStatus;
 
 /**
- * DEC-05 / ADR-05: completion is idempotent on the server. The todo row lock serializes concurrent requests,
- * and the unique constraints are the last line of defence. Each request is one retrying write transaction
- * (ADR-15): a retried attempt starts over from the lock, so the idempotency key still yields a single event.
+ * DEC-05 / ADR-05: completion is idempotent on the server. The todo row lock (FOR UPDATE NOWAIT, ADR-19) lets one
+ * request at a time change the todo; a request that finds the row held is told at once to press again. The
+ * idempotency key and unique constraints guarantee a single event. Each request is one write transaction
+ * (ADR-15; retries are off by default): a retried attempt starts over from the lock.
  */
 @Service
 public class TodoCompletionService {

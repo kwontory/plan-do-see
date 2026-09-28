@@ -14,16 +14,21 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.plandosee.diary.common.error.ConcurrencyConflictException;
+import com.plandosee.diary.common.error.ServiceBusyException;
 
 /**
- * ADR-15 write-service boundary. Runs the work in one transaction and, when it fails with a
+ * ADR-15/ADR-19 write-service boundary. Runs the work in one transaction and, when it fails with a
  * {@link TransientConflict}, rolls back and runs the whole transaction again after a short jittered delay
- * (at most {@code app.retry.max-retries} more times). Retrying is safe because every write transaction re-reads
+ * (at most {@code app.retry.max-retries} more times; ADR-19 sets the default to 0 because retrying means waiting,
+ * so a conflict goes straight to the "press again" notice). Retrying is safe because every write transaction re-reads
  * and re-decides from scratch after a rollback, completion is guarded by the idempotency key and unique
  * constraints, and the transfer by the review row lock and the unique next_plan_id.
  * <p>
  * When a transaction is already active (a service calling another service), the work simply joins it; only the
  * outermost boundary retries, so a rolled-back inner call can never be repeated on its own.
+ * <p>
+ * A failure caused by the time budget ({@link BusyCause}: statement or transaction timeout, pool wait) is never
+ * retried and becomes {@link ServiceBusyException}.
  * <p>
  * Logs carry the conflict kind and attempt numbers only (CLAUDE.md 5장).
  */
@@ -41,7 +46,7 @@ public class WriteTransactions {
     private final AtomicLong deadlocks = new AtomicLong();
 
     public WriteTransactions(PlatformTransactionManager transactionManager,
-                             @Value("${app.retry.max-retries:2}") int maxRetries,
+                             @Value("${app.retry.max-retries:0}") int maxRetries,
                              @Value("${app.retry.base-delay-ms:50}") long baseDelayMillis,
                              @Value("${app.retry.jitter-ms:100}") long jitterMillis) {
         this.template = new TransactionTemplate(transactionManager);
@@ -58,6 +63,11 @@ public class WriteTransactions {
             try {
                 return template.execute(status -> work.get());
             } catch (RuntimeException failure) {
+                Optional<BusyCause> busy = BusyCause.classify(failure);
+                if (busy.isPresent()) {
+                    log.warn("event=busy cause={} attempt={}", busy.get(), attempt);
+                    throw new ServiceBusyException(busy.get(), failure);
+                }
                 Optional<TransientConflict> kind = TransientConflict.classify(failure);
                 if (kind.isEmpty()) {
                     throw failure;

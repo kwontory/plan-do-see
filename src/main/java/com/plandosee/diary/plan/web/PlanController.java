@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.plandosee.diary.common.domain.Priority;
-import com.plandosee.diary.common.error.ConcurrencyConflictException;
+import com.plandosee.diary.common.error.RetryLaterException;
 import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.web.ConflictResponses;
 import com.plandosee.diary.common.web.FlashMessages;
@@ -67,8 +67,8 @@ public class PlanController {
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
             return createView(model);
-        } catch (ConcurrencyConflictException ex) {
-            ConflictResponses.rejectForm(result, response);
+        } catch (RetryLaterException ex) {
+            ConflictResponses.rejectForm(result, response, ex);
             return createView(model);
         }
         FlashMessages.add(redirect, FLASH_CREATED);
@@ -103,8 +103,8 @@ public class PlanController {
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
             return editView(model, planService.get(planId));
-        } catch (ConcurrencyConflictException ex) {
-            ConflictResponses.rejectForm(result, response);
+        } catch (RetryLaterException ex) {
+            ConflictResponses.rejectForm(result, response, ex);
             return editView(model, planService.get(planId));
         }
         FlashMessages.add(redirect, FLASH_UPDATED);

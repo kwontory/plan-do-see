@@ -13,7 +13,9 @@ import org.springframework.dao.PessimisticLockingFailureException;
  * <ul>
  *   <li>DEADLOCK: 40P01 ({@code DeadlockLoserDataAccessException}, a {@link PessimisticLockingFailureException})</li>
  *   <li>SERIALIZATION: 40001 ({@code CannotSerializeTransactionException}, a {@link PessimisticLockingFailureException})</li>
- *   <li>LOCK_TIMEOUT: 55P03 ({@link CannotAcquireLockException}), raised when {@code lock_timeout} expires</li>
+ *   <li>LOCK_TIMEOUT: 55P03 ({@link CannotAcquireLockException}), raised at once by {@code FOR UPDATE NOWAIT}
+ *       when another request holds the row, or when {@code lock_timeout} expires on an implicit lock wait
+ *       (ADR-19)</li>
  * </ul>
  * statement_timeout (57014) is deliberately not transient: a slow statement is not fixed by repeating it.
  */
