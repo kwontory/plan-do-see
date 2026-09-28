@@ -12,11 +12,11 @@ public class MetricLink {
 
     private final String key;
     private final String label;
-    private final int value;
+    private final long value;
     private final String unit;
     private final String href;
 
-    public MetricLink(String key, String label, int value, String unit, String href) {
+    public MetricLink(String key, String label, long value, String unit, String href) {
         this.key = key;
         this.label = label;
         this.value = value;
@@ -37,7 +37,7 @@ public class MetricLink {
         return label;
     }
 
-    public int getValue() {
+    public long getValue() {
         return value;
     }
 

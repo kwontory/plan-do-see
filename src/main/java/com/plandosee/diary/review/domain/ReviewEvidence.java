@@ -21,10 +21,10 @@ public record ReviewEvidence(
         List<EvidenceTodo> todos,
         List<ExecutionLogRow> logs,
         int evidenceCount,
-        int evidenceEstimatedMinutes,
-        int evidenceActualMinutes) {
+        long evidenceEstimatedMinutes,
+        long evidenceActualMinutes) {
 
-    public int evidenceVarianceMinutes() {
+    public long evidenceVarianceMinutes() {
         return evidenceActualMinutes - evidenceEstimatedMinutes;
     }
 }

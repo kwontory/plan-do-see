@@ -36,7 +36,7 @@ public enum ReviewMetric {
         return unit;
     }
 
-    public int valueOf(ReviewSummary summary) {
+    public long valueOf(ReviewSummary summary) {
         return switch (this) {
             case PLANNED -> summary.plannedCount();
             case COMPLETED -> summary.completedCount();

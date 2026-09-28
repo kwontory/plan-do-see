@@ -1,7 +1,8 @@
 package com.plandosee.diary.review.domain;
 
 /**
- * Raw result row of the summary query. Converted to the immutable ReviewSummary by the service.
+ * Raw result row of the summary query. Minute sums are long (SUM over many todos can exceed int).
+ * Converted to the immutable ReviewSummary by the service.
  */
 public class ReviewCounts {
 
@@ -9,9 +10,9 @@ public class ReviewCounts {
     private int completedCount;
     private int overdueCount;
     private int blockedCount;
-    private int estimatedMinutes;
-    private int actualMinutes;
-    private int varianceMinutes;
+    private long estimatedMinutes;
+    private long actualMinutes;
+    private long varianceMinutes;
 
     public int getPlannedCount() {
         return plannedCount;
@@ -45,27 +46,27 @@ public class ReviewCounts {
         this.blockedCount = blockedCount;
     }
 
-    public int getEstimatedMinutes() {
+    public long getEstimatedMinutes() {
         return estimatedMinutes;
     }
 
-    public void setEstimatedMinutes(int estimatedMinutes) {
+    public void setEstimatedMinutes(long estimatedMinutes) {
         this.estimatedMinutes = estimatedMinutes;
     }
 
-    public int getActualMinutes() {
+    public long getActualMinutes() {
         return actualMinutes;
     }
 
-    public void setActualMinutes(int actualMinutes) {
+    public void setActualMinutes(long actualMinutes) {
         this.actualMinutes = actualMinutes;
     }
 
-    public int getVarianceMinutes() {
+    public long getVarianceMinutes() {
         return varianceMinutes;
     }
 
-    public void setVarianceMinutes(int varianceMinutes) {
+    public void setVarianceMinutes(long varianceMinutes) {
         this.varianceMinutes = varianceMinutes;
     }
 }

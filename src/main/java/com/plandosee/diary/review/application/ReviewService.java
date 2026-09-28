@@ -135,10 +135,10 @@ public class ReviewService {
                 logs = reviewMapper.evidenceLogs(query);
             }
         }
-        int estimateSum = todos.stream().mapToInt(EvidenceTodo::getEstimatedMinutes).sum();
-        int actualSum = metric == ReviewMetric.ACTUAL
-                ? logs.stream().mapToInt(ExecutionLogRow::getActualMinutes).sum()
-                : todos.stream().mapToInt(EvidenceTodo::getActualMinutes).sum();
+        long estimateSum = todos.stream().mapToLong(EvidenceTodo::getEstimatedMinutes).sum();
+        long actualSum = metric == ReviewMetric.ACTUAL
+                ? logs.stream().mapToLong(ExecutionLogRow::getActualMinutes).sum()
+                : todos.stream().mapToLong(EvidenceTodo::getActualMinutes).sum();
         int count = metric == ReviewMetric.ACTUAL ? logs.size() : todos.size();
         return new ReviewEvidence(metric, summary, todos, logs, count, estimateSum, actualSum);
     }
