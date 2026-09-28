@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Spring Boot's default console logging, with the rendered line passed through LogSecretMasker so that database
+  URL, host, port, user name and password never reach the log, also in exception messages and cause chains
+  (T06-C58, ADR-25). Only the console appender exists: Render and local runs log to stdout.
+-->
+<configuration>
+	<include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+	<appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>${CONSOLE_LOG_THRESHOLD}</level>
+		</filter>
+		<encoder class="ch.qos.logback.core.encoder.LayoutWrappingEncoder">
+			<charset>${CONSOLE_LOG_CHARSET}</charset>
+			<layout class="com.plandosee.diary.common.logging.MaskingPatternLayout">
+				<pattern>${CONSOLE_LOG_PATTERN}</pattern>
+			</layout>
+		</encoder>
+	</appender>
+
+	<root level="INFO">
+		<appender-ref ref="CONSOLE"/>
+	</root>
+</configuration>

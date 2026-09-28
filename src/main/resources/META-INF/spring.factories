@@ -1,0 +1,2 @@
+org.springframework.context.ApplicationListener=\
+com.plandosee.diary.common.logging.DatasourceLogSecretsListener
