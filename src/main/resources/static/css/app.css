@@ -1890,6 +1890,13 @@ fieldset.field-group {
     }
 }
 
+/* The execution table fits at 480px and wider, so its hint shows only below that. */
+@media (min-width: 480px) {
+    .table-hint--narrow {
+        display: none;
+    }
+}
+
 /* The table area has a transparent 3px border that turns blue on focus: an outline would be hidden on two sides by
    the sticky first column and the head row background. Cells take the 3px back so text stays on the baseline. */
 .table-wrap {

@@ -134,6 +134,8 @@
         <p class="summary-line" th:text="#{todos.detail.logs.summary(${logPage.totalCount}, ${logsActualMinutes})}">0</p>
         <p class="sort-note" th:text="#{todos.detail.logs.sortNote}">sort</p>
         <p class="empty" th:if="${logs.isEmpty()}" th:text="#{todos.detail.logs.empty}">empty</p>
+        <!--/* This table fits from 480px; below that a long value can make it scroll inside its area. */-->
+        <p class="table-hint table-hint--narrow" th:unless="${logs.isEmpty()}" th:text="#{common.table.scrollHint}">scroll</p>
         <div class="table-wrap" tabindex="0" role="region" th:attr="aria-label=#{todos.detail.logs.heading}" th:unless="${logs.isEmpty()}">
             <table class="table--fit">
                 <caption class="visually-hidden" th:text="#{todos.detail.logs.heading}">logs</caption>
