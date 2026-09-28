@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.plandosee.diary.plan.infrastructure.PlanMapper">
+
+    <resultMap id="planRow" type="com.plandosee.diary.plan.domain.PlanRow">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="title" column="title"/>
+        <result property="startDate" column="start_date"/>
+        <result property="endDate" column="end_date"/>
+        <result property="priority" column="priority"/>
+        <result property="successCriteria" column="success_criteria"/>
+        <result property="estimatedMinutes" column="estimated_minutes"/>
+        <result property="carriedImprovement" column="carried_improvement"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <resultMap id="planRevisionRow" type="com.plandosee.diary.plan.domain.PlanRevisionRow">
+        <id property="id" column="id"/>
+        <result property="planId" column="plan_id"/>
+        <result property="revisionNo" column="revision_no"/>
+        <result property="title" column="title"/>
+        <result property="startDate" column="start_date"/>
+        <result property="endDate" column="end_date"/>
+        <result property="priority" column="priority"/>
+        <result property="successCriteria" column="success_criteria"/>
+        <result property="estimatedMinutes" column="estimated_minutes"/>
+        <result property="carriedImprovement" column="carried_improvement"/>
+        <result property="revisedAt" column="revised_at"/>
+    </resultMap>
+
+    <sql id="planColumns">
+        p.id,
+        p.user_id,
+        p.title,
+        p.start_date,
+        p.end_date,
+        p.priority,
+        p.success_criteria,
+        p.estimated_minutes,
+        p.carried_improvement,
+        p.created_at,
+        p.updated_at
+    </sql>
+
+    <insert id="insert" parameterType="com.plandosee.diary.plan.domain.PlanRow">
+        INSERT INTO plans (id, user_id, title, start_date, end_date, priority, success_criteria,
+                           estimated_minutes, carried_improvement, created_at, updated_at)
+        VALUES (#{id}, #{userId}, #{title}, #{startDate}, #{endDate}, #{priority}, #{successCriteria},
+                #{estimatedMinutes}, #{carriedImprovement}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <select id="findActiveOwned" resultMap="planRow">
+        SELECT <include refid="planColumns"/>
+        FROM plans p
+        WHERE p.id = #{planId}
+          AND p.user_id = #{userId}
+          AND p.deleted_at IS NULL
+    </select>
+
+    <select id="lockActiveOwned" resultMap="planRow">
+        SELECT <include refid="planColumns"/>
+        FROM plans p
+        WHERE p.id = #{planId}
+          AND p.user_id = #{userId}
+          AND p.deleted_at IS NULL
+        FOR UPDATE
+    </select>
+
+    <select id="listActiveOwned" resultMap="planRow">
+        SELECT <include refid="planColumns"/>
+        FROM plans p
+        WHERE p.user_id = #{userId}
+          AND p.deleted_at IS NULL
+        ORDER BY p.created_at DESC, p.id ASC
+    </select>
+
+    <update id="updateOwned" parameterType="com.plandosee.diary.plan.domain.PlanRow">
+        UPDATE plans
+        SET title = #{title},
+            start_date = #{startDate},
+            end_date = #{endDate},
+            priority = #{priority},
+            success_criteria = #{successCriteria},
+            estimated_minutes = #{estimatedMinutes},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+          AND user_id = #{userId}
+          AND deleted_at IS NULL
+    </update>
+
+    <select id="nextRevisionNo" resultType="int">
+        SELECT COALESCE(MAX(r.revision_no), 0) + 1 AS next_revision_no
+        FROM plan_revisions r
+        WHERE r.plan_id = #{planId}
+    </select>
+
+    <insert id="insertRevision" parameterType="com.plandosee.diary.plan.domain.PlanRevisionRow">
+        INSERT INTO plan_revisions (id, plan_id, revision_no, title, start_date, end_date, priority,
+                                    success_criteria, estimated_minutes, carried_improvement, revised_at)
+        VALUES (#{id}, #{planId}, #{revisionNo}, #{title}, #{startDate}, #{endDate}, #{priority},
+                #{successCriteria}, #{estimatedMinutes}, #{carriedImprovement}, #{revisedAt})
+    </insert>
+
+    <select id="listRevisionsOwned" resultMap="planRevisionRow">
+        SELECT r.id,
+               r.plan_id,
+               r.revision_no,
+               r.title,
+               r.start_date,
+               r.end_date,
+               r.priority,
+               r.success_criteria,
+               r.estimated_minutes,
+               r.carried_improvement,
+               r.revised_at
+        FROM plan_revisions r
+        JOIN plans p ON p.id = r.plan_id
+        WHERE r.plan_id = #{planId}
+          AND p.user_id = #{userId}
+          AND p.deleted_at IS NULL
+        ORDER BY r.revision_no DESC, r.id ASC
+    </select>
+</mapper>
