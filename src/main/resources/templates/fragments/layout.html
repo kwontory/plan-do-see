@@ -40,7 +40,7 @@
 </header>
 
 <!--/* PRG result notice. flashKey: message key, flashArgs: optional Object[] (web-contract revision 3) */-->
-<div th:fragment="flash" class="flash" role="status" aria-live="polite"
+<div th:fragment="flash" class="flash" role="status" aria-live="polite" data-js="flash"
      th:with="hasFlash=${flashKey != null and !#strings.isEmpty(flashKey)}"
      th:classappend="${!hasFlash} ? 'flash--empty'"><th:block
         th:if="${hasFlash}"><strong class="flash__label" th:text="#{layout.flash.label}">result</strong>
@@ -68,14 +68,25 @@
         th:classappend="${ok} ? 'verdict--ok' : 'verdict--bad'"
         th:text="${ok} ? #{common.verdict.ok} : #{common.verdict.bad}">ok</strong>
 
-<!--/* Error summary. Must be included inside a form with th:object. */-->
+<!--/* Enum label (ADR-17 F-4). The only place that builds enum.<Type>.<NAME> keys.
+       type: enum simple name (Priority, TodoStatus, DueFilter, TodoSort), value: enum constant or its name. */-->
+<th:block th:fragment="enumLabel(type, value)"
+          th:text="${#messages.msg('enum.' + type + '.' + value)}">label</th:block>
+
+<!--/* The same enum label placed as {0} into a sentence key, e.g. plans.item.priority (label, then {0}). */-->
+<th:block th:fragment="enumLabelIn(key, type, value)"
+          th:text="${#messages.msg(key, #messages.msg('enum.' + type + '.' + value))}">label</th:block>
+
+<!--/* Error summary. Must be included inside a form with th:object. One heading for every case (ADR-18 E3):
+       validation errors, rule errors and the 409 conflict re-render (concurrency.form.retry) all mean "not saved".
+       Global errors have no field to jump to, so they are plain text. Inputs keep the submitted values (th:field). */-->
 <div th:fragment="errorSummary" th:if="${#fields.hasErrors('*')}"
-     class="error-summary" role="alert" tabindex="-1" id="error-summary">
+     class="error-summary" role="alert" tabindex="-1" id="error-summary" data-js="error-summary">
     <h2 th:text="#{form.errorSummary.heading}">errors</h2>
     <ul>
         <li th:each="err : ${#fields.detailedErrors()}">
             <a th:if="${!err.global}" th:href="${'#' + err.fieldName}" href="#" th:text="${err.message}">field error</a>
-            <span th:if="${err.global}" th:text="${err.message}">global error</span>
+            <span th:if="${err.global}" data-test="form-global-error" th:text="${err.message}">global error</span>
         </li>
     </ul>
 </div>

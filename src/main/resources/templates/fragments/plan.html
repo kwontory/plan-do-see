@@ -15,7 +15,7 @@
                 <h3 class="plan-item__title"><a th:href="@{/plans/{id}(id=${p.id})}" href="#" th:text="${p.title}">title</a></h3>
                 <p class="plan-item__meta">
                     <span th:text="#{common.period(${p.startDate}, ${p.endDate})}">period</span>
-                    <span th:text="#{plans.item.priority(${#messages.msg('enum.Priority.' + p.priority)})}">priority</span>
+                    <span><th:block th:replace="~{fragments/layout :: enumLabelIn('plans.item.priority', 'Priority', ${p.priority})}">priority</th:block></span>
                     <span th:text="#{plans.item.estimated(${p.estimatedMinutes})}">estimated</span>
                     <span class="badge badge--carried" th:if="${p.carriedImprovement != null and !#strings.isEmpty(p.carriedImprovement)}"
                           th:text="#{badge.carried}">carried</span>
@@ -65,7 +65,8 @@
         <select th:field="*{priority}" required
                 th:attr="aria-describedby=${#fields.hasErrors('priority')} ? 'priority-error' : null,aria-invalid=${#fields.hasErrors('priority')} ? 'true' : null">
             <option value="" th:text="#{common.select.placeholder}">select</option>
-            <option th:each="pr : ${priorities}" th:value="${pr}" th:text="${#messages.msg('enum.Priority.' + pr)}">priority</option>
+            <option th:each="pr : ${priorities}" th:value="${pr}"><th:block
+                    th:replace="~{fragments/layout :: enumLabel('Priority', ${pr})}">priority</th:block></option>
         </select>
     </div>
 
@@ -86,50 +87,6 @@
                    th:attr="aria-describedby=${#fields.hasErrors('estimatedMinutes')} ? 'estimatedMinutes-help estimatedMinutes-error' : 'estimatedMinutes-help',aria-invalid=${#fields.hasErrors('estimatedMinutes')} ? 'true' : null">
             <span aria-hidden="true" th:text="#{form.unit.minutes}">min</span>
         </span>
-    </div>
-</th:block>
-
-<!--/* TodoForm fields. Must be included inside a form with th:object="${todoForm}". */-->
-<th:block th:fragment="todoFields(priorities)">
-    <div class="field">
-        <label for="title" th:text="#{form.todo.title.label}">title</label>
-        <p class="field-help" id="title-help" th:text="#{form.title.help}">help</p>
-        <p th:replace="~{fragments/layout :: fieldError('title')}"></p>
-        <input type="text" th:field="*{title}" maxlength="200" required
-               th:attr="aria-describedby=${#fields.hasErrors('title')} ? 'title-help title-error' : 'title-help',aria-invalid=${#fields.hasErrors('title')} ? 'true' : null">
-    </div>
-    <div class="field">
-        <label for="dueDate" th:text="#{form.todo.dueDate.label}">due</label>
-        <p class="field-help" id="dueDate-help" th:text="#{form.todo.dueDate.help}">help</p>
-        <p th:replace="~{fragments/layout :: fieldError('dueDate')}"></p>
-        <input type="date" th:field="*{dueDate}"
-               th:attr="aria-describedby=${#fields.hasErrors('dueDate')} ? 'dueDate-help dueDate-error' : 'dueDate-help',aria-invalid=${#fields.hasErrors('dueDate')} ? 'true' : null">
-    </div>
-    <div class="field">
-        <label for="priority" th:text="#{form.priority.label}">priority</label>
-        <p th:replace="~{fragments/layout :: fieldError('priority')}"></p>
-        <select th:field="*{priority}" required
-                th:attr="aria-describedby=${#fields.hasErrors('priority')} ? 'priority-error' : null,aria-invalid=${#fields.hasErrors('priority')} ? 'true' : null">
-            <option value="" th:text="#{common.select.placeholder}">select</option>
-            <option th:each="pr : ${priorities}" th:value="${pr}" th:text="${#messages.msg('enum.Priority.' + pr)}">priority</option>
-        </select>
-    </div>
-    <div class="field">
-        <label for="estimatedMinutes" th:text="#{form.estimatedMinutes.label}">minutes</label>
-        <p class="field-help" id="estimatedMinutes-help" th:text="#{form.todo.estimatedMinutes.help}">help</p>
-        <p th:replace="~{fragments/layout :: fieldError('estimatedMinutes')}"></p>
-        <span class="input-unit">
-            <input type="number" th:field="*{estimatedMinutes}" min="0" max="525600" step="1" inputmode="numeric" required
-                   th:attr="aria-describedby=${#fields.hasErrors('estimatedMinutes')} ? 'estimatedMinutes-help estimatedMinutes-error' : 'estimatedMinutes-help',aria-invalid=${#fields.hasErrors('estimatedMinutes')} ? 'true' : null">
-            <span aria-hidden="true" th:text="#{form.unit.minutes}">min</span>
-        </span>
-    </div>
-    <div class="field">
-        <label for="tags" th:text="#{form.todo.tags.label}">tags</label>
-        <p class="field-help" id="tags-help" th:text="#{form.todo.tags.help}">help</p>
-        <p th:replace="~{fragments/layout :: fieldError('tags')}"></p>
-        <input type="text" th:field="*{tags}"
-               th:attr="aria-describedby=${#fields.hasErrors('tags')} ? 'tags-help tags-error' : 'tags-help',aria-invalid=${#fields.hasErrors('tags')} ? 'true' : null">
     </div>
 </th:block>
 

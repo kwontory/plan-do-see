@@ -27,7 +27,7 @@
           th:action="@{/todos/{id}(id=${todo.id})}" th:object="${todoForm}">
         <input type="hidden" name="_method" value="put">
         <div th:replace="~{fragments/layout :: errorSummary}"></div>
-        <th:block th:replace="~{fragments/plan :: todoFields(${priorities})}"></th:block>
+        <th:block th:replace="~{fragments/todo :: todoFields(${priorities})}"></th:block>
         <div class="form-actions">
             <button type="submit" class="btn" th:text="#{common.saveEdit}">save</button>
             <a th:href="@{/todos/{id}(id=${todo.id})}" href="#" th:text="#{common.cancel}">cancel</a>

@@ -39,7 +39,7 @@
                 <dt th:text="#{plans.field.period}">period</dt>
                 <dd th:text="#{common.period(${plan.startDate}, ${plan.endDate})}">period</dd>
                 <dt th:text="#{plans.field.priority}">priority</dt>
-                <dd th:text="${#messages.msg('enum.Priority.' + plan.priority)}">priority</dd>
+                <dd><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${plan.priority})}">priority</th:block></dd>
                 <dt th:text="#{plans.field.successCriteria}">criteria</dt>
                 <dd class="pre-wrap" th:text="${plan.successCriteria}">criteria</dd>
                 <dt th:text="#{plans.field.estimatedMinutes}">estimated</dt>
@@ -104,7 +104,7 @@
                         <dt th:text="#{plans.field.period}">period</dt>
                         <dd th:text="#{common.period(${rev.startDate}, ${rev.endDate})}">period</dd>
                         <dt th:text="#{plans.field.priority}">priority</dt>
-                        <dd th:text="${#messages.msg('enum.Priority.' + rev.priority)}">priority</dd>
+                        <dd><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${rev.priority})}">priority</th:block></dd>
                         <dt th:text="#{plans.field.successCriteria}">criteria</dt>
                         <dd class="pre-wrap" th:text="${rev.successCriteria}">criteria</dd>
                         <dt th:text="#{plans.field.estimatedMinutes}">estimated</dt>

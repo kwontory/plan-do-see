@@ -4,6 +4,9 @@
  * completion is prevented on the server (idempotency key, row lock, unique constraint).
  * Never write user strings through innerHTML; this file only moves existing DOM nodes
  * and sets fixed textContent.
+ * Elements are found by behaviour attributes only (ADR-17 F-5): data-js="flash",
+ * data-js="error-summary", data-js="delete-confirm", data-no-lock, data-submitting.
+ * Style classes (class) and test hooks (data-test) are never used as selectors here.
  */
 (function () {
     'use strict';
@@ -76,8 +79,8 @@
     // Screen readers often skip live-region content that exists before load, so the region is
     // emptied and the same nodes are put back shortly after. Nodes are moved, never re-parsed.
     function reannounceFlash() {
-        var flash = document.querySelector('.flash[role="status"]:not(.flash--empty)');
-        if (!flash || !flash.firstChild) {
+        var flash = document.querySelector('[data-js="flash"]');
+        if (!flash || !flash.textContent.trim()) {
             return;
         }
         var nodes = Array.prototype.slice.call(flash.childNodes);
@@ -88,7 +91,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-        var summary = document.getElementById('error-summary');
+        var summary = document.querySelector('[data-js="error-summary"]');
         if (summary) {
             // Validation errors: focus the summary (role=alert) instead of re-announcing the flash.
             summary.focus();
@@ -102,8 +105,8 @@
         if (event.key !== 'Escape') {
             return;
         }
-        var details = event.target instanceof Element ? event.target.closest('details.delete[open]') : null;
-        if (!details) {
+        var details = event.target instanceof Element ? event.target.closest('[data-js="delete-confirm"]') : null;
+        if (!details || !details.open) {
             return;
         }
         details.open = false;

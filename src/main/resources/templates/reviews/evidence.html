@@ -3,8 +3,7 @@
       th:with="mk=${metricKey},
                metricLabel=${#messages.msg('metric.' + metricKey + '.label')},
                showTodos=${mk != 'actual'},
-               showLogs=${mk == 'actual' or mk == 'variance'},
-               evidenceVariance=${evidenceActualMinutes - evidenceEstimatedMinutes}">
+               showLogs=${mk == 'actual' or mk == 'variance'}">
 <head th:replace="~{fragments/layout :: head(#{evidence.pageTitle(${metricLabel})}, false)}">
     <meta charset="UTF-8">
     <title>evidence</title>
@@ -64,15 +63,15 @@
                 <span th:text="#{evidence.check.actual(${evidenceCount}, ${evidenceActualMinutes}, ${summary.actualMinutes})}"></span><span> · </span><strong
                     th:replace="~{fragments/layout :: verdict(${ok})}"></strong>
             </th:block>
-            <th:block th:case="'variance'" th:with="ok=${evidenceVariance == summary.varianceMinutes}">
+            <th:block th:case="'variance'" th:with="ok=${evidenceVarianceMinutes == summary.varianceMinutes}">
                 <span th:text="#{evidence.check.variance(${evidenceActualMinutes}, ${evidenceEstimatedMinutes})}"></span> <th:block
-                    th:replace="~{fragments/layout :: signedMinutes(${evidenceVariance})}"></th:block><span> · </span><span
+                    th:replace="~{fragments/layout :: signedMinutes(${evidenceVarianceMinutes})}"></th:block><span> · </span><span
                     th:text="#{evidence.check.metric}"></span> <th:block
                     th:replace="~{fragments/layout :: signedMinutes(${summary.varianceMinutes})}"></th:block><span> · </span><strong
                     th:replace="~{fragments/layout :: verdict(${ok})}"></strong>
             </th:block>
         </p>
-        <p class="empty" th:if="${(showTodos ? #lists.size(todos) : 0) + (showLogs ? #lists.size(logs) : 0) == 0}"
+        <p class="empty" th:if="${evidenceEmpty}"
            th:text="#{evidence.empty}">empty</p>
     </section>
 
@@ -98,9 +97,9 @@
                 <tbody>
                 <tr th:each="t : ${todos}">
                     <td><a th:href="@{/todos/{id}(id=${t.id})}" href="#" th:text="${t.title}">todo</a></td>
-                    <td><th:block th:replace="~{fragments/todo :: statusBadges(${t}, ${summary.today})}"></th:block></td>
+                    <td><th:block th:replace="~{fragments/todo :: statusBadges(${t})}"></th:block></td>
                     <td th:text="${t.dueDate != null} ? ${t.dueDate} : #{common.none}">none</td>
-                    <td th:text="${#messages.msg('enum.Priority.' + t.priority)}">priority</td>
+                    <td><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${t.priority})}">priority</th:block></td>
                     <td class="num" th:text="#{common.minutes(${t.estimatedMinutes})}">0</td>
                     <td class="num" th:text="#{common.minutes(${t.actualMinutes})}">0</td>
                     <td th:if="${mk == 'blocked'}">

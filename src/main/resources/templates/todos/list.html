@@ -35,7 +35,7 @@
               th:action="@{/plans/{id}/todos(id=${plan.id})}" th:object="${todoForm}">
             <th:block th:replace="~{fragments/todo :: listState(${filter}, false)}"></th:block>
             <div th:replace="~{fragments/layout :: errorSummary}"></div>
-            <th:block th:replace="~{fragments/plan :: todoFields(${priorities})}"></th:block>
+            <th:block th:replace="~{fragments/todo :: todoFields(${priorities})}"></th:block>
             <div class="form-actions">
                 <button type="submit" class="btn" th:text="#{todos.add.submit}">add</button>
             </div>
@@ -58,16 +58,18 @@
                     <label for="filter-status" th:text="#{todos.filter.status.label}">status</label>
                     <select id="filter-status" name="status">
                         <option value="" th:text="#{common.select.all}">all</option>
-                        <option th:each="s : ${statuses}" th:value="${s}" th:text="${#messages.msg('enum.TodoStatus.' + s)}"
-                                th:selected="${statusKey == #strings.toString(s)}">status</option>
+                        <option th:each="s : ${statuses}" th:value="${s}"
+                                th:selected="${statusKey == #strings.toString(s)}"><th:block
+                                th:replace="~{fragments/layout :: enumLabel('TodoStatus', ${s})}">status</th:block></option>
                     </select>
                 </div>
                 <div class="field">
                     <label for="filter-priority" th:text="#{form.priority.label}">priority</label>
                     <select id="filter-priority" name="priority">
                         <option value="" th:text="#{common.select.all}">all</option>
-                        <option th:each="pr : ${priorities}" th:value="${pr}" th:text="${#messages.msg('enum.Priority.' + pr)}"
-                                th:selected="${priorityKey == #strings.toString(pr)}">priority</option>
+                        <option th:each="pr : ${priorities}" th:value="${pr}"
+                                th:selected="${priorityKey == #strings.toString(pr)}"><th:block
+                                th:replace="~{fragments/layout :: enumLabel('Priority', ${pr})}">priority</th:block></option>
                     </select>
                 </div>
                 <div class="field">
@@ -89,16 +91,17 @@
                     <p class="field-help" id="filter-due-help" th:text="#{todos.filter.due.help(${today})}">help</p>
                     <select id="filter-due" name="due" aria-describedby="filter-due-help">
                         <option value="" th:text="#{common.select.all}">all</option>
-                        <option th:each="d : ${dueFilters}" th:value="${d}" th:text="${#messages.msg('enum.DueFilter.' + d)}"
-                                th:selected="${dueKey == #strings.toString(d)}">due</option>
+                        <option th:each="d : ${dueFilters}" th:value="${d}"
+                                th:selected="${dueKey == #strings.toString(d)}"><th:block
+                                th:replace="~{fragments/layout :: enumLabel('DueFilter', ${d})}">due</th:block></option>
                     </select>
                 </div>
                 <div class="field">
                     <label for="filter-sort" th:text="#{todos.filter.sort.label}">sort</label>
                     <select id="filter-sort" name="sort">
                         <option th:each="so : ${sorts}" th:value="${so}"
-                                th:text="${#messages.msg('enum.TodoSort.' + so)}"
-                                th:selected="${sortKey == #strings.toString(so)}">sort</option>
+                                th:selected="${sortKey == #strings.toString(so)}"><th:block
+                                th:replace="~{fragments/layout :: enumLabel('TodoSort', ${so})}">sort</th:block></option>
                     </select>
                 </div>
             </div>
@@ -115,14 +118,14 @@
         <div class="filter-status" th:if="${filterActive}">
             <p><th:block th:text="#{todos.filter.active}">active</th:block>
                 <span class="filter-conditions"><span th:unless="${#strings.isEmpty(qText)}" th:text="#{todos.filter.cond.q(${qText})}">q</span><th:block
-                        th:each="s : ${statuses}"><span th:if="${statusKey == #strings.toString(s)}"
-                        th:text="#{todos.filter.cond.status(${#messages.msg('enum.TodoStatus.' + s)})}">status</span></th:block><th:block
-                        th:each="pr : ${priorities}"><span th:if="${priorityKey == #strings.toString(pr)}"
-                        th:text="#{todos.filter.cond.priority(${#messages.msg('enum.Priority.' + pr)})}">priority</span></th:block><th:block
+                        th:each="s : ${statuses}"><span th:if="${statusKey == #strings.toString(s)}"><th:block
+                        th:replace="~{fragments/layout :: enumLabelIn('todos.filter.cond.status', 'TodoStatus', ${s})}">status</th:block></span></th:block><th:block
+                        th:each="pr : ${priorities}"><span th:if="${priorityKey == #strings.toString(pr)}"><th:block
+                        th:replace="~{fragments/layout :: enumLabelIn('todos.filter.cond.priority', 'Priority', ${pr})}">priority</th:block></span></th:block><th:block
                         th:each="tag : ${tags}"><span th:if="${tagKey == #strings.toString(tag.id)}"
                         th:text="#{todos.filter.cond.tag(${tag.name})}">tag</span></th:block><th:block
-                        th:each="d : ${dueFilters}"><span th:if="${dueKey == #strings.toString(d)}"
-                        th:text="#{todos.filter.cond.due(${#messages.msg('enum.DueFilter.' + d)})}">due</span></th:block></span>
+                        th:each="d : ${dueFilters}"><span th:if="${dueKey == #strings.toString(d)}"><th:block
+                        th:replace="~{fragments/layout :: enumLabelIn('todos.filter.cond.due', 'DueFilter', ${d})}">due</th:block></span></th:block></span>
             </p>
             <p><a th:href="@{/plans/{id}/todos(id=${plan.id},sort=${filter.sort})}" href="#" th:text="#{todos.filter.reset}">reset</a></p>
         </div>
@@ -141,10 +144,10 @@
 
         <ul class="todo-list" aria-describedby="sort-description" th:unless="${todos.isEmpty()}">
             <li th:each="todo : ${todos}">
-                <article class="todo-item" th:with="done=${todo.status.name() == 'COMPLETED'}">
+                <article class="todo-item" th:with="done=${todo.completed}">
                     <div class="todo-item__head">
                         <h3 class="todo-item__title"><a th:href="@{/todos/{id}(id=${todo.id})}" href="#" th:text="${todo.title}">todo</a></h3>
-                        <p class="todo-item__badges"><th:block th:replace="~{fragments/todo :: statusBadges(${todo}, ${today})}"></th:block></p>
+                        <p class="todo-item__badges"><th:block th:replace="~{fragments/todo :: statusBadges(${todo})}"></th:block></p>
                     </div>
                     <dl class="inline-dl">
                         <div>
@@ -154,7 +157,7 @@
                         </div>
                         <div>
                             <dt class="visually-hidden" th:text="#{todos.field.priority}">priority</dt>
-                            <dd th:text="#{todos.item.priority(${#messages.msg('enum.Priority.' + todo.priority)})}">priority</dd>
+                            <dd><th:block th:replace="~{fragments/layout :: enumLabelIn('todos.item.priority', 'Priority', ${todo.priority})}">priority</th:block></dd>
                         </div>
                         <div>
                             <dt class="visually-hidden" th:text="#{todos.field.estimatedMinutes}">estimated</dt>
@@ -191,11 +194,13 @@
                         <a class="btn btn--secondary" th:href="@{/todos/{id}/edit(id=${todo.id})}" href="#"><th:block
                                 th:text="#{common.edit}">edit</th:block><span class="visually-hidden"
                                 th:text="#{common.srContext(${todo.title})}"></span></a>
-                        <details class="delete">
+                        <details class="delete" data-js="delete-confirm">
                             <summary class="btn btn--secondary"><th:block th:text="#{todos.action.delete}">delete</th:block><span
                                     class="visually-hidden" th:text="#{common.srContext(${todo.title})}"></span></summary>
                             <div class="delete__body">
-                                <p th:text="#{todos.delete.warning}">warning</p>
+                                <p th:text="#{todos.delete.question}">question</p>
+                                <p th:text="#{todos.delete.effect}">effect</p>
+                                <p th:text="#{todos.delete.undo}">undo</p>
                                 <form method="post" th:action="@{/todos/{id}(id=${todo.id})}">
                                     <input type="hidden" name="_method" value="delete">
                                     <th:block th:replace="~{fragments/todo :: listState(${filter}, true)}"></th:block>
