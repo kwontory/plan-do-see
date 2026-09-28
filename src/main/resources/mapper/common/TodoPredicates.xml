@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  Shared todo predicates. The todo list filter, review summary, and review evidence all include these
+  fragments so a metric and its drill-down can never use different definitions (CLAUDE.md 6장, ADR-03).
+  Aliases: t = todos, p = plans, e = execution_logs. Parameters: userId, today.
+-->
+<mapper namespace="com.plandosee.diary.common.sql.TodoPredicates">
+
+    <sql id="activeOwnedTodo">
+        t.deleted_at IS NULL
+        AND p.deleted_at IS NULL
+        AND p.user_id = #{userId}
+    </sql>
+
+    <sql id="completed">
+        t.status = 'COMPLETED'
+    </sql>
+
+    <sql id="overdue">
+        t.status &lt;&gt; 'COMPLETED'
+        AND t.due_date IS NOT NULL
+        AND t.due_date &lt; #{today}
+    </sql>
+
+    <sql id="blockerPresent">
+        e.blocker_reason IS NOT NULL
+        AND btrim(e.blocker_reason) &lt;&gt; ''
+    </sql>
+
+    <sql id="priorityRank">
+        CASE t.priority WHEN 'HIGH' THEN 1 WHEN 'MEDIUM' THEN 2 ELSE 3 END
+    </sql>
+
+    <sql id="defaultTodoOrder">
+        t.due_date ASC NULLS LAST,
+        <include refid="com.plandosee.diary.common.sql.TodoPredicates.priorityRank"/> ASC,
+        t.created_at ASC,
+        t.id ASC
+    </sql>
+</mapper>

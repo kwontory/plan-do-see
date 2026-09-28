@@ -1,0 +1,49 @@
+server:
+  port: ${PORT:8080}
+  error:
+    include-stacktrace: never
+    include-message: never
+    include-exception: false
+    include-binding-errors: never
+    whitelabel:
+      enabled: false
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+spring:
+  application:
+    name: plandosee-diary
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:5}
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  mvc:
+    hiddenmethod:
+      filter:
+        enabled: true
+  thymeleaf:
+    cache: true
+  jackson:
+    time-zone: UTC
+
+mybatis:
+  mapper-locations: classpath:mapper/**/*.xml
+  type-handlers-package: com.plandosee.diary.common.mybatis
+  configuration:
+    map-underscore-to-camel-case: false
+    auto-mapping-behavior: NONE
+    default-statement-timeout: 30
+
+app:
+  demo-user-id: ${APP_DEMO_USER_ID:00000000-0000-4000-8000-000000000001}
+
+logging:
+  level:
+    root: INFO
