@@ -142,6 +142,37 @@
         ORDER BY c.id ASC
     </select>
 
+    <!-- ADR-16: edit history of active owned todos (history of deleted todos is excluded, ADR-04). -->
+    <select id="todoRevisions" resultMap="com.plandosee.diary.todo.application.port.TodoMapper.todoRevisionRow">
+        SELECT r.id,
+               r.todo_id,
+               r.revision_no,
+               r.title,
+               r.due_date,
+               r.priority,
+               r.estimated_minutes,
+               r.tag_names,
+               r.revised_at
+        FROM todo_revisions r
+        JOIN todos t ON t.id = r.todo_id
+        JOIN plans p ON p.id = t.plan_id
+        WHERE <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+        ORDER BY r.id ASC
+    </select>
+
+    <select id="reopenEvents" resultMap="com.plandosee.diary.todo.application.port.TodoMapper.reopenEventRow">
+        SELECT e.id,
+               e.todo_id,
+               e.cycle_no,
+               e.reopened_at,
+               e.created_at
+        FROM reopen_events e
+        JOIN todos t ON t.id = e.todo_id
+        JOIN plans p ON p.id = t.plan_id
+        WHERE <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+        ORDER BY e.id ASC
+    </select>
+
     <select id="reviews" resultMap="com.plandosee.diary.review.application.port.ReviewMapper.reviewRow">
         SELECT r.id,
                r.user_id,

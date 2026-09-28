@@ -26,6 +26,8 @@ import com.plandosee.diary.plan.domain.PlanRevisionRow;
 import com.plandosee.diary.plan.domain.PlanRow;
 import com.plandosee.diary.review.domain.ReviewRow;
 import com.plandosee.diary.todo.domain.CompletionEventRow;
+import com.plandosee.diary.todo.domain.ReopenEventRow;
+import com.plandosee.diary.todo.domain.TodoRevisionRow;
 import com.plandosee.diary.todo.domain.TodoRow;
 import com.plandosee.diary.user.domain.UserRow;
 
@@ -38,7 +40,8 @@ import com.plandosee.diary.user.domain.UserRow;
 @Service
 public class ExportService {
 
-    public static final String SCHEMA_VERSION = "2.0.0";
+    /** 2.1.0 (ADR-16): todoRevisions and reopenEvents added; every 2.0.0 field is unchanged. */
+    public static final String SCHEMA_VERSION = "2.1.0";
 
     private final ExportMapper exportMapper;
     private final CurrentUserProvider currentUserProvider;
@@ -69,10 +72,12 @@ public class ExportService {
         document.put("plans", map(exportMapper.plans(userId), ExportService::plan));
         document.put("planRevisions", map(exportMapper.planRevisions(userId), ExportService::planRevision));
         document.put("todos", map(exportMapper.todos(userId), ExportService::todo));
+        document.put("todoRevisions", map(exportMapper.todoRevisions(userId), ExportService::todoRevision));
         document.put("tags", map(exportMapper.tags(userId), ExportService::tag));
         document.put("todoTags", map(exportMapper.todoTags(userId), ExportService::todoTag));
         document.put("executionLogs", map(exportMapper.executionLogs(userId), ExportService::executionLog));
         document.put("completionEvents", map(exportMapper.completionEvents(userId), ExportService::completionEvent));
+        document.put("reopenEvents", map(exportMapper.reopenEvents(userId), ExportService::reopenEvent));
         document.put("reviews", map(exportMapper.reviews(userId), ExportService::review));
         return document;
     }
@@ -134,6 +139,30 @@ public class ExportService {
         m.put("completedAt", time(t.getCompletedAt()));
         m.put("createdAt", time(t.getCreatedAt()));
         m.put("updatedAt", time(t.getUpdatedAt()));
+        return m;
+    }
+
+    private static Map<String, Object> todoRevision(TodoRevisionRow r) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", id(r.getId()));
+        m.put("todoId", id(r.getTodoId()));
+        m.put("revisionNo", r.getRevisionNo());
+        m.put("title", r.getTitle());
+        m.put("dueDate", date(r.getDueDate()));
+        m.put("priority", r.getPriority().name());
+        m.put("estimatedMinutes", r.getEstimatedMinutes());
+        m.put("tagNames", List.copyOf(r.getTagNames()));
+        m.put("revisedAt", time(r.getRevisedAt()));
+        return m;
+    }
+
+    private static Map<String, Object> reopenEvent(ReopenEventRow e) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", id(e.getId()));
+        m.put("todoId", id(e.getTodoId()));
+        m.put("cycleNo", e.getCycleNo());
+        m.put("reopenedAt", time(e.getReopenedAt()));
+        m.put("createdAt", time(e.getCreatedAt()));
         return m;
     }
 

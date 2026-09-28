@@ -14,6 +14,7 @@ import com.plandosee.diary.common.id.IdGenerator;
 import com.plandosee.diary.common.time.SeoulDates;
 import com.plandosee.diary.todo.application.port.TodoMapper;
 import com.plandosee.diary.todo.domain.CompletionEventRow;
+import com.plandosee.diary.todo.domain.ReopenEventRow;
 import com.plandosee.diary.todo.domain.TodoRow;
 import com.plandosee.diary.todo.domain.TodoStatus;
 
@@ -88,7 +89,16 @@ public class TodoCompletionService {
             if (todo.getStatus() == TodoStatus.IN_PROGRESS) {
                 return new TransitionOutcome(TransitionResult.ALREADY_IN_PROGRESS, TodoStatus.IN_PROGRESS, todo.getPlanId());
             }
-            todoMapper.markInProgress(todoId, now());
+            OffsetDateTime now = now();
+            todoMapper.markInProgress(todoId, now);
+            // ADR-16: the reopen is an immutable event of the undone cycle, stored in the same transaction.
+            ReopenEventRow event = new ReopenEventRow();
+            event.setId(idGenerator.newId());
+            event.setTodoId(todoId);
+            event.setCycleNo(todo.getCompletionCycle());
+            event.setReopenedAt(now);
+            event.setCreatedAt(now);
+            todoMapper.insertReopenEvent(event);
             return new TransitionOutcome(TransitionResult.REOPENED, TodoStatus.IN_PROGRESS, todo.getPlanId());
         });
     }

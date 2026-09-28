@@ -27,6 +27,38 @@
         <result property="createdAt" column="created_at"/>
     </resultMap>
 
+    <resultMap id="todoRevisionRow" type="com.plandosee.diary.todo.domain.TodoRevisionRow">
+        <id property="id" column="id"/>
+        <result property="todoId" column="todo_id"/>
+        <result property="revisionNo" column="revision_no"/>
+        <result property="title" column="title"/>
+        <result property="dueDate" column="due_date"/>
+        <result property="priority" column="priority"/>
+        <result property="estimatedMinutes" column="estimated_minutes"/>
+        <result property="tagNames" column="tag_names" typeHandler="com.plandosee.diary.common.db.TextArrayTypeHandler"/>
+        <result property="revisedAt" column="revised_at"/>
+    </resultMap>
+
+    <resultMap id="reopenEventRow" type="com.plandosee.diary.todo.domain.ReopenEventRow">
+        <id property="id" column="id"/>
+        <result property="todoId" column="todo_id"/>
+        <result property="cycleNo" column="cycle_no"/>
+        <result property="reopenedAt" column="reopened_at"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <resultMap id="completionHistoryEntry" type="com.plandosee.diary.todo.domain.CompletionHistoryEntry">
+        <id property="id" column="id"/>
+        <result property="kind" column="kind"/>
+        <result property="cycleNo" column="cycle_no"/>
+        <result property="occurredAt" column="occurred_at"/>
+    </resultMap>
+
+    <resultMap id="completionHistoryCounts" type="com.plandosee.diary.todo.domain.CompletionHistoryCounts">
+        <result property="completionCount" column="completion_count"/>
+        <result property="reopenCount" column="reopen_count"/>
+    </resultMap>
+
     <sql id="todoColumns">
         t.id,
         t.plan_id,
@@ -240,5 +272,94 @@
         WHERE c.todo_id = #{todoId}
           AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
         ORDER BY c.cycle_no ASC, c.id ASC
+    </select>
+
+    <!-- ADR-16: todo edit history. Called under the todo row lock, so numbers never repeat or skip. -->
+    <select id="nextRevisionNo" resultType="int">
+        SELECT COALESCE(MAX(r.revision_no), 0) + 1 AS next_revision_no
+        FROM todo_revisions r
+        WHERE r.todo_id = #{todoId}
+    </select>
+
+    <insert id="insertRevision" parameterType="com.plandosee.diary.todo.domain.TodoRevisionRow">
+        INSERT INTO todo_revisions (id, todo_id, revision_no, title, due_date, priority, estimated_minutes,
+                                    tag_names, revised_at)
+        VALUES (#{id}, #{todoId}, #{revisionNo}, #{title}, #{dueDate}, #{priority}, #{estimatedMinutes},
+                #{tagNames,typeHandler=com.plandosee.diary.common.db.TextArrayTypeHandler}, #{revisedAt})
+    </insert>
+
+    <!-- Newest first, like the plan history (T06-C08). Hidden with the todo once it is deleted (ADR-04). -->
+    <select id="listRevisionsOwned" resultMap="todoRevisionRow">
+        SELECT r.id,
+               r.todo_id,
+               r.revision_no,
+               r.title,
+               r.due_date,
+               r.priority,
+               r.estimated_minutes,
+               r.tag_names,
+               r.revised_at
+        FROM todo_revisions r
+        JOIN todos t ON t.id = r.todo_id
+        JOIN plans p ON p.id = t.plan_id
+        WHERE r.todo_id = #{todoId}
+          AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+        ORDER BY r.revision_no DESC, r.id ASC
+    </select>
+
+    <!-- ADR-16: called after markInProgress under the todo row lock; one reopen per completion cycle. -->
+    <insert id="insertReopenEvent" parameterType="com.plandosee.diary.todo.domain.ReopenEventRow">
+        INSERT INTO reopen_events (id, todo_id, cycle_no, reopened_at, created_at)
+        VALUES (#{id}, #{todoId}, #{cycleNo}, #{reopenedAt}, #{createdAt})
+    </insert>
+
+    <!--
+      ADR-16 completion history: completion and reopen events of one owned active todo merged into one list. The
+      list, its pages, and its counts share these rows. Order: time, then cycle and kind (a cycle's completion
+      before its reopen, even with equal timestamps), then id.
+    -->
+    <sql id="completionHistoryRows">
+        WITH owned_todo AS (
+            SELECT t.id
+            FROM todos t
+            JOIN plans p ON p.id = t.plan_id
+            WHERE t.id = #{todoId}
+              AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+        ),
+        history AS (
+            SELECT c.id,
+                   'COMPLETED' AS kind,
+                   1 AS kind_rank,
+                   c.cycle_no,
+                   c.completed_at AS occurred_at
+            FROM completion_events c
+            JOIN owned_todo o ON o.id = c.todo_id
+            UNION ALL
+            SELECT r.id,
+                   'REOPENED' AS kind,
+                   2 AS kind_rank,
+                   r.cycle_no,
+                   r.reopened_at AS occurred_at
+            FROM reopen_events r
+            JOIN owned_todo o ON o.id = r.todo_id
+        )
+    </sql>
+
+    <select id="listCompletionHistoryOwned" resultMap="completionHistoryEntry">
+        <include refid="completionHistoryRows"/>
+        SELECT h.id,
+               h.kind,
+               h.cycle_no,
+               h.occurred_at
+        FROM history h
+        ORDER BY h.occurred_at ASC, h.cycle_no ASC, h.kind_rank ASC, h.id ASC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countCompletionHistoryOwned" resultMap="completionHistoryCounts">
+        <include refid="completionHistoryRows"/>
+        SELECT COUNT(h.id) FILTER (WHERE h.kind = 'COMPLETED') AS completion_count,
+               COUNT(h.id) FILTER (WHERE h.kind = 'REOPENED') AS reopen_count
+        FROM history h
     </select>
 </mapper>

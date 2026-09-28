@@ -17,6 +17,7 @@ import com.plandosee.diary.execution.application.TodoExecutionLogs;
 import com.plandosee.diary.execution.web.ExecutionForm;
 import com.plandosee.diary.plan.application.PlanService;
 import com.plandosee.diary.plan.domain.PlanRow;
+import com.plandosee.diary.todo.application.CompletionHistory;
 import com.plandosee.diary.todo.application.TodoService;
 import com.plandosee.diary.todo.domain.DueFilter;
 import com.plandosee.diary.todo.domain.TodoRow;
@@ -71,14 +72,16 @@ public class TodoPageModels {
 
     /** S03 after a form POST: the first page of each list. */
     public String detail(Model model, UUID todoId, ExecutionForm executionForm) {
-        return detail(model, todoId, executionForm, PageRequest.FIRST);
+        return detail(model, todoId, executionForm, PageRequest.FIRST, PageRequest.FIRST);
     }
 
     /**
      * S03. logs is one page (ADR-21, query parameter logPage, model logPage); logsActualMinutes is the total of all
-     * the todo's records.
+     * the todo's records. ADR-16: todoRevisions (newest first), completionHistory (one page of completions and
+     * reopens merged in time order, query parameter historyPage, model historyPage), completionCount, reopenCount
+     * (all events). events (completion events only) is kept until the template moves to completionHistory.
      */
-    public String detail(Model model, UUID todoId, ExecutionForm executionForm, int logPage) {
+    public String detail(Model model, UUID todoId, ExecutionForm executionForm, int logPage, int historyPage) {
         TodoRow todo = todoService.get(todoId);
         model.addAttribute("todo", todo);
         model.addAttribute("plan", planService.get(todo.getPlanId()));
@@ -87,6 +90,12 @@ public class TodoPageModels {
         model.addAttribute("logPage", logs.page());
         model.addAttribute("logsActualMinutes", logs.actualMinutes());
         model.addAttribute("events", todoService.completionEvents(todoId));
+        CompletionHistory history = todoService.completionHistory(todoId, historyPage);
+        model.addAttribute("completionHistory", history.entries());
+        model.addAttribute("historyPage", history.page());
+        model.addAttribute("completionCount", history.completionCount());
+        model.addAttribute("reopenCount", history.reopenCount());
+        model.addAttribute("todoRevisions", todoService.revisions(todoId));
         model.addAttribute("executionForm", executionForm);
         model.addAttribute("completionKey", idGenerator.newId());
         return "todos/detail";

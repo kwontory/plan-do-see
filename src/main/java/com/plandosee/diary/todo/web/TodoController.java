@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.plandosee.diary.common.domain.EditOutcome;
 import com.plandosee.diary.common.domain.Priority;
 import com.plandosee.diary.common.error.RetryLaterException;
 import com.plandosee.diary.common.error.DomainRuleException;
@@ -37,6 +38,8 @@ public class TodoController {
 
     public static final String FLASH_CREATED = "flash.todo.created";
     public static final String FLASH_UPDATED = "flash.todo.updated";
+    /** ADR-18 E5: the saved content equals the stored todo; nothing changed and no revision was added. */
+    public static final String FLASH_UNCHANGED = "flash.todo.unchanged";
     public static final String FLASH_DELETED = "flash.todo.deleted";
 
     private final TodoService todoService;
@@ -81,8 +84,10 @@ public class TodoController {
 
     @GetMapping("/todos/{id}")
     public String detail(@PathVariable("id") UUID todoId,
-                         @RequestParam(name = "logPage", required = false) String logPage, Model model) {
-        return pages.detail(model, todoId, new ExecutionForm(), PageRequest.parse(logPage));
+                         @RequestParam(name = "logPage", required = false) String logPage,
+                         @RequestParam(name = "historyPage", required = false) String historyPage, Model model) {
+        return pages.detail(model, todoId, new ExecutionForm(), PageRequest.parse(logPage),
+                PageRequest.parse(historyPage));
     }
 
     @GetMapping("/todos/{id}/edit")
@@ -99,8 +104,9 @@ public class TodoController {
         if (result.hasErrors()) {
             return editView(model, todoService.get(todoId));
         }
+        EditOutcome outcome;
         try {
-            todoService.update(todoId, form.toCommand());
+            outcome = todoService.update(todoId, form.toCommand());
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
             return editView(model, todoService.get(todoId));
@@ -108,7 +114,7 @@ public class TodoController {
             ConflictResponses.rejectForm(result, response, ex);
             return editView(model, todoService.get(todoId));
         }
-        FlashMessages.add(redirect, FLASH_UPDATED);
+        FlashMessages.add(redirect, outcome == EditOutcome.UNCHANGED ? FLASH_UNCHANGED : FLASH_UPDATED);
         return "redirect:/todos/" + todoId;
     }
 

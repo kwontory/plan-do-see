@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.plandosee.diary.common.concurrency.WriteTransactions;
 import com.plandosee.diary.common.config.CurrentUserProvider;
+import com.plandosee.diary.common.domain.EditOutcome;
 import com.plandosee.diary.common.error.NotFoundException;
 import com.plandosee.diary.common.id.IdGenerator;
 import com.plandosee.diary.common.paging.Page;
@@ -123,16 +124,23 @@ public class PlanService {
      * Snapshot of the previous values and the update of the current row commit or roll back together. The plan row
      * lock serializes concurrent revisions so revision numbers never repeat or skip (ADR-15).
      */
-    public void revise(UUID planId, PlanCommand command) {
+    public EditOutcome revise(UUID planId, PlanCommand command) {
         validate(command);
-        writes.run(() -> reviseLocked(planId, command));
+        return writes.run(() -> reviseLocked(planId, command));
     }
 
-    private void reviseLocked(UUID planId, PlanCommand command) {
+    /**
+     * ADR-18 E5 (with ADR-16): a save whose content equals the stored plan writes nothing, so no revision row is
+     * added and the result is UNCHANGED.
+     */
+    private EditOutcome reviseLocked(UUID planId, PlanCommand command) {
         UUID userId = currentUserProvider.currentUserId();
         PlanRow current = planMapper.lockActiveOwned(userId, planId);
         if (current == null) {
             throw new NotFoundException("plan");
+        }
+        if (sameContent(current, command)) {
+            return EditOutcome.UNCHANGED;
         }
         OffsetDateTime now = now();
 
@@ -155,6 +163,16 @@ public class PlanService {
         if (planMapper.updateOwned(current) != 1) {
             throw new NotFoundException("plan");
         }
+        return EditOutcome.UPDATED;
+    }
+
+    static boolean sameContent(PlanRow plan, PlanCommand command) {
+        return plan.getTitle().equals(command.title().strip())
+                && plan.getStartDate().equals(command.startDate())
+                && plan.getEndDate().equals(command.endDate())
+                && plan.getPriority() == command.priority()
+                && plan.getSuccessCriteria().equals(command.successCriteria().strip())
+                && plan.getEstimatedMinutes() == command.estimatedMinutes();
     }
 
     private void apply(PlanRow plan, PlanCommand command) {

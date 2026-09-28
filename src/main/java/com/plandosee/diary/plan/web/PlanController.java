@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.plandosee.diary.common.domain.EditOutcome;
 import com.plandosee.diary.common.domain.Priority;
 import com.plandosee.diary.common.error.RetryLaterException;
 import com.plandosee.diary.common.error.DomainRuleException;
@@ -37,6 +38,8 @@ public class PlanController {
     static final String FORM_VIEW = "plans/form";
     public static final String FLASH_CREATED = "flash.plan.created";
     public static final String FLASH_UPDATED = "flash.plan.updated";
+    /** ADR-18 E5: the saved content equals the stored plan; nothing changed and no revision was added. */
+    public static final String FLASH_UNCHANGED = "flash.plan.unchanged";
 
     private final PlanService planService;
     private final ReviewService reviewService;
@@ -103,8 +106,9 @@ public class PlanController {
         if (result.hasErrors()) {
             return editView(model, planService.get(planId));
         }
+        EditOutcome outcome;
         try {
-            planService.revise(planId, form.toCommand());
+            outcome = planService.revise(planId, form.toCommand());
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
             return editView(model, planService.get(planId));
@@ -112,7 +116,7 @@ public class PlanController {
             ConflictResponses.rejectForm(result, response, ex);
             return editView(model, planService.get(planId));
         }
-        FlashMessages.add(redirect, FLASH_UPDATED);
+        FlashMessages.add(redirect, outcome == EditOutcome.UNCHANGED ? FLASH_UNCHANGED : FLASH_UPDATED);
         return "redirect:/plans/" + planId;
     }
 

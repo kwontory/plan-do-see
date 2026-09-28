@@ -13,6 +13,8 @@ import com.plandosee.diary.plan.domain.PlanRevisionRow;
 import com.plandosee.diary.plan.domain.PlanRow;
 import com.plandosee.diary.review.domain.ReviewRow;
 import com.plandosee.diary.todo.domain.CompletionEventRow;
+import com.plandosee.diary.todo.domain.ReopenEventRow;
+import com.plandosee.diary.todo.domain.TodoRevisionRow;
 import com.plandosee.diary.todo.domain.TodoRow;
 import com.plandosee.diary.user.domain.UserRow;
 
@@ -38,6 +40,10 @@ public interface ExportMapper {
     List<ExecutionLogRow> executionLogs(@Param("userId") UUID userId);
 
     List<CompletionEventRow> completionEvents(@Param("userId") UUID userId);
+
+    List<TodoRevisionRow> todoRevisions(@Param("userId") UUID userId);
+
+    List<ReopenEventRow> reopenEvents(@Param("userId") UUID userId);
 
     List<ReviewRow> reviews(@Param("userId") UUID userId);
 }

@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.plandosee.diary.common.concurrency.WriteTransactions;
 import com.plandosee.diary.common.config.CurrentUserProvider;
+import com.plandosee.diary.common.domain.EditOutcome;
 import com.plandosee.diary.common.domain.Priority;
 import com.plandosee.diary.common.error.NotFoundException;
 import com.plandosee.diary.common.id.IdGenerator;
@@ -28,9 +29,12 @@ import com.plandosee.diary.plan.application.PlanService;
 import com.plandosee.diary.todo.application.port.TagMapper;
 import com.plandosee.diary.todo.application.port.TodoMapper;
 import com.plandosee.diary.todo.domain.CompletionEventRow;
+import com.plandosee.diary.todo.domain.CompletionHistoryCounts;
+import com.plandosee.diary.todo.domain.CompletionHistoryEntry;
 import com.plandosee.diary.todo.domain.DueFilter;
 import com.plandosee.diary.todo.domain.TagRow;
 import com.plandosee.diary.todo.domain.TodoFilter;
+import com.plandosee.diary.todo.domain.TodoRevisionRow;
 import com.plandosee.diary.todo.domain.TodoRow;
 import com.plandosee.diary.todo.domain.TodoRules;
 import com.plandosee.diary.todo.domain.TodoSort;
@@ -84,23 +88,69 @@ public class TodoService {
 
     /**
      * Only title, due date, priority, estimate, and tags change (ADR-07). Status, plan, and id are untouched.
+     * ADR-16: under the todo row lock, the values just before the edit are stored as the next todo_revisions row in
+     * the same transaction as the update. ADR-18 E5: when the submitted content equals the stored content (tags
+     * compared by normalized name), nothing is written and the result is UNCHANGED.
      */
-    public void update(UUID todoId, TodoCommand command) {
+    public EditOutcome update(UUID todoId, TodoCommand command) {
         validate(command);
-        writes.run(() -> {
+        return writes.run(() -> {
             UUID userId = currentUserProvider.currentUserId();
             TodoRow todo = todoMapper.lockActiveOwned(userId, todoId);
             if (todo == null) {
                 throw new NotFoundException("todo");
             }
+            List<String> currentTags = tagNamesOf(userId, todoId);
+            List<String> newTags = tagNames(command);
+            if (sameContent(todo, currentTags, command, newTags)) {
+                return EditOutcome.UNCHANGED;
+            }
             OffsetDateTime now = now();
+            todoMapper.insertRevision(revisionOf(todo, currentTags, now));
             applyContent(todo, command);
             todo.setUpdatedAt(now);
             if (todoMapper.updateContentOwned(userId, todo) != 1) {
                 throw new NotFoundException("todo");
             }
-            replaceTags(userId, todoId, tagNames(command), now);
+            replaceTags(userId, todoId, newTags, now);
+            return EditOutcome.UPDATED;
         });
+    }
+
+    private TodoRevisionRow revisionOf(TodoRow todo, List<String> tagNames, OffsetDateTime now) {
+        TodoRevisionRow revision = new TodoRevisionRow();
+        revision.setId(idGenerator.newId());
+        revision.setTodoId(todo.getId());
+        revision.setRevisionNo(todoMapper.nextRevisionNo(todo.getId()));
+        revision.setTitle(todo.getTitle());
+        revision.setDueDate(todo.getDueDate());
+        revision.setPriority(todo.getPriority());
+        revision.setEstimatedMinutes(todo.getEstimatedMinutes());
+        revision.setTagNames(tagNames);
+        revision.setRevisedAt(now);
+        return revision;
+    }
+
+    /** Display names of the todo's active tags, ordered by normalized name (the stored snapshot order). */
+    private List<String> tagNamesOf(UUID userId, UUID todoId) {
+        return tagMapper.listForTodos(userId, List.of(todoId)).stream().map(TagRow::getName).toList();
+    }
+
+    /** ADR-18 E5: the form content is the same as stored; tags compared as sets of normalized names. */
+    static boolean sameContent(TodoRow todo, List<String> currentTags, TodoCommand command, List<String> newTags) {
+        return todo.getTitle().equals(command.title().strip())
+                && java.util.Objects.equals(todo.getDueDate(), command.dueDate())
+                && todo.getPriority() == command.priority()
+                && todo.getEstimatedMinutes() == command.estimatedMinutes()
+                && normalizedSet(currentTags).equals(normalizedSet(newTags));
+    }
+
+    static java.util.Set<String> normalizedSet(List<String> names) {
+        java.util.Set<String> set = new java.util.TreeSet<>();
+        for (String name : names) {
+            set.add(normalizedKey(name));
+        }
+        return set;
     }
 
     public UUID delete(UUID todoId) {
@@ -212,6 +262,33 @@ public class TodoService {
             throw new NotFoundException("todo");
         }
         return todoMapper.listCompletionEventsOwned(userId, todoId);
+    }
+
+    /** ADR-16: the owned active todo's edit history, newest first. NotFoundException otherwise. */
+    @Transactional(readOnly = true)
+    public List<TodoRevisionRow> revisions(UUID todoId) {
+        UUID userId = currentUserProvider.currentUserId();
+        if (todoMapper.findActiveOwned(userId, todoId, seoulDates.today()) == null) {
+            throw new NotFoundException("todo");
+        }
+        return todoMapper.listRevisionsOwned(userId, todoId);
+    }
+
+    /**
+     * ADR-16 / ADR-21: one page of the merged completion and reopen history in time order, with the counts of all
+     * events, in one repeatable-read snapshot. NotFoundException when the todo is not an owned active todo.
+     */
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public CompletionHistory completionHistory(UUID todoId, int requestedPage) {
+        UUID userId = currentUserProvider.currentUserId();
+        if (todoMapper.findActiveOwned(userId, todoId, seoulDates.today()) == null) {
+            throw new NotFoundException("todo");
+        }
+        CompletionHistoryCounts counts = todoMapper.countCompletionHistoryOwned(userId, todoId);
+        PageInfo info = pageSettings.page(requestedPage, counts.total());
+        List<CompletionHistoryEntry> entries = info.totalCount() == 0 ? List.of()
+                : todoMapper.listCompletionHistoryOwned(userId, todoId, info.limit(), info.offset());
+        return new CompletionHistory(entries, counts.getCompletionCount(), counts.getReopenCount(), info);
     }
 
     @Transactional(readOnly = true)
