@@ -16,6 +16,8 @@ server:
       tracking-modes: cookie
       cookie:
         http-only: true
+        # true on HTTPS deployments (Render sets SESSION_COOKIE_SECURE=true).
+        secure: ${SESSION_COOKIE_SECURE:false}
         same-site: lax
 
 spring:

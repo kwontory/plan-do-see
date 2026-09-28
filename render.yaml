@@ -14,5 +14,7 @@ services:
         sync: false
       - key: DB_PASSWORD
         sync: false
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
       - key: APP_DEMO_USER_ID
         value: 00000000-0000-4000-8000-000000000001
