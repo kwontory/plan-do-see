@@ -400,6 +400,26 @@ main:focus {
     .breadcrumb li:not(:last-child)::after {
         flex: none;
     }
+
+    /* The current item repeats the h1 right below it: hidden visually only (still read, aria-current kept). */
+    .breadcrumb [aria-current="page"] {
+        position: absolute !important;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+    }
+
+    .breadcrumb li:nth-last-child(2)::after {
+        content: none;
+    }
+
+    /* A breadcrumb with only the current item shows nothing: take no space. */
+    .page-head > .breadcrumb:has(li:only-child) + * {
+        margin-top: 0;
+    }
 }
 
 /* Section: a line that bleeds, text on the baseline */
@@ -595,12 +615,12 @@ a.flow__item:hover .flow__name {
     .flow__item {
         flex-direction: column;
         justify-content: flex-start;
-        gap: var(--space-1);
-        min-height: 52px;
+        gap: 2px;
+        min-height: var(--target-min);
         min-width: var(--target-min);
         font-size: var(--font-size-xs);
-        line-height: 18px;
-        padding-top: 4px;
+        line-height: 16px;
+        padding-top: 2px;
     }
 
     .flow__step:first-child .flow__item {
@@ -615,7 +635,7 @@ a.flow__item:hover .flow__name {
     /* Connector from the previous circle to this one, at circle height (decorative). */
     .flow__step + .flow__step::before {
         position: absolute;
-        top: 13px;
+        top: 11px;
         left: calc(-50% + 14px);
         right: calc(50% + 14px);
         width: auto;
@@ -959,20 +979,23 @@ a.flow__item:hover .flow__name {
     margin-bottom: 0;
 }
 
-/* Paper layers (box-shadow: not in the DOM, not read, no overflow). Paper 1: 8px below, 4px inside each side;
-   paper 2: 16px below, 9px inside, one step darker. */
+/* Paper layers (box-shadow: not in the DOM, not read, no overflow). Visible thickness 6px and 12px; paper 2 is one
+   step darker. */
 .card--stacked {
     box-shadow:
         var(--shadow-card),
-        0 8px 0 -4px var(--color-layer), 0 8px 0 -3px var(--color-layer-line),
-        0 16px 0 -9px var(--color-primary-bg), 0 16px 0 -8px var(--color-layer-line);
-    margin-bottom: calc(16px + var(--space-5));
+        0 10px 0 -4px var(--color-layer), 0 10px 0 -3px var(--color-layer-line),
+        0 20px 0 -8px var(--color-primary-bg), 0 20px 0 -7px var(--color-layer-line);
+    margin-bottom: calc(20px + var(--space-5));
 }
 
+/* Hand-off card: one paper, a 2px primary top line. Square top corners so the line stays straight. */
 .card--handoff {
     border-top: var(--border-width-strong) solid var(--color-primary);
-    box-shadow: var(--shadow-card), 0 8px 0 -4px var(--color-layer), 0 8px 0 -3px var(--color-layer-line);
-    margin-bottom: calc(8px + var(--space-5));
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    box-shadow: var(--shadow-card), 0 10px 0 -4px var(--color-layer), 0 10px 0 -3px var(--color-layer-line);
+    margin-bottom: calc(10px + var(--space-5));
 }
 
 .card__foot {
@@ -1032,9 +1055,9 @@ a.flow__item:hover .flow__name {
         border-radius: var(--radius-md);
     }
 
-    /* A flat card that ends a section: the next section drops its top line, so there is no double line. */
-    .section:has(> .card:last-child:not(.card--stacked):not(.card--handoff)) + .section {
-        border-top: 0;
+    .card--handoff {
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
     }
 
     .card .panel,
@@ -1960,8 +1983,18 @@ tfoot td {
         overflow-wrap: normal;
     }
 
-    .table--fit td:last-child {
+    .table--fit td:last-child,
+    .table--fit th:last-child {
         min-width: 5em;
+    }
+
+    .table--fit thead th {
+        white-space: normal;
+    }
+
+    .table--fit th.num,
+    .table--fit td.num {
+        width: 1%;
     }
 
     .table--fit td.num {
