@@ -20,6 +20,11 @@ public interface PlanMapper {
 
     List<PlanRow> listActiveOwned(@Param("userId") UUID userId);
 
+    long countActiveOwned(@Param("userId") UUID userId);
+
+    List<PlanRow> listActiveOwnedPage(@Param("userId") UUID userId, @Param("limit") int limit,
+                                      @Param("offset") long offset);
+
     int updateOwned(PlanRow plan);
 
     int nextRevisionNo(@Param("planId") UUID planId);

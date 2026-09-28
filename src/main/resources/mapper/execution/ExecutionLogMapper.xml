@@ -19,20 +19,48 @@
         VALUES (#{id}, #{todoId}, #{startedAt}, #{endedAt}, #{actualMinutes}, #{blockerReason}, #{createdAt})
     </insert>
 
-    <select id="listForTodoOwned" resultMap="executionLogRow">
-        SELECT e.id,
-               e.todo_id,
-               t.title AS todo_title,
-               e.started_at,
-               e.ended_at,
-               e.actual_minutes,
-               e.blocker_reason,
-               e.created_at
+    <resultMap id="executionLogTotals" type="com.plandosee.diary.execution.domain.ExecutionLogTotals">
+        <result property="count" column="row_count"/>
+        <result property="actualMinutes" column="actual_minutes"/>
+    </resultMap>
+
+    <!-- ADR-21: a todo's records, their page, and their count and total share this FROM/WHERE. -->
+    <sql id="todoLogsFromWhere">
         FROM execution_logs e
         JOIN todos t ON t.id = e.todo_id
         JOIN plans p ON p.id = t.plan_id
         WHERE e.todo_id = #{todoId}
           AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+    </sql>
+
+    <sql id="todoLogColumns">
+        e.id,
+        e.todo_id,
+        t.title AS todo_title,
+        e.started_at,
+        e.ended_at,
+        e.actual_minutes,
+        e.blocker_reason,
+        e.created_at
+    </sql>
+
+    <select id="listForTodoOwned" resultMap="executionLogRow">
+        SELECT <include refid="todoLogColumns"/>
+        <include refid="todoLogsFromWhere"/>
         ORDER BY e.started_at ASC, e.id ASC
+    </select>
+
+    <select id="listForTodoOwnedPage" resultMap="executionLogRow">
+        SELECT <include refid="todoLogColumns"/>
+        <include refid="todoLogsFromWhere"/>
+        ORDER BY e.started_at ASC, e.id ASC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- Count and minute total of all the todo's records (not just one page). -->
+    <select id="totalsForTodoOwned" resultMap="executionLogTotals">
+        SELECT COUNT(e.id) AS row_count,
+               COALESCE(SUM(e.actual_minutes), 0) AS actual_minutes
+        <include refid="todoLogsFromWhere"/>
     </select>
 </mapper>

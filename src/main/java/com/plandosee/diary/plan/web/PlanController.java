@@ -13,11 +13,14 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.plandosee.diary.common.domain.Priority;
 import com.plandosee.diary.common.error.RetryLaterException;
 import com.plandosee.diary.common.error.DomainRuleException;
+import com.plandosee.diary.common.paging.Page;
+import com.plandosee.diary.common.paging.PageRequest;
 import com.plandosee.diary.common.web.ConflictResponses;
 import com.plandosee.diary.common.web.FlashMessages;
 import com.plandosee.diary.common.web.FormErrors;
@@ -44,8 +47,10 @@ public class PlanController {
     }
 
     @GetMapping("/plans")
-    public String list(Model model) {
-        model.addAttribute("plans", planService.list());
+    public String list(@RequestParam(name = "page", required = false) String page, Model model) {
+        Page<PlanRow> plans = planService.listPage(PageRequest.parse(page));
+        model.addAttribute("plans", plans.items());
+        model.addAttribute("page", plans.info());
         return "plans/list";
     }
 

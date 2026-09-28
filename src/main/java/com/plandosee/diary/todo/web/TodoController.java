@@ -20,6 +20,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.plandosee.diary.common.domain.Priority;
 import com.plandosee.diary.common.error.RetryLaterException;
 import com.plandosee.diary.common.error.DomainRuleException;
+import com.plandosee.diary.common.paging.PageRequest;
 import com.plandosee.diary.common.web.ConflictKeys;
 import com.plandosee.diary.common.web.ConflictResponses;
 import com.plandosee.diary.common.web.FlashMessages;
@@ -79,8 +80,9 @@ public class TodoController {
     }
 
     @GetMapping("/todos/{id}")
-    public String detail(@PathVariable("id") UUID todoId, Model model) {
-        return pages.detail(model, todoId, new ExecutionForm());
+    public String detail(@PathVariable("id") UUID todoId,
+                         @RequestParam(name = "logPage", required = false) String logPage, Model model) {
+        return pages.detail(model, todoId, new ExecutionForm(), PageRequest.parse(logPage));
     }
 
     @GetMapping("/todos/{id}/edit")

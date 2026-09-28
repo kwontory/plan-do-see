@@ -17,6 +17,9 @@ import com.plandosee.diary.common.db.StatementBudget;
 import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.error.NotFoundException;
 import com.plandosee.diary.common.id.IdGenerator;
+import com.plandosee.diary.common.paging.PageInfo;
+import com.plandosee.diary.common.paging.PageRequest;
+import com.plandosee.diary.common.paging.PageSettings;
 import com.plandosee.diary.common.time.SeoulDates;
 import com.plandosee.diary.execution.domain.ExecutionLogRow;
 import com.plandosee.diary.plan.application.PlanCommand;
@@ -25,6 +28,7 @@ import com.plandosee.diary.plan.domain.PlanRow;
 import com.plandosee.diary.review.application.port.ReviewMapper;
 import com.plandosee.diary.review.domain.EvidenceQuery;
 import com.plandosee.diary.review.domain.EvidenceTodo;
+import com.plandosee.diary.review.domain.EvidenceTotals;
 import com.plandosee.diary.review.domain.ReviewEvidence;
 import com.plandosee.diary.review.domain.ReviewMetric;
 import com.plandosee.diary.review.domain.ReviewRow;
@@ -47,10 +51,12 @@ public class ReviewService {
     private final SeoulDates seoulDates;
     private final WriteTransactions writes;
     private final StatementBudget statementBudget;
+    private final PageSettings pageSettings;
 
     public ReviewService(ReviewMapper reviewMapper, PlanService planService, CurrentUserProvider currentUserProvider,
                          IdGenerator idGenerator, SeoulDates seoulDates, WriteTransactions writes,
-                         StatementBudget statementBudget) {
+                         StatementBudget statementBudget, PageSettings pageSettings) {
+        this.pageSettings = pageSettings;
         this.reviewMapper = reviewMapper;
         this.planService = planService;
         this.currentUserProvider = currentUserProvider;
@@ -142,12 +148,24 @@ public class ReviewService {
 
     /**
      * The evidence page in one repeatable-read snapshot: review, plan, summary, and evidence lists agree (T06-C83).
+     * First page of each list.
      */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ReviewEvidencePage evidencePage(UUID reviewId, ReviewMetric metric) {
+        return evidencePage(reviewId, metric, PageRequest.FIRST, PageRequest.FIRST);
+    }
+
+    /**
+     * ADR-21: the evidence page with one page of the todo list ({@code todoPage}) and of the log list
+     * ({@code logPage}). evidenceCount and the minute sums still cover the whole scope, so they match the summary
+     * whatever page is shown (T06-C83).
+     */
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public ReviewEvidencePage evidencePage(UUID reviewId, ReviewMetric metric, int todoPage, int logPage) {
         statementBudget.useAggregateTimeout();
         ReviewRow review = get(reviewId);
-        return new ReviewEvidencePage(review, planService.get(review.getPlanId()), evidence(review, metric));
+        return new ReviewEvidencePage(review, planService.get(review.getPlanId()),
+                evidence(review, metric, todoPage, logPage));
     }
 
     @Transactional(readOnly = true)
@@ -157,39 +175,59 @@ public class ReviewService {
     }
 
     /**
-     * Summary and evidence are read in one repeatable-read snapshot so the page never shows numbers that disagree.
+     * Summary and every evidence row (whole lists, not paged), read in one repeatable-read snapshot so the numbers
+     * never disagree.
      */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ReviewEvidence evidence(UUID reviewId, ReviewMetric metric) {
         statementBudget.useAggregateTimeout();
-        return evidence(get(reviewId), metric);
+        return evidence(get(reviewId), metric, null, null);
     }
 
-    private ReviewEvidence evidence(ReviewRow review, ReviewMetric metric) {
+    /**
+     * Lists narrowed by the metric's filter; totals come from the same filter over the whole scope. A null page
+     * reads the whole list.
+     */
+    private ReviewEvidence evidence(ReviewRow review, ReviewMetric metric, Integer todoPage, Integer logPage) {
         ReviewScope scope = scope(review);
         ReviewSummary summary = summary(scope);
         EvidenceQuery query = EvidenceQuery.of(scope, metric);
+        boolean showsTodos = metric != ReviewMetric.ACTUAL;
+        boolean showsLogs = metric == ReviewMetric.ACTUAL || metric == ReviewMetric.VARIANCE;
+
+        EvidenceTotals todoTotals = showsTodos ? reviewMapper.evidenceTodoTotals(query) : EvidenceTotals.zero();
+        PageInfo todoInfo = null;
         List<EvidenceTodo> todos = List.of();
-        List<ExecutionLogRow> logs = List.of();
-        switch (metric) {
-            case PLANNED, COMPLETED, OVERDUE, ESTIMATED -> todos = reviewMapper.evidenceTodos(query);
-            case BLOCKED -> {
-                todos = reviewMapper.evidenceTodos(query);
-                logs = reviewMapper.evidenceLogs(query);
-                attachBlockerReasons(todos, logs);
-            }
-            case ACTUAL -> logs = reviewMapper.evidenceLogs(query);
-            case VARIANCE -> {
-                todos = reviewMapper.evidenceTodos(query);
-                logs = reviewMapper.evidenceLogs(query);
+        if (showsTodos) {
+            todoInfo = pageOf(todoPage, todoTotals.getCount());
+            if (todoInfo.totalCount() > 0) {
+                todos = reviewMapper.evidenceTodos(todoPage == null ? query : query.page(todoInfo.limit(), todoInfo.offset()));
             }
         }
-        long estimateSum = todos.stream().mapToLong(EvidenceTodo::getEstimatedMinutes).sum();
-        long actualSum = metric == ReviewMetric.ACTUAL
-                ? logs.stream().mapToLong(ExecutionLogRow::getActualMinutes).sum()
-                : todos.stream().mapToLong(EvidenceTodo::getActualMinutes).sum();
-        int count = metric == ReviewMetric.ACTUAL ? logs.size() : todos.size();
-        return new ReviewEvidence(metric, summary, todos, logs, count, estimateSum, actualSum);
+
+        EvidenceTotals logTotals = showsLogs ? reviewMapper.evidenceLogTotals(query) : EvidenceTotals.zero();
+        PageInfo logInfo = null;
+        List<ExecutionLogRow> logs = List.of();
+        if (showsLogs) {
+            logInfo = pageOf(logPage, logTotals.getCount());
+            if (logInfo.totalCount() > 0) {
+                logs = reviewMapper.evidenceLogs(logPage == null ? query : query.page(logInfo.limit(), logInfo.offset()));
+            }
+        } else if (metric == ReviewMetric.BLOCKED && !todos.isEmpty()) {
+            logs = reviewMapper.evidenceLogs(query.forTodos(todos.stream().map(EvidenceTodo::getId).toList()));
+            attachBlockerReasons(todos, logs);
+        }
+
+        boolean actual = metric == ReviewMetric.ACTUAL;
+        long count = actual ? logTotals.getCount() : todoTotals.getCount();
+        long estimateSum = actual ? 0 : todoTotals.getEstimatedMinutes();
+        long actualSum = actual ? logTotals.getActualMinutes() : todoTotals.getActualMinutes();
+        return new ReviewEvidence(metric, summary, todos, logs, Math.toIntExact(count), estimateSum, actualSum,
+                todoInfo, logInfo);
+    }
+
+    private PageInfo pageOf(Integer requested, long total) {
+        return requested == null ? PageInfo.whole(total) : pageSettings.page(requested, total);
     }
 
     /**

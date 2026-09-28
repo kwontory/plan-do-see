@@ -72,6 +72,8 @@ mybatis:
 
 app:
   demo-user-id: ${APP_DEMO_USER_ID:00000000-0000-4000-8000-000000000001}
+  # ADR-21: rows per page of every paged list (plans, todos, evidence, a todo's records). 1 to 200.
+  page-size: ${APP_PAGE_SIZE:50}
   db:
     # PostgreSQL duration: digits with an optional ms, s, or min unit (e.g. 100ms, 1s). 0 disables the limit.
     lock-timeout: ${DB_LOCK_TIMEOUT:100ms}

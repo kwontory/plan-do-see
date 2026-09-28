@@ -7,14 +7,15 @@ import java.util.UUID;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.plandosee.diary.common.domain.Priority;
+import com.plandosee.diary.common.paging.PageRequest;
 import com.plandosee.diary.todo.domain.DueFilter;
 import com.plandosee.diary.todo.domain.TodoSort;
 import com.plandosee.diary.todo.domain.TodoStatus;
 
 /**
- * S02 search/filter/sort state (ADR-06). Bound from the query string on GET and from hidden fields on list POSTs
- * (web-contract revision 1 Q10). Unknown values are dropped (sort falls back to DUE), so only allowlisted values
- * ever reach SQL or a redirect URL.
+ * S02 search/filter/sort state (ADR-06) and page (ADR-21). Bound from the query string on GET and from hidden fields
+ * on list POSTs (web-contract revision 1 Q10). Unknown values are dropped (sort falls back to DUE, page to 1), so
+ * only allowlisted values ever reach SQL or a redirect URL.
  */
 public class TodoListQuery {
 
@@ -24,6 +25,7 @@ public class TodoListQuery {
     private String tagId;
     private String due;
     private String sort;
+    private String page;
 
     /** A copy with every value parsed against its allowlist and rendered back in canonical form. */
     public TodoListQuery normalized() {
@@ -34,11 +36,21 @@ public class TodoListQuery {
         n.tagId = tagIdValue() == null ? null : tagIdValue().toString();
         n.due = dueValue() == null ? null : dueValue().name();
         n.sort = sortValue().name();
+        n.page = String.valueOf(pageValue());
         return n;
     }
 
-    /** /plans/{planId}/todos with only the allowlisted list state; every value is percent-encoded. */
+    /**
+     * /plans/{planId}/todos with only the allowlisted list state and the current page (omitted when 1); every value
+     * is percent-encoded. Used for redirects after add, complete, reopen, and delete (ADR-21: the page is kept; a
+     * page that no longer exists is shown as the last page by the list itself).
+     */
     public String listUrl(UUID planId) {
+        return listUrl(planId, pageValue());
+    }
+
+    /** The same list state on another page (page links, ADR-21). */
+    public String listUrl(UUID planId, int page) {
         TodoListQuery n = normalized();
         Map<String, Object> vars = new LinkedHashMap<>();
         vars.put("planId", planId);
@@ -50,6 +62,9 @@ public class TodoListQuery {
         addParam(builder, vars, "due", n.due);
         if (n.sort != null && !TodoSort.DUE.name().equals(n.sort)) {
             addParam(builder, vars, "sort", n.sort);
+        }
+        if (page > PageRequest.FIRST) {
+            addParam(builder, vars, "page", String.valueOf(page));
         }
         return builder.encode().buildAndExpand(vars).toUriString();
     }
@@ -75,6 +90,11 @@ public class TodoListQuery {
 
     public TodoSort sortValue() {
         return TodoSort.fromParam(sort);
+    }
+
+    /** Requested page, 1 when absent or unreadable (PageRequest.parse). */
+    public int pageValue() {
+        return PageRequest.parse(page);
     }
 
     public UUID tagIdValue() {
@@ -146,5 +166,13 @@ public class TodoListQuery {
 
     public void setSort(String sort) {
         this.sort = sort;
+    }
+
+    public String getPage() {
+        return page;
+    }
+
+    public void setPage(String page) {
+        this.page = page;
     }
 }

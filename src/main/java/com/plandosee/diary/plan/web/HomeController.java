@@ -3,11 +3,16 @@ package com.plandosee.diary.plan.web;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
+import com.plandosee.diary.common.paging.Page;
+import com.plandosee.diary.common.paging.PageRequest;
 import com.plandosee.diary.plan.application.PlanService;
+import com.plandosee.diary.plan.domain.PlanRow;
 
 /**
- * S00. The public warning comes from GlobalModelAdvice (publicNotice).
+ * S00. The public warning comes from GlobalModelAdvice (publicNotice). The plan list is paged (ADR-21):
+ * {@code plans} holds the rows of the page, {@code page} the page position (PageInfo).
  */
 @Controller
 public class HomeController {
@@ -19,8 +24,10 @@ public class HomeController {
     }
 
     @GetMapping("/")
-    public String index(Model model) {
-        model.addAttribute("plans", planService.list());
+    public String index(@RequestParam(name = "page", required = false) String page, Model model) {
+        Page<PlanRow> plans = planService.listPage(PageRequest.parse(page));
+        model.addAttribute("plans", plans.items());
+        model.addAttribute("page", plans.info());
         return "index";
     }
 }

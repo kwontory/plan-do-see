@@ -72,9 +72,11 @@
         FOR UPDATE OF t NOWAIT
     </select>
 
-    <select id="search" parameterType="com.plandosee.diary.todo.domain.TodoFilter" resultMap="todoRow">
-        SELECT <include refid="todoColumns"/>,
-               <include refid="dueFlagColumns"/>
+    <!--
+      ADR-21: the todo list, its pages, and its count share this FROM/WHERE (search, filters; ADR-06) and the
+      ORDER BY below, so the count always describes the rows that can appear on the pages.
+    -->
+    <sql id="searchFromWhere">
         FROM todos t
         JOIN plans p ON p.id = t.plan_id
         WHERE t.plan_id = #{planId}
@@ -113,6 +115,10 @@
               AND t.due_date IS NULL
             </when>
         </choose>
+    </sql>
+
+    <!-- Stable order ending in the unique id (DEC-06, ADR-06), so pages never overlap or skip a row. -->
+    <sql id="searchOrder">
         ORDER BY
         <choose>
             <when test="sortKey == 'PRIORITY'">
@@ -129,6 +135,22 @@
                 <include refid="com.plandosee.diary.common.sql.TodoPredicates.defaultTodoOrder"/>
             </otherwise>
         </choose>
+    </sql>
+
+    <!-- The whole list when limit is null, otherwise one page of it. -->
+    <select id="search" parameterType="com.plandosee.diary.todo.domain.TodoFilter" resultMap="todoRow">
+        SELECT <include refid="todoColumns"/>,
+               <include refid="dueFlagColumns"/>
+        <include refid="searchFromWhere"/>
+        <include refid="searchOrder"/>
+        <if test="limit != null">
+        LIMIT #{limit} OFFSET #{offset}
+        </if>
+    </select>
+
+    <select id="countSearch" parameterType="com.plandosee.diary.todo.domain.TodoFilter" resultType="long">
+        SELECT COUNT(t.id) AS todo_count
+        <include refid="searchFromWhere"/>
     </select>
 
     <!--

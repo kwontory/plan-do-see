@@ -68,12 +68,29 @@
         FOR UPDATE NOWAIT
     </select>
 
-    <select id="listActiveOwned" resultMap="planRow">
-        SELECT <include refid="planColumns"/>
+    <!-- ADR-21: the plan list, its page, and its count share this FROM/WHERE. -->
+    <sql id="activeOwnedPlans">
         FROM plans p
         WHERE p.user_id = #{userId}
           AND p.deleted_at IS NULL
+    </sql>
+
+    <select id="listActiveOwned" resultMap="planRow">
+        SELECT <include refid="planColumns"/>
+        <include refid="activeOwnedPlans"/>
         ORDER BY p.created_at DESC, p.id ASC
+    </select>
+
+    <select id="countActiveOwned" resultType="long">
+        SELECT COUNT(p.id) AS plan_count
+        <include refid="activeOwnedPlans"/>
+    </select>
+
+    <select id="listActiveOwnedPage" resultMap="planRow">
+        SELECT <include refid="planColumns"/>
+        <include refid="activeOwnedPlans"/>
+        ORDER BY p.created_at DESC, p.id ASC
+        LIMIT #{limit} OFFSET #{offset}
     </select>
 
     <update id="updateOwned" parameterType="com.plandosee.diary.plan.domain.PlanRow">

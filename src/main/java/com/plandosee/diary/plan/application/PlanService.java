@@ -6,12 +6,16 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.plandosee.diary.common.concurrency.WriteTransactions;
 import com.plandosee.diary.common.config.CurrentUserProvider;
 import com.plandosee.diary.common.error.NotFoundException;
 import com.plandosee.diary.common.id.IdGenerator;
+import com.plandosee.diary.common.paging.Page;
+import com.plandosee.diary.common.paging.PageInfo;
+import com.plandosee.diary.common.paging.PageSettings;
 import com.plandosee.diary.common.time.SeoulDates;
 import com.plandosee.diary.plan.application.port.PlanMapper;
 import com.plandosee.diary.plan.domain.PlanPeriod;
@@ -26,14 +30,17 @@ public class PlanService {
     private final IdGenerator idGenerator;
     private final SeoulDates seoulDates;
     private final WriteTransactions writes;
+    private final PageSettings pageSettings;
 
     public PlanService(PlanMapper planMapper, CurrentUserProvider currentUserProvider,
-                       IdGenerator idGenerator, SeoulDates seoulDates, WriteTransactions writes) {
+                       IdGenerator idGenerator, SeoulDates seoulDates, WriteTransactions writes,
+                       PageSettings pageSettings) {
         this.planMapper = planMapper;
         this.currentUserProvider = currentUserProvider;
         this.idGenerator = idGenerator;
         this.seoulDates = seoulDates;
         this.writes = writes;
+        this.pageSettings = pageSettings;
     }
 
     public UUID create(PlanCommand command) {
@@ -91,6 +98,19 @@ public class PlanService {
     @Transactional(readOnly = true)
     public List<PlanRow> list() {
         return planMapper.listActiveOwned(currentUserProvider.currentUserId());
+    }
+
+    /**
+     * ADR-21: one page of the plan list (S00, S01). The count and the rows come from one repeatable-read snapshot,
+     * so the page position always matches the rows shown; a page past the end shows the last page.
+     */
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public Page<PlanRow> listPage(int requestedPage) {
+        UUID userId = currentUserProvider.currentUserId();
+        PageInfo info = pageSettings.page(requestedPage, planMapper.countActiveOwned(userId));
+        List<PlanRow> rows = info.totalCount() == 0 ? List.of()
+                : planMapper.listActiveOwnedPage(userId, info.limit(), info.offset());
+        return new Page<>(rows, info);
     }
 
     @Transactional(readOnly = true)

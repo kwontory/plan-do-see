@@ -6,15 +6,19 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.plandosee.diary.common.concurrency.WriteTransactions;
 import com.plandosee.diary.common.config.CurrentUserProvider;
 import com.plandosee.diary.common.id.IdGenerator;
+import com.plandosee.diary.common.paging.PageInfo;
+import com.plandosee.diary.common.paging.PageSettings;
 import com.plandosee.diary.common.time.SeoulDates;
 import com.plandosee.diary.execution.application.port.ExecutionLogMapper;
 import com.plandosee.diary.execution.domain.ActualMinutes;
 import com.plandosee.diary.execution.domain.ExecutionLogRow;
+import com.plandosee.diary.execution.domain.ExecutionLogTotals;
 import com.plandosee.diary.todo.application.TodoService;
 
 /**
@@ -29,10 +33,12 @@ public class ExecutionService {
     private final IdGenerator idGenerator;
     private final SeoulDates seoulDates;
     private final WriteTransactions writes;
+    private final PageSettings pageSettings;
 
     public ExecutionService(ExecutionLogMapper executionLogMapper, TodoService todoService,
                             CurrentUserProvider currentUserProvider, IdGenerator idGenerator, SeoulDates seoulDates,
-                            WriteTransactions writes) {
+                            WriteTransactions writes, PageSettings pageSettings) {
+        this.pageSettings = pageSettings;
         this.executionLogMapper = executionLogMapper;
         this.todoService = todoService;
         this.currentUserProvider = currentUserProvider;
@@ -73,6 +79,21 @@ public class ExecutionService {
     @Transactional(readOnly = true)
     public TodoExecutionLogs logsForTodo(UUID todoId) {
         return TodoExecutionLogs.of(listForTodo(todoId));
+    }
+
+    /**
+     * ADR-21: one page of the todo's records, with the count and minute total of all of them, in one
+     * repeatable-read snapshot. A page past the end shows the last page.
+     */
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public TodoExecutionLogs logsForTodo(UUID todoId, int requestedPage) {
+        todoService.requireOwned(todoId);
+        UUID userId = currentUserProvider.currentUserId();
+        ExecutionLogTotals totals = executionLogMapper.totalsForTodoOwned(userId, todoId);
+        PageInfo info = pageSettings.page(requestedPage, totals.getCount());
+        List<ExecutionLogRow> logs = info.totalCount() == 0 ? List.of()
+                : executionLogMapper.listForTodoOwnedPage(userId, todoId, info.limit(), info.offset());
+        return new TodoExecutionLogs(logs, totals.getActualMinutes(), info);
     }
 
     static String normalizeBlocker(String blockerReason) {

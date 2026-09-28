@@ -22,6 +22,7 @@ import com.plandosee.diary.common.domain.Priority;
 import com.plandosee.diary.common.error.RetryLaterException;
 import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.error.NotFoundException;
+import com.plandosee.diary.common.paging.PageRequest;
 import com.plandosee.diary.common.web.ConflictKeys;
 import com.plandosee.diary.common.web.ConflictResponses;
 import com.plandosee.diary.common.web.FlashMessages;
@@ -97,9 +98,12 @@ public class ReviewController {
 
     @GetMapping("/reviews/{id}/evidence")
     public String evidence(@PathVariable("id") UUID reviewId,
-                           @RequestParam(name = "metric", required = false) String metricKey, Model model) {
+                           @RequestParam(name = "metric", required = false) String metricKey,
+                           @RequestParam(name = "page", required = false) String todoPage,
+                           @RequestParam(name = "logPage", required = false) String logPage, Model model) {
         ReviewMetric metric = ReviewMetric.fromKey(metricKey).orElseThrow(() -> new NotFoundException("metric"));
-        ReviewEvidencePage page = reviewService.evidencePage(reviewId, metric);
+        ReviewEvidencePage page = reviewService.evidencePage(reviewId, metric, PageRequest.parse(todoPage),
+                PageRequest.parse(logPage));
         ReviewEvidence evidence = page.evidence();
         model.addAttribute("review", page.review());
         model.addAttribute("plan", page.plan());
@@ -113,6 +117,8 @@ public class ReviewController {
         model.addAttribute("evidenceActualMinutes", evidence.evidenceActualMinutes());
         model.addAttribute("evidenceVarianceMinutes", evidence.evidenceVarianceMinutes());
         model.addAttribute("evidenceEmpty", evidence.empty());
+        model.addAttribute("page", evidence.todoPage());
+        model.addAttribute("logPage", evidence.logPage());
         return "reviews/evidence";
     }
 

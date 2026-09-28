@@ -19,9 +19,18 @@ public class TodoFilter {
     private final DueFilter due;
     private final TodoSort sort;
     private final LocalDate today;
+    private final Integer limit;
+    private final Long offset;
 
     public TodoFilter(UUID userId, UUID planId, String query, TodoStatus status, Priority priority,
                       UUID tagId, DueFilter due, TodoSort sort, LocalDate today) {
+        this(userId, planId, query, status, priority, tagId, due, sort, today, null, null);
+    }
+
+    private TodoFilter(UUID userId, UUID planId, String query, TodoStatus status, Priority priority,
+                       UUID tagId, DueFilter due, TodoSort sort, LocalDate today, Integer limit, Long offset) {
+        this.limit = limit;
+        this.offset = offset;
         this.userId = userId;
         this.planId = planId;
         this.query = query == null || query.isBlank() ? null : query.strip();
@@ -83,5 +92,20 @@ public class TodoFilter {
 
     public LocalDate getToday() {
         return today;
+    }
+
+    /** The same conditions and order, narrowed to one page (ADR-21). */
+    public TodoFilter page(int limit, long offset) {
+        return new TodoFilter(userId, planId, query, status, priority, tagId, due, sort, today, limit, offset);
+    }
+
+    /** SQL LIMIT, or null for the whole list. */
+    public Integer getLimit() {
+        return limit;
+    }
+
+    /** SQL OFFSET, or null for the whole list. */
+    public Long getOffset() {
+        return offset;
     }
 }

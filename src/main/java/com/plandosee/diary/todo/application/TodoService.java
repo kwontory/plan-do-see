@@ -11,6 +11,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,9 @@ import com.plandosee.diary.common.config.CurrentUserProvider;
 import com.plandosee.diary.common.domain.Priority;
 import com.plandosee.diary.common.error.NotFoundException;
 import com.plandosee.diary.common.id.IdGenerator;
+import com.plandosee.diary.common.paging.Page;
+import com.plandosee.diary.common.paging.PageInfo;
+import com.plandosee.diary.common.paging.PageSettings;
 import com.plandosee.diary.common.time.SeoulDates;
 import com.plandosee.diary.plan.application.PlanService;
 import com.plandosee.diary.todo.application.port.TagMapper;
@@ -41,10 +45,12 @@ public class TodoService {
     private final IdGenerator idGenerator;
     private final SeoulDates seoulDates;
     private final WriteTransactions writes;
+    private final PageSettings pageSettings;
 
     public TodoService(TodoMapper todoMapper, TagMapper tagMapper, PlanService planService,
                        CurrentUserProvider currentUserProvider, IdGenerator idGenerator, SeoulDates seoulDates,
-                       WriteTransactions writes) {
+                       WriteTransactions writes, PageSettings pageSettings) {
+        this.pageSettings = pageSettings;
         this.todoMapper = todoMapper;
         this.tagMapper = tagMapper;
         this.planService = planService;
@@ -177,6 +183,23 @@ public class TodoService {
         List<TodoRow> todos = todoMapper.search(filter);
         attachTags(userId, todos);
         return todos;
+    }
+
+    /**
+     * ADR-21: one page of the filtered list (S02). Count and rows use the same conditions and are read in one
+     * repeatable-read snapshot; a page past the end shows the last page. Tags are attached to the page rows only.
+     */
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public Page<TodoRow> searchPage(UUID planId, String query, TodoStatus status, Priority priority,
+                                    UUID tagId, DueFilter due, TodoSort sort, int requestedPage) {
+        UUID userId = currentUserProvider.currentUserId();
+        planService.requireOwned(planId);
+        TodoFilter filter = new TodoFilter(userId, planId, query, status, priority, tagId, due, sort, seoulDates.today());
+        PageInfo info = pageSettings.page(requestedPage, todoMapper.countSearch(filter));
+        List<TodoRow> todos = info.totalCount() == 0 ? List.of()
+                : todoMapper.search(filter.page(info.limit(), info.offset()));
+        attachTags(userId, todos);
+        return new Page<>(todos, info);
     }
 
     @Transactional(readOnly = true)

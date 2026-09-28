@@ -10,6 +10,7 @@ import org.apache.ibatis.annotations.Param;
 import com.plandosee.diary.execution.domain.ExecutionLogRow;
 import com.plandosee.diary.review.domain.EvidenceQuery;
 import com.plandosee.diary.review.domain.EvidenceTodo;
+import com.plandosee.diary.review.domain.EvidenceTotals;
 import com.plandosee.diary.review.domain.ReviewCounts;
 import com.plandosee.diary.review.domain.ReviewRow;
 import com.plandosee.diary.review.domain.ReviewScope;
@@ -37,5 +38,9 @@ public interface ReviewMapper {
 
     List<EvidenceTodo> evidenceTodos(EvidenceQuery query);
 
+    EvidenceTotals evidenceTodoTotals(EvidenceQuery query);
+
     List<ExecutionLogRow> evidenceLogs(EvidenceQuery query);
+
+    EvidenceTotals evidenceLogTotals(EvidenceQuery query);
 }
