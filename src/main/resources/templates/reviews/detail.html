@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:with="formError=${improvementForm != null and #fields.hasErrors('${improvementForm.*}')},
+               transferred=${review.nextPlanId != null},
+               hasImprovement=${review.improvement != null and !#strings.isEmpty(#strings.trim(review.improvement))}">
+<head th:replace="~{fragments/layout :: head(|회고: ${plan.title}|, ${formError})}">
+    <meta charset="UTF-8">
+    <title>회고</title>
+</head>
+<body>
+<header th:replace="~{fragments/layout :: header('plans')}"></header>
+
+<main id="main" tabindex="-1">
+    <nav class="breadcrumb" aria-label="현재 위치">
+        <ol>
+            <li><a th:href="@{/plans}" href="/plans">계획</a></li>
+            <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">계획 제목</a></li>
+            <li aria-current="page">회고</li>
+        </ol>
+    </nav>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1 th:text="|회고: ${plan.title}|">회고</h1>
+
+    <!--/* 1. Basis */-->
+    <section class="section" aria-labelledby="basis-heading">
+        <h2 id="basis-heading">회고 기준</h2>
+        <dl class="dl-grid">
+            <dt>회고 기간</dt>
+            <dd th:text="|${review.periodStart} ~ ${review.periodEnd}|">기간</dd>
+            <dt>지연 판정 기준일</dt>
+            <dd th:text="|${summary.today} (서울 오늘)|">2026-01-01 (서울 오늘)</dd>
+            <dt>대상</dt>
+            <dd>이 계획에서 삭제하지 않은 할 일 전체와 그 실행 기록</dd>
+        </dl>
+        <p class="muted">숫자는 이 페이지를 연 시점의 자료로 계산합니다. 할 일이나 실행 기록이 바뀌면 숫자도 바뀝니다.</p>
+        <p class="muted" th:text="|계획에 적은 예상 시간(${plan.estimatedMinutes}분)은 참고값이며, 아래 예상 시간은 할 일의 예상 시간을 더한 값입니다.|">참고</p>
+    </section>
+
+    <!--/* 2. Metrics */-->
+    <section class="section" aria-labelledby="metrics-heading">
+        <h2 id="metrics-heading">지표</h2>
+        <p class="note" th:if="${summary.plannedCount == 0}">이 계획에 할 일이 없어 모든 숫자가 0입니다.</p>
+        <p>숫자를 누르면 그 숫자를 만든 근거 기록을 볼 수 있습니다.</p>
+        <ul class="metric-grid">
+            <li th:each="m : ${metrics}">
+                <a class="link-card" th:href="@{${m.href}}" href="#">
+                    <span class="link-card__label" th:text="${m.label}">계획 수</span>
+                    <span class="link-card__value">
+                        <th:block th:if="${m.key == 'variance'}"><th:block th:replace="~{fragments/layout :: signedMinutes(${m.value})}"></th:block></th:block>
+                        <th:block th:unless="${m.key == 'variance'}" th:text="|${m.value}${m.unit}|">0건</th:block>
+                    </span>
+                    <span class="link-card__desc" th:switch="${m.key}">
+                        <th:block th:case="'planned'">이 계획에서 삭제하지 않은 할 일 수</th:block>
+                        <th:block th:case="'completed'">그중 지금 완료 상태인 할 일 수(완료 버튼을 누른 횟수가 아님)</th:block>
+                        <th:block th:case="'overdue'">완료되지 않았고 마감일이 기준일보다 앞선 할 일 수</th:block>
+                        <th:block th:case="'blocked'">막힌 이유를 적은 실행 기록이 있는 할 일 수(기록이 여러 건이어도 1건)</th:block>
+                        <th:block th:case="'estimated'">대상 할 일의 예상 시간 합계</th:block>
+                        <th:block th:case="'actual'">대상 할 일에 남긴 실행 기록의 실제 시간 합계</th:block>
+                        <th:block th:case="'variance'">실제 시간 − 예상 시간(+는 더 걸림, -는 덜 걸림)</th:block>
+                    </span>
+                    <span class="link-card__cta">근거 보기 →</span>
+                </a>
+            </li>
+        </ul>
+    </section>
+
+    <!--/* 3. Improvement */-->
+    <section class="section" aria-labelledby="improvement-heading">
+        <h2 id="improvement-heading">개선점</h2>
+        <form th:unless="${transferred}" method="post" novalidate class="form"
+              th:action="@{/reviews/{id}/improvement(id=${review.id})}" th:object="${improvementForm}">
+            <input type="hidden" name="_method" value="put">
+            <div th:replace="~{fragments/layout :: errorSummary}"></div>
+            <div class="field" th:classappend="${#fields.hasErrors('improvement')} ? 'field--error'">
+                <label for="improvement">다음 계획으로 넘길 개선점 한 가지</label>
+                <p class="field-help" id="improvement-help">1000자 이하. ‘다음 계획 만들기’를 하면 이 내용이 새 계획에 그대로 복사되고, 그 뒤에는 고칠 수 없습니다.</p>
+                <p th:replace="~{fragments/layout :: fieldError('improvement')}"></p>
+                <textarea th:field="*{improvement}" rows="5" maxlength="1000"
+                          th:attr="aria-describedby=${#fields.hasErrors('improvement')} ? 'improvement-help improvement-error' : 'improvement-help',aria-invalid=${#fields.hasErrors('improvement')} ? 'true' : null"></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn">개선점 저장</button>
+            </div>
+        </form>
+        <div th:if="${transferred}" class="readonly-box">
+            <p><span class="badge badge--transferred">다음 계획으로 넘김</span></p>
+            <p class="pre-wrap" th:text="${review.improvement}">개선점</p>
+            <p class="muted" th:if="${review.transferredAt != null}">넘긴 시각 <time th:replace="~{fragments/layout :: datetime(${review.transferredAt})}"></time></p>
+            <p class="muted">이미 다음 계획으로 넘긴 개선점이라 고칠 수 없습니다.</p>
+        </div>
+    </section>
+
+    <!--/* 4. Next plan */-->
+    <section class="section" aria-labelledby="next-heading">
+        <h2 id="next-heading">다음 계획</h2>
+        <p th:if="${!transferred and !hasImprovement}">개선점을 저장하면 다음 계획을 만들 수 있습니다.</p>
+        <th:block th:if="${!transferred and hasImprovement}">
+            <p>저장된 개선점을 담아 새 계획을 만듭니다. 한 회고의 개선점은 한 번만 넘길 수 있습니다.</p>
+            <p><a class="btn" th:href="@{/reviews/{id}/next-plan(id=${review.id})}" href="#">다음 계획 만들기</a></p>
+        </th:block>
+        <th:block th:if="${transferred}">
+            <p>이 개선점은 다음 계획으로 넘어갔습니다.</p>
+            <p th:if="${nextPlan != null}" class="muted" th:text="|다음 계획: ${nextPlan.title}|">다음 계획 제목</p>
+            <p><a th:href="@{/plans/{id}(id=${review.nextPlanId})}" href="#">넘겨받은 다음 계획 보기</a></p>
+        </th:block>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

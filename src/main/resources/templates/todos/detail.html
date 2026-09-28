@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:with="formError=${#fields.hasErrors('${executionForm.*}')},
+               done=${todo.status.name() == 'COMPLETED'},
+               logTotal=${logs == null or logs.isEmpty() ? 0 : #aggregates.sum(logs.![actualMinutes])}">
+<head th:replace="~{fragments/layout :: head(${todo.title}, ${formError})}">
+    <meta charset="UTF-8">
+    <title>할 일 상세</title>
+</head>
+<body>
+<header th:replace="~{fragments/layout :: header('plans')}"></header>
+
+<main id="main" tabindex="-1">
+    <nav class="breadcrumb" aria-label="현재 위치">
+        <ol>
+            <li><a th:href="@{/plans}" href="/plans">계획</a></li>
+            <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">계획 제목</a></li>
+            <li><a th:href="@{/plans/{id}/todos(id=${plan.id})}" href="#">할 일</a></li>
+            <li aria-current="page" th:text="${todo.title}">할 일 제목</li>
+        </ol>
+    </nav>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1 th:text="${todo.title}">할 일 제목</h1>
+
+    <!--/* 1. Summary */-->
+    <section class="section" aria-labelledby="info-heading">
+        <h2 id="info-heading">할 일 정보</h2>
+        <p class="badges"><th:block th:replace="~{fragments/todo :: statusBadges(${todo}, ${today})}"></th:block></p>
+        <dl class="dl-grid">
+            <dt>마감일</dt>
+            <dd th:text="${todo.dueDate != null ? todo.dueDate : '마감일 없음'}">마감일 없음</dd>
+            <dt>우선순위</dt>
+            <dd th:text="${todo.priority.label()}">보통</dd>
+            <dt>예상 시간(계획 값)</dt>
+            <dd><span class="num" th:text="|${todo.estimatedMinutes}분|">0분</span>
+                <span class="muted">실행 기록을 남겨도 예상 시간은 바뀌지 않습니다.</span></dd>
+            <dt>태그</dt>
+            <dd th:text="${todo.tags != null and !todo.tags.isEmpty() ? #strings.listJoin(todo.tags.![name], ', ') : '없음'}">없음</dd>
+            <th:block th:if="${done and todo.completedAt != null}">
+                <dt>완료 시각</dt>
+                <dd><time th:replace="~{fragments/layout :: datetime(${todo.completedAt})}"></time></dd>
+            </th:block>
+        </dl>
+        <p><a class="btn btn--secondary" th:href="@{/todos/{id}/edit(id=${todo.id})}" href="#">수정</a></p>
+    </section>
+
+    <!--/* 2. Completion */-->
+    <section class="section" aria-labelledby="completion-heading">
+        <h2 id="completion-heading">완료 상태</h2>
+        <p class="field-help" id="completion-help">완료 버튼을 여러 번 눌러도 완료 기록은 한 번만 남습니다.</p>
+        <form th:unless="${done}" method="post" class="inline-form" aria-describedby="completion-help"
+              th:action="@{/todos/{id}/completion(id=${todo.id})}">
+            <input type="hidden" name="idempotencyKey" th:value="${completionKey}">
+            <input type="hidden" name="returnTo" value="detail">
+            <button type="submit" class="btn">완료</button>
+        </form>
+        <form th:if="${done}" method="post" class="inline-form" aria-describedby="completion-help"
+              th:action="@{/todos/{id}/completion(id=${todo.id})}">
+            <input type="hidden" name="_method" value="delete">
+            <input type="hidden" name="returnTo" value="detail">
+            <button type="submit" class="btn btn--secondary">진행 중으로 되돌리기</button>
+        </form>
+    </section>
+
+    <!--/* 3. Execution form */-->
+    <section class="section" aria-labelledby="exec-form-heading">
+        <h2 id="exec-form-heading">실행 기록 남기기</h2>
+        <div id="exec-help" class="note">
+            <p>시각은 서울(Asia/Seoul) 기준으로 입력합니다.</p>
+            <p>실제 시간은 저장할 때 서버가 ‘종료 − 시작’으로 계산합니다. 1초라도 남으면 1분으로 올립니다(예: 10분 1초 → 11분). 시작과 종료가 같으면 0분입니다.</p>
+        </div>
+        <form method="post" novalidate class="form" aria-describedby="exec-help"
+              th:action="@{/todos/{id}/executions(id=${todo.id})}" th:object="${executionForm}">
+            <div th:replace="~{fragments/layout :: errorSummary}"></div>
+            <div class="field-group--pair">
+                <div class="field" th:classappend="${#fields.hasErrors('startedAt')} ? 'field--error'">
+                    <label for="startedAt">시작 시각</label>
+                    <p th:replace="~{fragments/layout :: fieldError('startedAt')}"></p>
+                    <input type="datetime-local" step="1" th:field="*{startedAt}" required
+                           th:attr="aria-describedby=${#fields.hasErrors('startedAt')} ? 'startedAt-error' : null,aria-invalid=${#fields.hasErrors('startedAt')} ? 'true' : null">
+                </div>
+                <div class="field" th:classappend="${#fields.hasErrors('endedAt')} ? 'field--error'">
+                    <label for="endedAt">종료 시각</label>
+                    <p class="field-help" id="endedAt-help">시작 시각과 같거나 뒤여야 합니다.</p>
+                    <p th:replace="~{fragments/layout :: fieldError('endedAt')}"></p>
+                    <input type="datetime-local" step="1" th:field="*{endedAt}" required
+                           th:attr="aria-describedby=${#fields.hasErrors('endedAt')} ? 'endedAt-help endedAt-error' : 'endedAt-help',aria-invalid=${#fields.hasErrors('endedAt')} ? 'true' : null">
+                </div>
+            </div>
+            <div class="field" th:classappend="${#fields.hasErrors('blockerReason')} ? 'field--error'">
+                <label for="blockerReason">막힌 이유(선택)</label>
+                <p class="field-help" id="blockerReason-help">막힌 점이 있었다면 적습니다. 비워 두면 저장하지 않습니다. 회고의 막힘 수에 반영됩니다.</p>
+                <p th:replace="~{fragments/layout :: fieldError('blockerReason')}"></p>
+                <textarea th:field="*{blockerReason}" rows="3"
+                          th:attr="aria-describedby=${#fields.hasErrors('blockerReason')} ? 'blockerReason-help blockerReason-error' : 'blockerReason-help',aria-invalid=${#fields.hasErrors('blockerReason')} ? 'true' : null"></textarea>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn">실행 기록 저장</button>
+            </div>
+        </form>
+        <p class="muted">저장한 실행 기록은 감사 근거라서 이 화면에서 고치거나 지울 수 없습니다.</p>
+    </section>
+
+    <!--/* 4. Execution logs */-->
+    <section class="section" aria-labelledby="logs-heading">
+        <h2 id="logs-heading">실행 기록</h2>
+        <p class="summary-line" th:text="|${#lists.size(logs)}건 · 실제 시간 합계 ${logTotal}분|">0건 · 실제 시간 합계 0분</p>
+        <p class="sort-note">시작 시각이 빠른 순입니다.</p>
+        <p class="empty" th:if="${logs.isEmpty()}">아직 실행 기록이 없습니다. 위에서 시작·종료 시각을 입력해 첫 기록을 남기세요.</p>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="실행 기록" th:unless="${logs.isEmpty()}">
+            <table>
+                <caption class="visually-hidden">실행 기록</caption>
+                <thead>
+                <tr>
+                    <th scope="col">시작</th>
+                    <th scope="col">종료</th>
+                    <th scope="col" class="num">실제 시간</th>
+                    <th scope="col">막힌 이유</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="log : ${logs}">
+                    <td><time th:replace="~{fragments/layout :: datetime(${log.startedAt})}"></time></td>
+                    <td><time th:replace="~{fragments/layout :: datetime(${log.endedAt})}"></time></td>
+                    <td class="num" th:text="|${log.actualMinutes}분|">0분</td>
+                    <td class="pre-wrap" th:text="${log.blockerReason != null ? log.blockerReason : '없음'}">없음</td>
+                </tr>
+                </tbody>
+                <tfoot>
+                <tr>
+                    <th scope="row" colspan="2">합계</th>
+                    <td class="num" th:text="|${logTotal}분|">0분</td>
+                    <td></td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+    </section>
+
+    <!--/* 5. Completion events */-->
+    <section class="section" aria-labelledby="events-heading">
+        <h2 id="events-heading">완료 기록</h2>
+        <p class="muted">완료로 바꿀 때마다 한 건씩 남습니다. 진행 중으로 되돌린 뒤 다시 완료하면 다음 회차가 추가됩니다.</p>
+        <p class="summary-line" th:text="|완료 기록 ${#lists.size(events)}건|">완료 기록 0건</p>
+        <p class="sort-note">회차 순입니다.</p>
+        <p class="empty" th:if="${events.isEmpty()}">아직 완료한 적이 없습니다.</p>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="완료 기록" th:unless="${events.isEmpty()}">
+            <table>
+                <caption class="visually-hidden">완료 기록</caption>
+                <thead>
+                <tr>
+                    <th scope="col">회차</th>
+                    <th scope="col">완료 시각</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="ev : ${events}">
+                    <td th:text="|${ev.cycleNo}회차|">1회차</td>
+                    <td><time th:replace="~{fragments/layout :: datetime(${ev.completedAt})}"></time></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:with="formError=${#fields.hasErrors('${todoForm.*}')},
+               qText=${filter.q == null ? '' : #strings.trim(#strings.toString(filter.q))},
+               statusKey=${#strings.toString(filter.status)},
+               priorityKey=${#strings.toString(filter.priority)},
+               tagKey=${#strings.toString(filter.tagId)},
+               dueKey=${#strings.toString(filter.due)},
+               sortKey=${#strings.toString(filter.sort)},
+               filterActive=${!#strings.isEmpty(qText) or !#strings.isEmpty(statusKey) or !#strings.isEmpty(priorityKey) or !#strings.isEmpty(tagKey) or !#strings.isEmpty(dueKey)}">
+<head th:replace="~{fragments/layout :: head(|할 일: ${plan.title}|, ${formError})}">
+    <meta charset="UTF-8">
+    <title>할 일</title>
+</head>
+<body>
+<header th:replace="~{fragments/layout :: header('plans')}"></header>
+
+<main id="main" tabindex="-1">
+    <nav class="breadcrumb" aria-label="현재 위치">
+        <ol>
+            <li><a th:href="@{/plans}" href="/plans">계획</a></li>
+            <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">계획 제목</a></li>
+            <li aria-current="page">할 일</li>
+        </ol>
+    </nav>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1>할 일</h1>
+    <p class="subtitle">계획: <a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">계획 제목</a></p>
+
+    <!--/* 1. Add */-->
+    <section class="section" aria-labelledby="add-heading">
+        <h2 id="add-heading">할 일 추가</h2>
+        <form method="post" novalidate class="form"
+              th:action="@{/plans/{id}/todos(id=${plan.id})}" th:object="${todoForm}">
+            <th:block th:replace="~{fragments/todo :: listState(${filter}, false)}"></th:block>
+            <div th:replace="~{fragments/layout :: errorSummary}"></div>
+            <th:block th:replace="~{fragments/plan :: todoFields(${priorities})}"></th:block>
+            <div class="form-actions">
+                <button type="submit" class="btn">할 일 추가</button>
+            </div>
+        </form>
+    </section>
+
+    <!--/* 2. Search and filter */-->
+    <section class="section" aria-labelledby="filter-heading">
+        <h2 id="filter-heading">검색과 필터</h2>
+        <form method="get" role="search" aria-labelledby="filter-heading" class="filter-form"
+              th:action="@{/plans/{id}/todos(id=${plan.id})}">
+            <div class="filter-grid">
+                <div class="field">
+                    <label for="filter-q">제목 검색</label>
+                    <p class="field-help" id="filter-q-help">제목 일부로 찾습니다. 대소문자를 구분하지 않습니다.</p>
+                    <input type="search" id="filter-q" name="q" aria-describedby="filter-q-help"
+                           th:value="${filter.q}">
+                </div>
+                <div class="field">
+                    <label for="filter-status">상태</label>
+                    <select id="filter-status" name="status">
+                        <option value="">전체</option>
+                        <option th:each="s : ${statuses}" th:value="${s}" th:text="${s.label()}"
+                                th:selected="${statusKey == #strings.toString(s)}">진행 중</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="filter-priority">우선순위</label>
+                    <select id="filter-priority" name="priority">
+                        <option value="">전체</option>
+                        <option th:each="pr : ${priorities}" th:value="${pr}" th:text="${pr.label()}"
+                                th:selected="${priorityKey == #strings.toString(pr)}">보통</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <th:block th:if="${tags != null and !tags.isEmpty()}">
+                        <label for="filter-tagId">태그</label>
+                        <select id="filter-tagId" name="tagId">
+                            <option value="">전체</option>
+                            <option th:each="tag : ${tags}" th:value="${tag.id}" th:text="${tag.name}"
+                                    th:selected="${tagKey == #strings.toString(tag.id)}">태그</option>
+                        </select>
+                    </th:block>
+                    <th:block th:if="${tags == null or tags.isEmpty()}">
+                        <span class="field-label">태그</span>
+                        <p class="muted">아직 태그가 없습니다.</p>
+                    </th:block>
+                </div>
+                <div class="field">
+                    <label for="filter-due">마감 상태</label>
+                    <p class="field-help" id="filter-due-help" th:text="|오늘(${today}, 서울 기준)을 기준으로 판정합니다.|">도움말</p>
+                    <select id="filter-due" name="due" aria-describedby="filter-due-help">
+                        <option value="">전체</option>
+                        <option th:each="d : ${dueFilters}" th:value="${d}" th:text="${d.label()}"
+                                th:selected="${dueKey == #strings.toString(d)}">오늘 마감</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="filter-sort">정렬</label>
+                    <select id="filter-sort" name="sort">
+                        <option th:each="so : ${sorts}" th:value="${so}"
+                                th:with="soKey=${#strings.toString(so)}"
+                                th:text="${soKey == 'DUE' ? '마감일 순(기본)' : (soKey == 'PRIORITY' ? '우선순위 순' : (soKey == 'CREATED' ? '만든 순' : soKey))}"
+                                th:selected="${sortKey == soKey}">마감일 순(기본)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn--secondary" data-no-lock>적용</button>
+            </div>
+        </form>
+    </section>
+
+    <!--/* 3. List */-->
+    <section class="section" aria-labelledby="list-heading">
+        <h2 id="list-heading">목록</h2>
+
+        <div class="filter-status" th:if="${filterActive}">
+            <p>필터 적용 중:
+                <span class="filter-conditions"><span th:unless="${#strings.isEmpty(qText)}" th:text="|검색어 “${qText}”|">검색어</span><th:block
+                        th:each="s : ${statuses}"><span th:if="${statusKey == #strings.toString(s)}" th:text="|상태 ${s.label()}|">상태</span></th:block><th:block
+                        th:each="pr : ${priorities}"><span th:if="${priorityKey == #strings.toString(pr)}" th:text="|우선순위 ${pr.label()}|">우선순위</span></th:block><th:block
+                        th:each="tag : ${tags}"><span th:if="${tagKey == #strings.toString(tag.id)}" th:text="|태그 ${tag.name}|">태그</span></th:block><th:block
+                        th:each="d : ${dueFilters}"><span th:if="${dueKey == #strings.toString(d)}" th:text="|마감 상태 ${d.label()}|">마감 상태</span></th:block></span>
+            </p>
+            <p><a th:href="@{/plans/{id}/todos(id=${plan.id},sort=${filter.sort})}" href="#">검색·필터 초기화</a></p>
+        </div>
+
+        <p class="result-count" th:text="|${#lists.size(todos)}건|">0건</p>
+        <p id="sort-description" class="sort-description"><strong>정렬 기준:</strong> <span th:text="${sortDescription}">정렬 설명</span></p>
+
+        <th:block th:if="${todos.isEmpty()}">
+            <p class="empty" th:unless="${filterActive}">아직 할 일이 없습니다. 위의 ‘할 일 추가’에서 첫 할 일을 만들어 보세요.</p>
+            <div class="empty" th:if="${filterActive}">
+                <p>조건에 맞는 할 일이 없습니다.</p>
+                <p><a th:href="@{/plans/{id}/todos(id=${plan.id},sort=${filter.sort})}" href="#">검색·필터 초기화</a></p>
+            </div>
+        </th:block>
+
+        <ul class="todo-list" aria-describedby="sort-description" th:unless="${todos.isEmpty()}">
+            <li th:each="todo : ${todos}">
+                <article class="todo-item" th:with="done=${todo.status.name() == 'COMPLETED'}">
+                    <div class="todo-item__head">
+                        <h3 class="todo-item__title"><a th:href="@{/todos/{id}(id=${todo.id})}" href="#" th:text="${todo.title}">할 일 제목</a></h3>
+                        <p class="todo-item__badges"><th:block th:replace="~{fragments/todo :: statusBadges(${todo}, ${today})}"></th:block></p>
+                    </div>
+                    <dl class="inline-dl">
+                        <div>
+                            <dt class="visually-hidden">마감일</dt>
+                            <dd th:if="${todo.dueDate != null}" th:text="|마감 ${todo.dueDate}|">마감 2026-01-01</dd>
+                            <dd th:if="${todo.dueDate == null}">마감일 없음</dd>
+                        </div>
+                        <div>
+                            <dt class="visually-hidden">우선순위</dt>
+                            <dd th:text="|우선순위 ${todo.priority.label()}|">우선순위 보통</dd>
+                        </div>
+                        <div>
+                            <dt class="visually-hidden">예상 시간</dt>
+                            <dd th:text="|예상 ${todo.estimatedMinutes}분|">예상 0분</dd>
+                        </div>
+                        <div th:if="${todo.tags != null and !todo.tags.isEmpty()}">
+                            <dt class="visually-hidden">태그</dt>
+                            <dd th:text="|태그 ${#strings.listJoin(todo.tags.![name], ', ')}|">태그</dd>
+                        </div>
+                        <div th:if="${done and todo.completedAt != null}">
+                            <dt class="visually-hidden">완료 시각</dt>
+                            <dd>완료 시각 <time th:replace="~{fragments/layout :: datetime(${todo.completedAt})}"></time></dd>
+                        </div>
+                    </dl>
+                    <div class="todo-item__actions">
+                        <form th:unless="${done}" method="post" class="inline-form"
+                              th:action="@{/todos/{id}/completion(id=${todo.id})}">
+                            <input type="hidden" name="idempotencyKey" th:value="${completionKeys[todo.id]}">
+                            <th:block th:replace="~{fragments/todo :: listState(${filter}, true)}"></th:block>
+                            <button type="submit" class="btn">완료<span class="visually-hidden" th:text="|: ${todo.title}|"></span></button>
+                        </form>
+                        <form th:if="${done}" method="post" class="inline-form"
+                              th:action="@{/todos/{id}/completion(id=${todo.id})}">
+                            <input type="hidden" name="_method" value="delete">
+                            <th:block th:replace="~{fragments/todo :: listState(${filter}, true)}"></th:block>
+                            <button type="submit" class="btn btn--secondary">진행 중으로 되돌리기<span class="visually-hidden" th:text="|: ${todo.title}|"></span></button>
+                        </form>
+                        <a class="btn btn--secondary" th:href="@{/todos/{id}(id=${todo.id})}" href="#">상세·실행 기록<span class="visually-hidden" th:text="|: ${todo.title}|"></span></a>
+                        <a class="btn btn--secondary" th:href="@{/todos/{id}/edit(id=${todo.id})}" href="#">수정<span class="visually-hidden" th:text="|: ${todo.title}|"></span></a>
+                        <details class="delete">
+                            <summary class="btn btn--secondary">삭제<span class="visually-hidden" th:text="|: ${todo.title}|"></span></summary>
+                            <div class="delete__body">
+                                <p>이 할 일을 삭제할까요? 삭제하면 할 일 목록, 회고 숫자, 내보내기 파일에서 빠집니다. 이 할 일에 남긴 실행 기록과 완료 기록도 함께 보이지 않게 됩니다. 이 앱에는 삭제를 되돌리는 기능이 없습니다.</p>
+                                <form method="post" th:action="@{/todos/{id}(id=${todo.id})}">
+                                    <input type="hidden" name="_method" value="delete">
+                                    <th:block th:replace="~{fragments/todo :: listState(${filter}, true)}"></th:block>
+                                    <button type="submit" class="btn btn--danger">삭제 확정<span class="visually-hidden" th:text="|: ${todo.title}|"></span></button>
+                                </form>
+                            </div>
+                        </details>
+                    </div>
+                </article>
+            </li>
+        </ul>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

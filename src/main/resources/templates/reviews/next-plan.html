@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:with="formError=${#fields.hasErrors('${planForm.*}')},
+               hasImprovement=${review.improvement != null and !#strings.isEmpty(#strings.trim(review.improvement))}">
+<head th:replace="~{fragments/layout :: head('다음 계획 만들기', ${formError})}">
+    <meta charset="UTF-8">
+    <title>다음 계획 만들기</title>
+</head>
+<body>
+<header th:replace="~{fragments/layout :: header('plans')}"></header>
+
+<main id="main" tabindex="-1">
+    <nav class="breadcrumb" aria-label="현재 위치">
+        <ol>
+            <li><a th:href="@{/plans}" href="/plans">계획</a></li>
+            <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">계획 제목</a></li>
+            <li><a th:href="@{/reviews/{id}(id=${review.id})}" href="#">회고</a></li>
+            <li aria-current="page">다음 계획 만들기</li>
+        </ol>
+    </nav>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1>다음 계획 만들기</h1>
+
+    <th:block th:unless="${hasImprovement}">
+        <p class="empty">넘길 개선점이 없습니다. 회고에서 개선점을 먼저 저장하세요.</p>
+        <p><a class="btn btn--secondary" th:href="@{/reviews/{id}(id=${review.id})}" href="#">회고로 돌아가기</a></p>
+    </th:block>
+
+    <th:block th:if="${hasImprovement}">
+        <section class="section" aria-labelledby="carry-heading">
+            <h2 id="carry-heading">넘길 개선점</h2>
+            <div class="readonly-box">
+                <p class="pre-wrap" th:text="${review.improvement}">개선점</p>
+                <p class="muted" th:text="|출처: ${plan.title} 회고(${review.periodStart} ~ ${review.periodEnd})|">출처</p>
+            </div>
+            <p class="muted">이 개선점은 서버가 회고에서 그대로 복사합니다. 여기서 고칠 수 없습니다.</p>
+        </section>
+
+        <section class="section" aria-labelledby="new-plan-heading">
+            <h2 id="new-plan-heading">새 계획</h2>
+            <form method="post" novalidate class="form"
+                  th:action="@{/reviews/{id}/next-plan(id=${review.id})}" th:object="${planForm}">
+                <div th:replace="~{fragments/layout :: errorSummary}"></div>
+                <th:block th:replace="~{fragments/plan :: planFields(${priorities})}"></th:block>
+                <div class="form-actions">
+                    <button type="submit" class="btn">다음 계획 만들기</button>
+                    <a th:href="@{/reviews/{id}(id=${review.id})}" href="#">회고로 돌아가기</a>
+                </div>
+            </form>
+        </section>
+    </th:block>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('자료 내보내기', false)}">
+    <meta charset="UTF-8">
+    <title>자료 내보내기</title>
+</head>
+<body>
+<header th:replace="~{fragments/layout :: header('export')}"></header>
+
+<main id="main" tabindex="-1">
+    <nav class="breadcrumb" aria-label="현재 위치">
+        <ol>
+            <li aria-current="page">내보내기</li>
+        </ol>
+    </nav>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1>자료 내보내기</h1>
+    <p>지금까지 저장한 계획, 할 일, 실행 기록, 회고를 JSON 파일 하나로 내려받습니다.</p>
+
+    <section class="section" aria-labelledby="included-heading">
+        <h2 id="included-heading">포함되는 자료</h2>
+        <ul>
+            <li>계획</li>
+            <li>계획 수정 이력</li>
+            <li>할 일</li>
+            <li>태그와 할 일-태그 연결</li>
+            <li>실행 기록</li>
+            <li>완료 기록</li>
+            <li>회고와 개선점 이관 정보</li>
+            <li>모든 ID와 서로의 연결 관계</li>
+            <li>날짜(yyyy-MM-dd)와 시각(시간대 포함)</li>
+            <li>시간 값(모두 분 단위 정수)</li>
+        </ul>
+    </section>
+
+    <section class="section" aria-labelledby="excluded-heading">
+        <h2 id="excluded-heading">포함되지 않는 자료</h2>
+        <ul>
+            <li>삭제한 할 일과 그 할 일의 실행 기록·완료 기록·태그 연결</li>
+            <li>비밀번호, 인증 토큰, 세션 값, 서버 접속 정보 같은 비밀값</li>
+        </ul>
+    </section>
+
+    <section class="section" aria-labelledby="format-heading">
+        <h2 id="format-heading">파일 형식</h2>
+        <ul>
+            <li>파일 이름: plandosee-export-YYYYMMDD.json(내려받은 날짜)</li>
+            <li>문자 인코딩: UTF-8</li>
+            <li>스키마 버전과 내보낸 시각, 시간대(Asia/Seoul)가 파일 맨 위에 들어 있습니다.</li>
+        </ul>
+    </section>
+
+    <p class="notice-box notice-box--inline">지금은 로그인이 없어 이 내려받기 주소도 링크를 아는 누구나 사용할 수 있습니다.</p>
+
+    <p><a class="btn" th:href="@{/export/download}" href="/export/download">JSON 파일 내려받기</a></p>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

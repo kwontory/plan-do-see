@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* S02 list state (contract amendment 1, Q10). filter: TodoListQuery.
+       withPriority=false on the add form: TodoForm.priority owns "priority" there, so the list
+       priority condition is sent as "listPriority" (main agent decision). */-->
+<th:block th:fragment="listState(filter, withPriority)">
+    <input type="hidden" name="returnTo" value="list">
+    <input type="hidden" name="q" th:value="${filter != null ? filter.q : null}">
+    <input type="hidden" name="status" th:value="${filter != null ? filter.status : null}">
+    <input type="hidden" name="priority" th:if="${withPriority}" th:value="${filter != null ? filter.priority : null}">
+    <input type="hidden" name="listPriority" th:if="${!withPriority and filter != null and filter.priority != null}" th:value="${filter.priority}">
+    <input type="hidden" name="tagId" th:value="${filter != null ? filter.tagId : null}">
+    <input type="hidden" name="due" th:value="${filter != null ? filter.due : null}">
+    <input type="hidden" name="sort" th:value="${filter != null ? filter.sort : null}">
+</th:block>
+
+<!--/* Status + derived badges. todo needs status, dueDate. today: LocalDate (Seoul) */-->
+<th:block th:fragment="statusBadges(todo, today)"
+          th:with="done=${todo.status.name() == 'COMPLETED'}">
+    <span th:if="${done}" class="badge badge--done"><span aria-hidden="true">✓ </span>완료</span>
+    <span th:unless="${done}" class="badge badge--progress">진행 중</span>
+    <span th:if="${!done and todo.dueDate != null and today != null and todo.dueDate.isBefore(today)}"
+          class="badge badge--overdue">지연</span>
+    <span th:if="${!done and todo.dueDate != null and today != null and todo.dueDate.isEqual(today)}"
+          class="badge badge--today">오늘 마감</span>
+</th:block>
+
+</body>
+</html>

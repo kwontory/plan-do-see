@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:with="formError=${#fields.hasErrors('${todoForm.*}')}">
+<head th:replace="~{fragments/layout :: head(|할 일 수정: ${todo.title}|, ${formError})}">
+    <meta charset="UTF-8">
+    <title>할 일 수정</title>
+</head>
+<body>
+<header th:replace="~{fragments/layout :: header('plans')}"></header>
+
+<main id="main" tabindex="-1">
+    <nav class="breadcrumb" aria-label="현재 위치">
+        <ol>
+            <li><a th:href="@{/plans}" href="/plans">계획</a></li>
+            <li><a th:href="@{/plans/{id}(id=${todo.planId})}" href="#"
+                   th:text="${plan != null ? plan.title : '계획'}">계획</a></li>
+            <li><a th:href="@{/plans/{id}/todos(id=${todo.planId})}" href="#">할 일</a></li>
+            <li><a th:href="@{/todos/{id}(id=${todo.id})}" href="#" th:text="${todo.title}">할 일 제목</a></li>
+            <li aria-current="page">수정</li>
+        </ol>
+    </nav>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1>할 일 수정</h1>
+    <p class="note">완료 여부는 이 화면에서 바꾸지 않습니다. 할 일 목록이나 상세의 완료 버튼을 사용하세요.</p>
+
+    <form method="post" novalidate class="form"
+          th:action="@{/todos/{id}(id=${todo.id})}" th:object="${todoForm}">
+        <input type="hidden" name="_method" value="put">
+        <div th:replace="~{fragments/layout :: errorSummary}"></div>
+        <th:block th:replace="~{fragments/plan :: todoFields(${priorities})}"></th:block>
+        <div class="form-actions">
+            <button type="submit" class="btn">수정 저장</button>
+            <a th:href="@{/todos/{id}(id=${todo.id})}" href="#">취소</a>
+        </div>
+    </form>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

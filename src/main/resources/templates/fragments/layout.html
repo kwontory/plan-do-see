@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(pageTitle, hasError)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="referrer" content="same-origin">
+    <title th:text="${(hasError ? '오류: ' : '') + pageTitle + ' - PlanDoSee Diary'}">PlanDoSee Diary</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}" href="/css/app.css">
+    <script th:src="@{/js/app.js}" src="/js/app.js" defer></script>
+</head>
+<body>
+
+<header th:fragment="header(activeNav)" class="site-header">
+    <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+    <div class="public-banner">
+        <strong class="public-banner__label">공개 안내</strong>
+        <span class="public-banner__text"
+              th:text="${publicNotice != null ? publicNotice : '지금은 로그인이 없어 링크를 아는 사람은 누구나 볼 수 있습니다. 남이 봐도 괜찮은 내용만 넣으세요'}">공개 안내 문구</span>
+    </div>
+    <div class="site-bar">
+        <a class="brand" th:href="@{/}" href="/">PlanDoSee Diary</a>
+        <nav class="main-nav" aria-label="주 메뉴">
+            <ul>
+                <li><a th:href="@{/}" href="/"
+                       th:classappend="${activeNav == 'home'} ? 'is-current'"
+                       th:attr="aria-current=${activeNav == 'home'} ? 'page' : null">홈</a></li>
+                <li><a th:href="@{/plans}" href="/plans"
+                       th:classappend="${activeNav == 'plans'} ? 'is-current'"
+                       th:attr="aria-current=${activeNav == 'plans'} ? 'page' : null">계획</a></li>
+                <li><a th:href="@{/export}" href="/export"
+                       th:classappend="${activeNav == 'export'} ? 'is-current'"
+                       th:attr="aria-current=${activeNav == 'export'} ? 'page' : null">내보내기</a></li>
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<div th:fragment="flash" class="flash" role="status" aria-live="polite"
+     th:classappend="${flashMessage == null or #strings.isEmpty(flashMessage)} ? 'flash--empty'"><th:block
+        th:if="${flashMessage != null and !#strings.isEmpty(flashMessage)}"><strong class="flash__label">처리 결과</strong>
+    <span class="flash__text" th:text="${flashMessage}">메시지</span></th:block></div>
+
+<footer th:fragment="footer" class="site-footer">
+    <p th:if="${today != null}">시각과 오늘 날짜는 서울(Asia/Seoul) 기준입니다. 오늘: <time th:attr="datetime=${today}" th:text="${today}">2026-01-01</time></p>
+    <p th:if="${today == null}">시각과 오늘 날짜는 서울(Asia/Seoul) 기준입니다.</p>
+</footer>
+
+<!--/* Seoul date-time display. value: OffsetDateTime */-->
+<time th:fragment="datetime(value)"
+      th:if="${value != null}"
+      th:attr="datetime=${value}"
+      th:text="${#temporals.format(value.atZoneSameInstant(T(java.time.ZoneId).of('Asia/Seoul')), 'yyyy-MM-dd HH:mm:ss')}">2026-01-01 00:00:00</time>
+
+<!--/* Variance sign: +n분 초과 / -n분 적음 / 0분. v: int */-->
+<th:block th:fragment="signedMinutes(v)"><th:block th:if="${v > 0}" th:text="|+${v}분 초과|">+0분 초과</th:block><th:block
+        th:if="${v < 0}" th:text="|-${-v}분 적음|">-0분 적음</th:block><th:block th:if="${v == 0}">0분</th:block></th:block>
+
+<!--/* Evidence reconciliation verdict. ok: boolean */-->
+<strong th:fragment="verdict(ok)" class="verdict" th:classappend="${ok} ? 'verdict--ok' : 'verdict--bad'"
+        th:text="${ok} ? '일치' : '불일치'">일치</strong>
+
+<!--/* Error summary. Must be included inside a form with th:object. */-->
+<div th:fragment="errorSummary" th:if="${#fields.hasErrors('*')}"
+     class="error-summary" role="alert" tabindex="-1" id="error-summary">
+    <h2>입력 내용을 확인하세요</h2>
+    <ul>
+        <li th:each="err : ${#fields.detailedErrors()}">
+            <a th:if="${!err.global}" th:href="${'#' + err.fieldName}" href="#" th:text="${err.message}">필드 오류</a>
+            <span th:if="${err.global}" th:text="${err.message}">전역 오류</span>
+        </li>
+    </ul>
+</div>
+
+<!--/* Field error. Must be included inside a form with th:object. name: field name (also input id) */-->
+<p th:fragment="fieldError(name)" th:if="${#fields.hasErrors(name)}"
+   class="field-error" th:id="${name + '-error'}">
+    <th:block th:each="msg, st : ${#fields.errors(name)}"><span class="field-error__prefix">오류: </span><span
+            th:text="${msg}">오류 문구</span><br th:if="${!st.last}"></th:block>
+</p>
+
+</body>
+</html>

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${plan.title}, false)}">
+    <meta charset="UTF-8">
+    <title>계획 상세</title>
+</head>
+<body>
+<header th:replace="~{fragments/layout :: header('plans')}"></header>
+
+<main id="main" tabindex="-1">
+    <nav class="breadcrumb" aria-label="현재 위치">
+        <ol>
+            <li><a th:href="@{/plans}" href="/plans">계획</a></li>
+            <li aria-current="page" th:text="${plan.title}">계획 제목</li>
+        </ol>
+    </nav>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1 th:text="${plan.title}">계획 제목</h1>
+
+    <section class="section" aria-labelledby="carried-heading"
+             th:if="${plan.carriedImprovement != null and !#strings.isEmpty(plan.carriedImprovement)}">
+        <h2 id="carried-heading">이전 회고에서 넘어온 개선점</h2>
+        <div class="carried">
+            <p><span class="badge badge--carried">이전 회고에서 넘어온 개선점</span></p>
+            <p class="pre-wrap" th:text="${plan.carriedImprovement}">개선점</p>
+            <p th:if="${sourceReview != null}">
+                <a th:href="@{/reviews/{id}(id=${sourceReview.id})}" href="#">출처 회고 보기</a>
+                <span class="muted" th:text="|회고 기간 ${sourceReview.periodStart} ~ ${sourceReview.periodEnd}|">회고 기간</span>
+            </p>
+            <p th:if="${sourceReview == null}" class="muted">출처 회고를 찾을 수 없습니다.</p>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="current-heading">
+        <h2 id="current-heading">현재 계획 <span class="badge badge--current">현재 값</span></h2>
+        <div class="current">
+            <dl class="dl-grid">
+                <dt>기간</dt>
+                <dd th:text="|${plan.startDate} ~ ${plan.endDate}|">2026-01-01 ~ 2026-01-31</dd>
+                <dt>우선순위</dt>
+                <dd th:text="${plan.priority.label()}">보통</dd>
+                <dt>성공 기준</dt>
+                <dd class="pre-wrap" th:text="${plan.successCriteria}">성공 기준</dd>
+                <dt>예상 시간</dt>
+                <dd class="num" th:text="|${plan.estimatedMinutes}분|">0분</dd>
+                <dt>만든 시각</dt>
+                <dd><time th:replace="~{fragments/layout :: datetime(${plan.createdAt})}"></time></dd>
+                <dt>마지막 수정 시각</dt>
+                <dd><time th:replace="~{fragments/layout :: datetime(${plan.updatedAt})}"></time></dd>
+            </dl>
+            <p><a class="btn btn--secondary" th:href="@{/plans/{id}/edit(id=${plan.id})}" href="#">계획 수정</a></p>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="todo-heading">
+        <h2 id="todo-heading">할 일</h2>
+        <p>할 일을 추가하고 완료하거나 실행 기록을 남깁니다.</p>
+        <p><a class="btn" th:href="@{/plans/{id}/todos(id=${plan.id})}" href="#">할 일 목록 열기</a></p>
+    </section>
+
+    <section class="section" aria-labelledby="reviews-heading" id="reviews">
+        <h2 id="reviews-heading">회고</h2>
+        <p class="sort-note">회고 시작일이 늦은 순입니다. 시작일이 같으면 최근에 만든 회고가 위에 옵니다.</p>
+        <p class="empty" th:if="${reviews == null or reviews.isEmpty()}">아직 회고가 없습니다.</p>
+        <ul class="review-list" th:unless="${reviews == null or reviews.isEmpty()}">
+            <li th:each="r : ${reviews}" class="review-item">
+                <p class="review-item__period" th:text="|회고 기간 ${r.periodStart} ~ ${r.periodEnd}|">회고 기간</p>
+                <p class="muted">만든 시각 <time th:replace="~{fragments/layout :: datetime(${r.createdAt})}"></time></p>
+                <p>
+                    <span th:if="${r.nextPlanId != null}" class="badge badge--transferred">다음 계획으로 넘김</span>
+                    <span th:if="${r.nextPlanId == null and (r.improvement == null or #strings.isEmpty(r.improvement))}">개선점 없음</span>
+                    <span th:if="${r.nextPlanId == null and r.improvement != null and !#strings.isEmpty(r.improvement)}">개선점 있음</span>
+                </p>
+                <p><a th:href="@{/reviews/{id}(id=${r.id})}" href="#">회고 열기<span class="visually-hidden" th:text="|: ${r.periodStart} ~ ${r.periodEnd}|"></span></a></p>
+            </li>
+        </ul>
+        <form method="post" class="form form--inline" th:action="@{/plans/{id}/reviews(id=${plan.id})}"
+              aria-describedby="review-create-help">
+            <p id="review-create-help" class="field-help"
+               th:text="|이 계획의 기간(${plan.startDate} ~ ${plan.endDate})으로 회고를 만듭니다. 회고 숫자는 이 계획의 할 일과 실행 기록으로 계산됩니다.|">도움말</p>
+            <button type="submit" class="btn">회고 만들기</button>
+        </form>
+    </section>
+
+    <section class="section" aria-labelledby="revisions-heading">
+        <h2 id="revisions-heading">수정 이력</h2>
+        <p class="muted">계획을 수정할 때마다 바뀌기 직전의 값이 남습니다. 최근 수정이 위에 옵니다.</p>
+        <p class="empty" th:if="${revisions == null or revisions.isEmpty()}">아직 수정한 적이 없습니다. 계획을 수정하면 수정 전 값이 여기에 남습니다.</p>
+        <ol reversed class="revision-list" th:unless="${revisions == null or revisions.isEmpty()}">
+            <li th:each="rev : ${revisions}">
+                <article class="revision">
+                    <h3 th:text="|${rev.revisionNo}번째 수정|">1번째 수정</h3>
+                    <p class="muted">수정 시각 <time th:replace="~{fragments/layout :: datetime(${rev.revisedAt})}"></time></p>
+                    <p><span class="badge badge--readonly">수정 전 값</span></p>
+                    <dl class="dl-grid">
+                        <dt>제목</dt>
+                        <dd th:text="${rev.title}">제목</dd>
+                        <dt>기간</dt>
+                        <dd th:text="|${rev.startDate} ~ ${rev.endDate}|">기간</dd>
+                        <dt>우선순위</dt>
+                        <dd th:text="${rev.priority.label()}">보통</dd>
+                        <dt>성공 기준</dt>
+                        <dd class="pre-wrap" th:text="${rev.successCriteria}">성공 기준</dd>
+                        <dt>예상 시간</dt>
+                        <dd class="num" th:text="|${rev.estimatedMinutes}분|">0분</dd>
+                        <th:block th:if="${rev.carriedImprovement != null and !#strings.isEmpty(rev.carriedImprovement)}">
+                            <dt>이관받은 개선점</dt>
+                            <dd class="pre-wrap" th:text="${rev.carriedImprovement}">개선점</dd>
+                        </th:block>
+                    </dl>
+                </article>
+            </li>
+        </ol>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

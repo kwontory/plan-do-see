@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('요청을 처리하지 않았습니다', false)}">
+    <meta charset="UTF-8">
+    <title>요청을 처리하지 않았습니다</title>
+</head>
+<body>
+<header th:replace="~{fragments/layout :: header('none')}"></header>
+
+<main id="main" tabindex="-1">
+    <h1>요청을 처리하지 않았습니다</h1>
+    <p>이 요청은 다른 사이트에서 보낸 것으로 보여 처리하지 않았습니다. 이 사이트에서 다시 시도하세요.</p>
+    <ul class="link-row">
+        <li><a class="btn btn--secondary" th:href="@{/}" href="/">홈으로</a></li>
+        <li><a class="btn btn--secondary" th:href="@{/plans}" href="/plans">계획 목록으로</a></li>
+    </ul>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

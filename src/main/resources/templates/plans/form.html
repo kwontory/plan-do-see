@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:with="isEdit=${mode == 'edit'},formError=${#fields.hasErrors('${planForm.*}')}">
+<head th:replace="~{fragments/layout :: head(${isEdit ? '계획 수정' : '새 계획 만들기'}, ${formError})}">
+    <meta charset="UTF-8">
+    <title>계획 폼</title>
+</head>
+<body>
+<header th:replace="~{fragments/layout :: header('plans')}"></header>
+
+<main id="main" tabindex="-1">
+    <nav class="breadcrumb" aria-label="현재 위치">
+        <ol>
+            <li><a th:href="@{/plans}" href="/plans">계획</a></li>
+            <th:block th:if="${isEdit}">
+                <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">계획 제목</a></li>
+                <li aria-current="page">수정</li>
+            </th:block>
+            <li th:unless="${isEdit}" aria-current="page">새 계획</li>
+        </ol>
+    </nav>
+    <div th:replace="~{fragments/layout :: flash}"></div>
+    <h1 th:text="${isEdit} ? '계획 수정' : '새 계획 만들기'">새 계획 만들기</h1>
+
+    <p class="note" th:if="${isEdit}">저장하면 지금 값은 수정 이력에 그대로 남고, 계획은 새 값으로 바뀝니다.</p>
+
+    <div class="readonly-box"
+         th:if="${isEdit and plan.carriedImprovement != null and !#strings.isEmpty(plan.carriedImprovement)}">
+        <p class="readonly-box__label"><span class="badge badge--carried">이전 회고에서 넘어온 개선점(수정 불가)</span></p>
+        <p class="pre-wrap" th:text="${plan.carriedImprovement}">개선점</p>
+    </div>
+
+    <form method="post" novalidate class="form"
+          th:action="${isEdit} ? @{/plans/{id}(id=${plan.id})} : @{/plans}"
+          th:object="${planForm}">
+        <input type="hidden" name="_method" value="put" th:if="${isEdit}">
+        <div th:replace="~{fragments/layout :: errorSummary}"></div>
+        <th:block th:replace="~{fragments/plan :: planFields(${priorities})}"></th:block>
+        <div class="form-actions">
+            <button type="submit" class="btn" th:text="${isEdit} ? '수정 저장' : '계획 만들기'">계획 만들기</button>
+            <a th:href="${isEdit} ? @{/plans/{id}(id=${plan.id})} : @{/plans}" href="/plans">취소</a>
+        </div>
+    </form>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
