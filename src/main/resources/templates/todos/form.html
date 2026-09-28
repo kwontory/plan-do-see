@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org"
-      th:with="formError=${#fields.hasErrors('${todoForm.*}')}">
+      th:with="formError=${#fields.hasErrors('${todoForm.*}')},
+               conflict=${latest != null or snapshotUnavailable == true}">
 <head th:replace="~{fragments/layout :: head(#{todos.form.pageTitle(${todo.title})}, ${formError})}">
     <meta charset="UTF-8">
     <title>todo edit</title>
@@ -12,27 +13,48 @@
     <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
         <ol>
             <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
-            <li><a th:href="@{/plans/{id}(id=${todo.planId})}" href="#"
-                   th:text="${plan != null} ? ${plan.title} : #{breadcrumb.plans}">plan</a></li>
-            <li><a th:href="@{/plans/{id}/todos(id=${todo.planId})}" href="#" th:text="#{breadcrumb.todos}">todos</a></li>
+            <!--/* planId is unknown on the ADR-19 stand-in (snapshotUnavailable): those two steps are left out. */-->
+            <th:block th:if="${todo.planId != null}">
+                <li><a th:href="@{/plans/{id}(id=${todo.planId})}" href="#"
+                       th:text="${plan != null} ? ${plan.title} : #{breadcrumb.plans}">plan</a></li>
+                <li><a th:href="@{/plans/{id}/todos(id=${todo.planId})}" href="#" th:text="#{breadcrumb.todos}">todos</a></li>
+            </th:block>
             <li><a th:href="@{/todos/{id}(id=${todo.id})}" href="#" th:text="${todo.title}">todo</a></li>
             <li aria-current="page" th:text="#{breadcrumb.edit}">edit</li>
         </ol>
     </nav>
     <div th:replace="~{fragments/layout :: flash}"></div>
     <h1 th:text="#{todos.form.heading}">edit</h1>
-    <p class="note" th:text="#{todos.form.note}">note</p>
-
-    <form method="post" novalidate class="form"
-          th:action="@{/todos/{id}(id=${todo.id})}" th:object="${todoForm}">
-        <input type="hidden" name="_method" value="put">
+    <!--/* ADR-18 (screens.md 11.5.2): summary -> latest (read-only) -> my input (kept, can be saved again). */-->
+    <th:block th:object="${todoForm}" th:with="showJumps=${latest != null}">
         <div th:replace="~{fragments/layout :: errorSummary}"></div>
-        <th:block th:replace="~{fragments/todo :: todoFields(${priorities})}"></th:block>
-        <div class="form-actions">
-            <button type="submit" class="btn" th:text="#{common.saveEdit}">save</button>
-            <a th:href="@{/todos/{id}(id=${todo.id})}" href="#" th:text="#{common.cancel}">cancel</a>
+    </th:block>
+    <p class="note" th:if="${snapshotUnavailable == true}" th:text="#{conflict.latest.unavailable}">unavailable</p>
+    <th:block th:if="${latest != null}">
+        <section th:replace="~{fragments/layout :: conflictLatest(2, ${latest.updatedAt}, @{/todos/{id}/edit(id=${todo.id})}, ~{fragments/todo :: todoLatestFields})}"></section>
+    </th:block>
+
+    <div th:attr="id=${conflict} ? 'my-input' : null,tabindex=${conflict} ? '-1' : null,data-test=${conflict} ? 'conflict-mine' : null,aria-labelledby=${conflict} ? 'my-input-heading' : null,role=${conflict} ? 'region' : null">
+        <th:block th:if="${conflict}">
+            <th:block th:replace="~{fragments/layout :: conflictMineHead(2, true)}"></th:block>
+        </th:block>
+        <div class="note">
+            <p th:text="#{todos.form.note}">note</p>
+            <p th:text="#{todos.form.revisionNote}">revision note</p>
         </div>
-    </form>
+
+        <form method="post" novalidate class="form"
+              th:action="@{/todos/{id}(id=${todo.id})}" th:object="${todoForm}">
+            <input type="hidden" name="_method" value="put">
+            <input type="hidden" th:field="*{version}">
+            <th:block th:replace="~{fragments/todo :: todoFields(${priorities})}"></th:block>
+            <div class="form-actions">
+                <button type="submit" class="btn" th:attr="data-test=${conflict} ? 'conflict-resubmit' : null"
+                        th:text="${conflict} ? #{conflict.mine.resubmit} : #{common.saveEdit}">save</button>
+                <a th:href="@{/todos/{id}(id=${todo.id})}" href="#" th:text="#{common.cancel}">cancel</a>
+            </div>
+        </form>
+    </div>
 </main>
 
 <footer th:replace="~{fragments/layout :: footer}"></footer>

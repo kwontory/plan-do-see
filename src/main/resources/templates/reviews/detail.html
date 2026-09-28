@@ -61,30 +61,61 @@
         </ul>
     </section>
 
-    <!--/* 3. Improvement */-->
-    <section class="section" aria-labelledby="improvement-heading">
+    <!--/* 3. Improvement. ADR-18 (screens.md 11.5.2, 11.5.5): on a conflict (model latest) the order is summary ->
+           latest (read-only) -> my input. Not yet carried: my input stays in the form and can be saved again.
+           Already carried to a next plan: my input is shown read-only for copying, with no form. Headings are h3
+           inside this h2 section. */-->
+    <section class="section" aria-labelledby="improvement-heading"
+             th:with="conflict=${latest != null},
+                      loadUrl=${transferred} ? null : @{/reviews/{id}(id=${review.id})} + '#improvement-heading'">
         <h2 id="improvement-heading" th:text="#{reviews.detail.improvement.heading}">improvement</h2>
-        <form th:unless="${transferred}" method="post" novalidate class="form"
-              th:action="@{/reviews/{id}/improvement(id=${review.id})}" th:object="${improvementForm}">
-            <input type="hidden" name="_method" value="put">
+        <th:block th:if="${improvementForm != null}" th:object="${improvementForm}"
+                  th:with="nestedSummary=true, showJumps=${conflict}">
             <div th:replace="~{fragments/layout :: errorSummary}"></div>
-            <div class="field">
-                <label for="improvement" th:text="#{reviews.detail.improvement.label}">improvement</label>
-                <p class="field-help" id="improvement-help" th:text="#{reviews.detail.improvement.help}">help</p>
-                <p th:replace="~{fragments/layout :: fieldError('improvement')}"></p>
-                <textarea th:field="*{improvement}" rows="5" maxlength="1000"
-                          th:attr="aria-describedby=${#fields.hasErrors('improvement')} ? 'improvement-help improvement-error' : 'improvement-help',aria-invalid=${#fields.hasErrors('improvement')} ? 'true' : null"></textarea>
-            </div>
-            <div class="form-actions">
-                <button type="submit" class="btn" th:text="#{reviews.detail.improvement.submit}">save</button>
-            </div>
-        </form>
-        <div th:if="${transferred}" class="readonly-box">
+        </th:block>
+        <th:block th:if="${conflict}">
+            <section th:replace="~{fragments/layout :: conflictLatest(3, ${transferred ? null : latest.updatedAt}, ${loadUrl}, ~{fragments/review :: improvementLatest(${latest}, ${nextPlan})})}"></section>
+        </th:block>
+
+        <div th:unless="${transferred}"
+             th:attr="id=${conflict} ? 'my-input' : null,tabindex=${conflict} ? '-1' : null,data-test=${conflict} ? 'conflict-mine' : null,aria-labelledby=${conflict} ? 'my-input-heading' : null,role=${conflict} ? 'region' : null">
+            <th:block th:if="${conflict}">
+                <th:block th:replace="~{fragments/layout :: conflictMineHead(3, true)}"></th:block>
+            </th:block>
+            <form method="post" novalidate class="form"
+                  th:action="@{/reviews/{id}/improvement(id=${review.id})}" th:object="${improvementForm}">
+                <input type="hidden" name="_method" value="put">
+                <input type="hidden" th:field="*{version}">
+                <div class="field" th:with="err=${#fields.hasErrors('improvement')}, chg=${changedFields != null and changedFields.contains('improvement')}">
+                    <label for="improvement" th:text="#{reviews.detail.improvement.label}">improvement</label>
+                    <span th:replace="~{fragments/layout :: changedNote('improvement')}"></span>
+                    <p class="field-help" id="improvement-help" th:text="#{reviews.detail.improvement.help}">help</p>
+                    <p th:replace="~{fragments/layout :: fieldError('improvement')}"></p>
+                    <textarea th:field="*{improvement}" rows="5" maxlength="1000"
+                              th:attr="aria-describedby=${'improvement-help' + (err ? ' improvement-error' : '') + (chg ? ' improvement-changed' : '')},aria-invalid=${err} ? 'true' : null"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn" th:attr="data-test=${conflict} ? 'conflict-resubmit' : null"
+                            th:text="${conflict} ? #{conflict.mine.resubmit} : #{reviews.detail.improvement.submit}">save</button>
+                </div>
+            </form>
+        </div>
+
+        <div th:if="${transferred and !conflict}" class="readonly-box">
             <p><span class="badge badge--transferred" th:text="#{badge.transferred}">transferred</span></p>
             <p class="pre-wrap" th:text="${review.improvement}">improvement</p>
             <p class="muted" th:if="${review.transferredAt != null}"><th:block th:text="#{reviews.detail.improvement.transferredAt}">at</th:block> <time
                     th:replace="~{fragments/layout :: datetime(${review.transferredAt})}"></time></p>
             <p class="muted" th:text="#{reviews.detail.improvement.locked}">locked</p>
+        </div>
+
+        <!--/* Already carried: the input cannot be saved; id="improvement" is the target of the summary's field error link. */-->
+        <div th:if="${transferred and conflict}" id="my-input" tabindex="-1" role="region"
+             aria-labelledby="my-input-heading" data-test="conflict-mine">
+            <th:block th:replace="~{fragments/layout :: conflictMineHead(3, false)}"></th:block>
+            <div class="readonly-box" id="improvement" tabindex="-1">
+                <p class="pre-wrap" th:text="${improvementForm == null or #strings.isEmpty(improvementForm.improvement)} ? #{common.none} : ${improvementForm.improvement}">input</p>
+            </div>
         </div>
     </section>
 

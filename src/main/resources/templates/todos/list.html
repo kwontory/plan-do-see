@@ -130,7 +130,8 @@
             <p><a th:href="@{/plans/{id}/todos(id=${plan.id},sort=${filter.sort})}" href="#" th:text="#{todos.filter.reset}">reset</a></p>
         </div>
 
-        <p class="result-count" th:text="#{common.count(${#lists.size(todos)})}">0</p>
+        <!--/* ADR-21: the whole list's count (server), not the rows of this page. */-->
+        <p class="result-count" th:text="#{common.count(${page.totalCount})}">0</p>
         <p id="sort-description" class="sort-description"><strong th:text="#{common.sortLabel}">sort:</strong> <span
                 data-test="sort-description" th:text="${#messages.msg('sort.' + sortKey + '.description')}">sort</span></p>
 
@@ -213,6 +214,8 @@
                 </article>
             </li>
         </ul>
+
+        <div th:replace="~{fragments/layout :: pager(${page}, 'page', @{${filter.listUrl(plan.id, 1)}}, '#list-heading', #{todos.list.pagerLabel})}"></div>
     </section>
 </main>
 

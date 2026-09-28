@@ -32,63 +32,101 @@
 </th:block>
 
 <!--/* PlanForm fields. Must be included inside a form with th:object="${planForm}". priorities: enum values.
-       Error state is carried by aria-invalid (styled in CSS) and the field error text (D11). */-->
+       Error state is carried by aria-invalid (styled in CSS) and the field error text (D11). On an ADR-18 conflict
+       page the model changedFields adds a "differs from the latest" note (changedNote) to aria-describedby. */-->
 <th:block th:fragment="planFields(priorities)">
-    <div class="field">
+    <div class="field" th:with="err=${#fields.hasErrors('title')}, chg=${changedFields != null and changedFields.contains('title')}">
         <label for="title" th:text="#{form.plan.title.label}">title</label>
+        <span th:replace="~{fragments/layout :: changedNote('title')}"></span>
         <p class="field-help" id="title-help" th:text="#{form.title.help}">help</p>
         <p th:replace="~{fragments/layout :: fieldError('title')}"></p>
         <input type="text" th:field="*{title}" maxlength="200" required
-               th:attr="aria-describedby=${#fields.hasErrors('title')} ? 'title-help title-error' : 'title-help',aria-invalid=${#fields.hasErrors('title')} ? 'true' : null">
+               th:attr="aria-describedby=${'title-help' + (err ? ' title-error' : '') + (chg ? ' title-changed' : '')},aria-invalid=${err} ? 'true' : null">
     </div>
 
     <fieldset class="field-group field-group--pair">
         <legend th:text="#{form.plan.period.legend}">period</legend>
-        <div class="field">
+        <div class="field" th:with="err=${#fields.hasErrors('startDate')}, chg=${changedFields != null and changedFields.contains('startDate')},
+                                    desc=${#strings.trim((err ? 'startDate-error ' : '') + (chg ? 'startDate-changed' : ''))}">
             <label for="startDate" th:text="#{form.plan.startDate.label}">start</label>
+            <span th:replace="~{fragments/layout :: changedNote('startDate')}"></span>
             <p th:replace="~{fragments/layout :: fieldError('startDate')}"></p>
             <input type="date" th:field="*{startDate}" required
-                   th:attr="aria-describedby=${#fields.hasErrors('startDate')} ? 'startDate-error' : null,aria-invalid=${#fields.hasErrors('startDate')} ? 'true' : null">
+                   th:attr="aria-describedby=${#strings.isEmpty(desc)} ? null : ${desc},aria-invalid=${err} ? 'true' : null">
         </div>
-        <div class="field">
+        <div class="field" th:with="err=${#fields.hasErrors('endDate')}, chg=${changedFields != null and changedFields.contains('endDate')}">
             <label for="endDate" th:text="#{form.plan.endDate.label}">end</label>
+            <span th:replace="~{fragments/layout :: changedNote('endDate')}"></span>
             <p class="field-help" id="endDate-help" th:text="#{form.plan.endDate.help}">help</p>
             <p th:replace="~{fragments/layout :: fieldError('endDate')}"></p>
             <input type="date" th:field="*{endDate}" required
-                   th:attr="aria-describedby=${#fields.hasErrors('endDate')} ? 'endDate-help endDate-error' : 'endDate-help',aria-invalid=${#fields.hasErrors('endDate')} ? 'true' : null">
+                   th:attr="aria-describedby=${'endDate-help' + (err ? ' endDate-error' : '') + (chg ? ' endDate-changed' : '')},aria-invalid=${err} ? 'true' : null">
         </div>
     </fieldset>
 
-    <div class="field">
+    <div class="field" th:with="err=${#fields.hasErrors('priority')}, chg=${changedFields != null and changedFields.contains('priority')},
+                                desc=${#strings.trim((err ? 'priority-error ' : '') + (chg ? 'priority-changed' : ''))}">
         <label for="priority" th:text="#{form.priority.label}">priority</label>
+        <span th:replace="~{fragments/layout :: changedNote('priority')}"></span>
         <p th:replace="~{fragments/layout :: fieldError('priority')}"></p>
         <select th:field="*{priority}" required
-                th:attr="aria-describedby=${#fields.hasErrors('priority')} ? 'priority-error' : null,aria-invalid=${#fields.hasErrors('priority')} ? 'true' : null">
+                th:attr="aria-describedby=${#strings.isEmpty(desc)} ? null : ${desc},aria-invalid=${err} ? 'true' : null">
             <option value="" th:text="#{common.select.placeholder}">select</option>
             <option th:each="pr : ${priorities}" th:value="${pr}"><th:block
                     th:replace="~{fragments/layout :: enumLabel('Priority', ${pr})}">priority</th:block></option>
         </select>
     </div>
 
-    <div class="field">
+    <div class="field" th:with="err=${#fields.hasErrors('successCriteria')}, chg=${changedFields != null and changedFields.contains('successCriteria')}">
         <label for="successCriteria" th:text="#{form.plan.successCriteria.label}">criteria</label>
+        <span th:replace="~{fragments/layout :: changedNote('successCriteria')}"></span>
         <p class="field-help" id="successCriteria-help" th:text="#{form.plan.successCriteria.help}">help</p>
         <p th:replace="~{fragments/layout :: fieldError('successCriteria')}"></p>
         <textarea th:field="*{successCriteria}" rows="4" maxlength="1000" required
-                  th:attr="aria-describedby=${#fields.hasErrors('successCriteria')} ? 'successCriteria-help successCriteria-error' : 'successCriteria-help',aria-invalid=${#fields.hasErrors('successCriteria')} ? 'true' : null"></textarea>
+                  th:attr="aria-describedby=${'successCriteria-help' + (err ? ' successCriteria-error' : '') + (chg ? ' successCriteria-changed' : '')},aria-invalid=${err} ? 'true' : null"></textarea>
     </div>
 
-    <div class="field">
+    <div class="field" th:with="err=${#fields.hasErrors('estimatedMinutes')}, chg=${changedFields != null and changedFields.contains('estimatedMinutes')}">
         <label for="estimatedMinutes" th:text="#{form.estimatedMinutes.label}">minutes</label>
+        <span th:replace="~{fragments/layout :: changedNote('estimatedMinutes')}"></span>
         <p class="field-help" id="estimatedMinutes-help" th:text="#{form.plan.estimatedMinutes.help}">help</p>
         <p th:replace="~{fragments/layout :: fieldError('estimatedMinutes')}"></p>
         <span class="input-unit">
             <input type="number" th:field="*{estimatedMinutes}" min="0" max="525600" step="1" inputmode="numeric" required
-                   th:attr="aria-describedby=${#fields.hasErrors('estimatedMinutes')} ? 'estimatedMinutes-help estimatedMinutes-error' : 'estimatedMinutes-help',aria-invalid=${#fields.hasErrors('estimatedMinutes')} ? 'true' : null">
+                   th:attr="aria-describedby=${'estimatedMinutes-help' + (err ? ' estimatedMinutes-error' : '') + (chg ? ' estimatedMinutes-changed' : '')},aria-invalid=${err} ? 'true' : null">
             <span aria-hidden="true" th:text="#{form.unit.minutes}">min</span>
         </span>
     </div>
 </th:block>
+
+<!--/* ADR-18 latest panel values of a plan (model latest: PlanRow). "period" is one line for both dates. */-->
+<dl th:fragment="planLatestFields" class="dl-grid">
+    <dt><th:block th:text="#{plans.field.title}">title</th:block> <span th:replace="~{fragments/layout :: changedBadge('title')}"></span></dt>
+    <dd th:text="${latest.title}">title</dd>
+    <dt><th:block th:text="#{plans.field.period}">period</th:block> <span th:replace="~{fragments/layout :: changedBadge('period')}"></span></dt>
+    <dd th:text="#{common.period(${latest.startDate}, ${latest.endDate})}">period</dd>
+    <dt><th:block th:text="#{plans.field.priority}">priority</th:block> <span th:replace="~{fragments/layout :: changedBadge('priority')}"></span></dt>
+    <dd><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${latest.priority})}">priority</th:block></dd>
+    <dt><th:block th:text="#{plans.field.successCriteria}">criteria</th:block> <span th:replace="~{fragments/layout :: changedBadge('successCriteria')}"></span></dt>
+    <dd class="pre-wrap" th:text="${latest.successCriteria}">criteria</dd>
+    <dt><th:block th:text="#{plans.field.estimatedMinutes}">estimated</th:block> <span th:replace="~{fragments/layout :: changedBadge('estimatedMinutes')}"></span></dt>
+    <dd class="num" th:text="#{common.minutes(${latest.estimatedMinutes})}">0</dd>
+</dl>
+
+<!--/* Submitted PlanForm shown read-only for copying (no inputs, no save). form: PlanForm; any value may be empty. */-->
+<dl th:fragment="planInputReadonly(form)" class="dl-grid">
+    <dt th:text="#{plans.field.title}">title</dt>
+    <dd th:text="${#strings.isEmpty(form.title)} ? #{common.none} : ${form.title}">title</dd>
+    <dt th:text="#{plans.field.period}">period</dt>
+    <dd th:text="#{common.period(${form.startDate != null ? form.startDate : #messages.msg('common.none')}, ${form.endDate != null ? form.endDate : #messages.msg('common.none')})}">period</dd>
+    <dt th:text="#{plans.field.priority}">priority</dt>
+    <dd><th:block th:if="${form.priority != null}"><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${form.priority})}">priority</th:block></th:block><th:block
+            th:if="${form.priority == null}" th:text="#{common.none}">none</th:block></dd>
+    <dt th:text="#{plans.field.successCriteria}">criteria</dt>
+    <dd class="pre-wrap" th:text="${#strings.isEmpty(form.successCriteria)} ? #{common.none} : ${form.successCriteria}">criteria</dd>
+    <dt th:text="#{plans.field.estimatedMinutes}">estimated</dt>
+    <dd class="num" th:text="${form.estimatedMinutes != null} ? #{common.minutes(${form.estimatedMinutes})} : #{common.none}">0</dd>
+</dl>
 
 </body>
 </html>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* ADR-18 latest panel values of a review's improvement (reviews/detail improvement conflict and the next-plan
+       form sent after the improvement was already carried, 11.5.5). review: ReviewRow as stored now,
+       nextPlan: PlanRow or null. The "changed" badge only appears when the model changedFields lists improvement. */-->
+<dl th:fragment="improvementLatest(review, nextPlan)" class="dl-grid">
+    <dt><th:block th:text="#{reviews.detail.improvement.heading}">improvement</th:block> <span
+            th:replace="~{fragments/layout :: changedBadge('improvement')}"></span></dt>
+    <dd class="pre-wrap" th:text="${#strings.isEmpty(review.improvement)} ? #{common.none} : ${review.improvement}">improvement</dd>
+    <th:block th:if="${review.transferred}">
+        <th:block th:if="${review.transferredAt != null}">
+            <dt th:text="#{reviews.detail.improvement.transferredAt}">transferred at</dt>
+            <dd><time th:replace="~{fragments/layout :: datetime(${review.transferredAt})}"></time></dd>
+        </th:block>
+        <dt th:text="#{reviews.detail.next.heading}">next plan</dt>
+        <dd><p th:if="${nextPlan != null}" th:text="#{reviews.detail.next.title(${nextPlan.title})}">next</p>
+            <p><a th:href="@{/plans/{id}(id=${review.nextPlanId})}" href="#" th:text="#{reviews.detail.next.view}">view</a></p></dd>
+    </th:block>
+</dl>
+
+</body>
+</html>

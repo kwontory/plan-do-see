@@ -21,27 +21,30 @@
     <div th:replace="~{fragments/layout :: flash}"></div>
     <h1 th:text="${todo.title}">todo</h1>
 
-    <!--/* 1. Summary */-->
+    <!--/* 1. Current values (ADR-16, screens.md 11.2.1: same "current" card as the plan detail) */-->
     <section class="section" aria-labelledby="info-heading">
-        <h2 id="info-heading" th:text="#{todos.detail.info.heading}">info</h2>
-        <p class="badges"><th:block th:replace="~{fragments/todo :: statusBadges(${todo})}"></th:block></p>
-        <dl class="dl-grid">
-            <dt th:text="#{todos.field.dueDate}">due</dt>
-            <dd th:text="${todo.dueDate != null} ? ${todo.dueDate} : #{todos.item.noDue}">due</dd>
-            <dt th:text="#{todos.field.priority}">priority</dt>
-            <dd><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${todo.priority})}">priority</th:block></dd>
-            <dt th:text="#{todos.field.estimatedPlanValue}">estimated</dt>
-            <dd><span class="num" data-test="todo-estimated-minutes" th:data-value="${todo.estimatedMinutes}"
-                      th:text="#{common.minutes(${todo.estimatedMinutes})}">0</span>
-                <span class="muted" th:text="#{todos.detail.estimatedNote}">note</span></dd>
-            <dt th:text="#{todos.field.tags}">tags</dt>
-            <dd th:text="${todo.tags != null and !todo.tags.isEmpty()} ? ${#strings.listJoin(todo.tags.![name], ', ')} : #{common.none}">tags</dd>
-            <th:block th:if="${done and todo.completedAt != null}">
-                <dt th:text="#{todos.field.completedAt}">completed</dt>
-                <dd><time th:replace="~{fragments/layout :: datetime(${todo.completedAt})}"></time></dd>
-            </th:block>
-        </dl>
-        <p><a class="btn btn--secondary" th:href="@{/todos/{id}/edit(id=${todo.id})}" href="#" th:text="#{common.edit}">edit</a></p>
+        <h2 id="info-heading"><th:block th:text="#{todos.detail.info.heading}">info</th:block> <span
+                class="badge badge--current" th:text="#{badge.current}">current value</span></h2>
+        <div class="current">
+            <p class="badges"><th:block th:replace="~{fragments/todo :: statusBadges(${todo})}"></th:block></p>
+            <dl class="dl-grid">
+                <dt th:text="#{todos.field.dueDate}">due</dt>
+                <dd th:text="${todo.dueDate != null} ? ${todo.dueDate} : #{todos.item.noDue}">due</dd>
+                <dt th:text="#{todos.field.priority}">priority</dt>
+                <dd><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${todo.priority})}">priority</th:block></dd>
+                <dt th:text="#{todos.field.estimatedPlanValue}">estimated</dt>
+                <dd><span class="num" data-test="todo-estimated-minutes" th:data-value="${todo.estimatedMinutes}"
+                          th:text="#{common.minutes(${todo.estimatedMinutes})}">0</span>
+                    <span class="muted" th:text="#{todos.detail.estimatedNote}">note</span></dd>
+                <dt th:text="#{todos.field.tags}">tags</dt>
+                <dd th:text="${todo.tags != null and !todo.tags.isEmpty()} ? ${#strings.listJoin(todo.tags.![name], ', ')} : #{common.none}">tags</dd>
+                <th:block th:if="${done and todo.completedAt != null}">
+                    <dt th:text="#{todos.field.completedAt}">completed</dt>
+                    <dd><time th:replace="~{fragments/layout :: datetime(${todo.completedAt})}"></time></dd>
+                </th:block>
+            </dl>
+            <p><a class="btn btn--secondary" th:href="@{/todos/{id}/edit(id=${todo.id})}" href="#" th:text="#{common.edit}">edit</a></p>
+        </div>
     </section>
 
     <!--/* 2. Completion */-->
@@ -104,7 +107,8 @@
     <!--/* 4. Execution logs */-->
     <section class="section" aria-labelledby="logs-heading">
         <h2 id="logs-heading" th:text="#{todos.detail.logs.heading}">logs</h2>
-        <p class="summary-line" th:text="#{todos.detail.logs.summary(${#lists.size(logs)}, ${logsActualMinutes})}">0</p>
+        <!--/* ADR-21: count and total cover every record of this todo (server values), not only this page. */-->
+        <p class="summary-line" th:text="#{todos.detail.logs.summary(${logPage.totalCount}, ${logsActualMinutes})}">0</p>
         <p class="sort-note" th:text="#{todos.detail.logs.sortNote}">sort</p>
         <p class="empty" th:if="${logs.isEmpty()}" th:text="#{todos.detail.logs.empty}">empty</p>
         <div class="table-wrap" tabindex="0" role="region" th:attr="aria-label=#{todos.detail.logs.heading}" th:unless="${logs.isEmpty()}">
@@ -136,32 +140,59 @@
                 </tfoot>
             </table>
         </div>
+        <p th:replace="~{fragments/layout :: allPagesNote(${logPage})}"></p>
+        <div th:replace="~{fragments/layout :: pager(${logPage}, 'logPage', @{/todos/{id}(id=${todo.id},historyPage=${historyPage.number})}, '#logs-heading', ${#messages.msg('pager.nav', #messages.msg('todos.detail.logs.heading'))})}"></div>
     </section>
 
-    <!--/* 5. Completion events */-->
-    <section class="section" aria-labelledby="events-heading">
-        <h2 id="events-heading" th:text="#{todos.detail.events.heading}">events</h2>
-        <p class="muted" th:text="#{todos.detail.events.intro}">intro</p>
-        <p class="summary-line" th:text="#{todos.detail.events.summary(${#lists.size(events)})}">0</p>
-        <p class="sort-note" th:text="#{todos.detail.events.sortNote}">sort</p>
-        <p class="empty" th:if="${events.isEmpty()}" th:text="#{todos.detail.events.empty}">empty</p>
-        <div class="table-wrap" tabindex="0" role="region" th:attr="aria-label=#{todos.detail.events.heading}" th:unless="${events.isEmpty()}">
-            <table>
-                <caption class="visually-hidden" th:text="#{todos.detail.events.heading}">events</caption>
-                <thead>
-                <tr>
-                    <th scope="col" th:text="#{todos.detail.events.col.cycle}">cycle</th>
-                    <th scope="col" th:text="#{todos.detail.events.col.completedAt}">completed</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="ev : ${events}">
-                    <td th:text="#{todos.detail.events.cycle(${ev.cycleNo})}">1</td>
-                    <td><time th:replace="~{fragments/layout :: datetime(${ev.completedAt})}"></time></td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
+    <!--/* 5. Completions and reopens (ADR-16, screens.md 11.2.3). The server merges and orders them (completionHistory,
+           one page) and counts all of them (completionCount, reopenCount); the template neither merges nor counts. */-->
+    <section class="section" aria-labelledby="history-heading">
+        <h2 id="history-heading" th:text="#{todos.detail.history.heading}">history</h2>
+        <p class="muted" th:text="#{todos.detail.history.intro}">intro</p>
+        <p class="summary-line"><span data-test="completion-count" th:data-value="${completionCount}"
+                th:text="#{todos.detail.history.completionCount(${completionCount})}">0</span> · <span data-test="reopen-count"
+                th:data-value="${reopenCount}" th:text="#{todos.detail.history.reopenCount(${reopenCount})}">0</span></p>
+        <p class="sort-note" th:text="#{todos.detail.history.sortNote}">sort</p>
+        <p class="empty" th:if="${completionHistory.isEmpty()}" th:text="#{todos.detail.history.empty}">empty</p>
+        <th:block th:unless="${completionHistory.isEmpty()}">
+            <div class="table-wrap" tabindex="0" role="region" th:attr="aria-label=#{todos.detail.history.heading}">
+                <table>
+                    <caption class="visually-hidden" th:text="#{todos.detail.history.heading}">history</caption>
+                    <thead>
+                    <tr>
+                        <th scope="col" th:text="#{todos.detail.history.col.kind}">kind</th>
+                        <th scope="col" th:text="#{todos.detail.history.col.cycle}">cycle</th>
+                        <th scope="col" th:text="#{todos.detail.history.col.at}">at</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="h : ${completionHistory}">
+                        <td data-test="completion-history-kind" th:data-value="${h.kind}"><th:block
+                                th:replace="~{fragments/layout :: enumLabel('CompletionHistoryKind', ${h.kind})}">kind</th:block></td>
+                        <td th:text="#{todos.detail.history.cycle(${h.cycleNo})}">1</td>
+                        <td><time th:replace="~{fragments/layout :: datetime(${h.occurredAt})}"></time></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="muted" th:text="#{todos.detail.history.cycleNote}">cycle note</p>
+        </th:block>
+        <div th:replace="~{fragments/layout :: pager(${historyPage}, 'historyPage', @{/todos/{id}(id=${todo.id},logPage=${logPage.number})}, '#history-heading', ${#messages.msg('pager.nav', #messages.msg('todos.detail.history.heading'))})}"></div>
+    </section>
+
+    <!--/* 6. Edit history (ADR-16, screens.md 11.2.2): values before each edit, newest first (server order). */-->
+    <section class="section" aria-labelledby="todo-revisions-heading">
+        <h2 id="todo-revisions-heading" th:text="#{todos.detail.revisions.heading}">revisions</h2>
+        <p class="muted" th:text="#{todos.detail.revisions.intro}">intro</p>
+        <p class="empty" th:if="${todoRevisions == null or todoRevisions.isEmpty()}" th:text="#{todos.detail.revisions.empty}">empty</p>
+        <ol reversed class="revision-list" th:unless="${todoRevisions == null or todoRevisions.isEmpty()}">
+            <li th:each="rev : ${todoRevisions}">
+                <article class="revision" data-test="todo-revision" th:data-value="${rev.revisionNo}">
+                    <th:block th:replace="~{fragments/layout :: revisionHead(${rev.revisionNo}, ${rev.revisedAt})}"></th:block>
+                    <dl th:replace="~{fragments/todo :: todoRevisionFields(${rev})}"></dl>
+                </article>
+            </li>
+        </ol>
     </section>
 </main>
 

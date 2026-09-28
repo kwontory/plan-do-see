@@ -2,7 +2,7 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <body>
 
-<!--/* S02 list state (contract amendment 1, Q10). filter: TodoListQuery.
+<!--/* S02 list state (contract amendment 1, Q10) and the page shown (ADR-21). filter: TodoListQuery.
        withPriority=false on the add form: TodoForm.priority owns "priority" there, so the list
        priority condition is sent as "listPriority" (main agent decision). */-->
 <th:block th:fragment="listState(filter, withPriority)">
@@ -14,6 +14,7 @@
     <input type="hidden" name="tagId" th:value="${filter != null ? filter.tagId : null}">
     <input type="hidden" name="due" th:value="${filter != null ? filter.due : null}">
     <input type="hidden" name="sort" th:value="${filter != null ? filter.sort : null}">
+    <input type="hidden" name="page" th:value="${filter != null ? filter.page : null}">
 </th:block>
 
 <!--/* Status + derived badges. todo: TodoRow or EvidenceTodo with the server flags completed, overdue, dueToday
@@ -27,50 +28,113 @@
     <span th:if="${!todo.completed and todo.dueToday}" class="badge badge--today" th:text="#{badge.dueToday}">today</span>
 </th:block>
 
-<!--/* TodoForm fields. Must be included inside a form with th:object="${todoForm}". */-->
+<!--/* TodoForm fields. Must be included inside a form with th:object="${todoForm}". On an ADR-18 conflict page the
+       model changedFields adds a "differs from the latest" note (changedNote) to aria-describedby. */-->
 <th:block th:fragment="todoFields(priorities)">
-    <div class="field">
+    <div class="field" th:with="err=${#fields.hasErrors('title')}, chg=${changedFields != null and changedFields.contains('title')}">
         <label for="title" th:text="#{form.todo.title.label}">title</label>
+        <span th:replace="~{fragments/layout :: changedNote('title')}"></span>
         <p class="field-help" id="title-help" th:text="#{form.title.help}">help</p>
         <p th:replace="~{fragments/layout :: fieldError('title')}"></p>
         <input type="text" th:field="*{title}" maxlength="200" required
-               th:attr="aria-describedby=${#fields.hasErrors('title')} ? 'title-help title-error' : 'title-help',aria-invalid=${#fields.hasErrors('title')} ? 'true' : null">
+               th:attr="aria-describedby=${'title-help' + (err ? ' title-error' : '') + (chg ? ' title-changed' : '')},aria-invalid=${err} ? 'true' : null">
     </div>
-    <div class="field">
+    <div class="field" th:with="err=${#fields.hasErrors('dueDate')}, chg=${changedFields != null and changedFields.contains('dueDate')}">
         <label for="dueDate" th:text="#{form.todo.dueDate.label}">due</label>
+        <span th:replace="~{fragments/layout :: changedNote('dueDate')}"></span>
         <p class="field-help" id="dueDate-help" th:text="#{form.todo.dueDate.help}">help</p>
         <p th:replace="~{fragments/layout :: fieldError('dueDate')}"></p>
         <input type="date" th:field="*{dueDate}"
-               th:attr="aria-describedby=${#fields.hasErrors('dueDate')} ? 'dueDate-help dueDate-error' : 'dueDate-help',aria-invalid=${#fields.hasErrors('dueDate')} ? 'true' : null">
+               th:attr="aria-describedby=${'dueDate-help' + (err ? ' dueDate-error' : '') + (chg ? ' dueDate-changed' : '')},aria-invalid=${err} ? 'true' : null">
     </div>
-    <div class="field">
+    <div class="field" th:with="err=${#fields.hasErrors('priority')}, chg=${changedFields != null and changedFields.contains('priority')},
+                                desc=${#strings.trim((err ? 'priority-error ' : '') + (chg ? 'priority-changed' : ''))}">
         <label for="priority" th:text="#{form.priority.label}">priority</label>
+        <span th:replace="~{fragments/layout :: changedNote('priority')}"></span>
         <p th:replace="~{fragments/layout :: fieldError('priority')}"></p>
         <select th:field="*{priority}" required
-                th:attr="aria-describedby=${#fields.hasErrors('priority')} ? 'priority-error' : null,aria-invalid=${#fields.hasErrors('priority')} ? 'true' : null">
+                th:attr="aria-describedby=${#strings.isEmpty(desc)} ? null : ${desc},aria-invalid=${err} ? 'true' : null">
             <option value="" th:text="#{common.select.placeholder}">select</option>
             <option th:each="pr : ${priorities}" th:value="${pr}"><th:block
                     th:replace="~{fragments/layout :: enumLabel('Priority', ${pr})}">priority</th:block></option>
         </select>
     </div>
-    <div class="field">
+    <div class="field" th:with="err=${#fields.hasErrors('estimatedMinutes')}, chg=${changedFields != null and changedFields.contains('estimatedMinutes')}">
         <label for="estimatedMinutes" th:text="#{form.estimatedMinutes.label}">minutes</label>
+        <span th:replace="~{fragments/layout :: changedNote('estimatedMinutes')}"></span>
         <p class="field-help" id="estimatedMinutes-help" th:text="#{form.todo.estimatedMinutes.help}">help</p>
         <p th:replace="~{fragments/layout :: fieldError('estimatedMinutes')}"></p>
         <span class="input-unit">
             <input type="number" th:field="*{estimatedMinutes}" min="0" max="525600" step="1" inputmode="numeric" required
-                   th:attr="aria-describedby=${#fields.hasErrors('estimatedMinutes')} ? 'estimatedMinutes-help estimatedMinutes-error' : 'estimatedMinutes-help',aria-invalid=${#fields.hasErrors('estimatedMinutes')} ? 'true' : null">
+                   th:attr="aria-describedby=${'estimatedMinutes-help' + (err ? ' estimatedMinutes-error' : '') + (chg ? ' estimatedMinutes-changed' : '')},aria-invalid=${err} ? 'true' : null">
             <span aria-hidden="true" th:text="#{form.unit.minutes}">min</span>
         </span>
     </div>
-    <div class="field">
+    <div class="field" th:with="err=${#fields.hasErrors('tags')}, chg=${changedFields != null and changedFields.contains('tags')}">
         <label for="tags" th:text="#{form.todo.tags.label}">tags</label>
+        <span th:replace="~{fragments/layout :: changedNote('tags')}"></span>
         <p class="field-help" id="tags-help" th:text="#{form.todo.tags.help}">help</p>
         <p th:replace="~{fragments/layout :: fieldError('tags')}"></p>
         <input type="text" th:field="*{tags}"
-               th:attr="aria-describedby=${#fields.hasErrors('tags')} ? 'tags-help tags-error' : 'tags-help',aria-invalid=${#fields.hasErrors('tags')} ? 'true' : null">
+               th:attr="aria-describedby=${'tags-help' + (err ? ' tags-error' : '') + (chg ? ' tags-changed' : '')},aria-invalid=${err} ? 'true' : null">
     </div>
 </th:block>
+
+<!--/* ADR-18 latest panel values of a todo (model latest: TodoRow with tags). Status is shown but not compared (E7). */-->
+<dl th:fragment="todoLatestFields" class="dl-grid">
+    <dt><th:block th:text="#{todos.field.title}">title</th:block> <span th:replace="~{fragments/layout :: changedBadge('title')}"></span></dt>
+    <dd th:text="${latest.title}">title</dd>
+    <dt th:text="#{todos.filter.status.label}">status</dt>
+    <dd><th:block th:replace="~{fragments/layout :: enumLabel('TodoStatus', ${latest.status})}">status</th:block></dd>
+    <dt><th:block th:text="#{todos.field.dueDate}">due</th:block> <span th:replace="~{fragments/layout :: changedBadge('dueDate')}"></span></dt>
+    <dd th:text="${latest.dueDate != null} ? ${latest.dueDate} : #{todos.item.noDue}">due</dd>
+    <dt><th:block th:text="#{todos.field.priority}">priority</th:block> <span th:replace="~{fragments/layout :: changedBadge('priority')}"></span></dt>
+    <dd><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${latest.priority})}">priority</th:block></dd>
+    <dt><th:block th:text="#{todos.field.estimatedMinutes}">estimated</th:block> <span th:replace="~{fragments/layout :: changedBadge('estimatedMinutes')}"></span></dt>
+    <dd class="num" th:text="#{common.minutes(${latest.estimatedMinutes})}">0</dd>
+    <dt><th:block th:text="#{todos.field.tags}">tags</th:block> <span th:replace="~{fragments/layout :: changedBadge('tags')}"></span></dt>
+    <dd th:text="${latest.tags != null and !latest.tags.isEmpty()} ? ${#strings.listJoin(latest.tags.![name], ', ')} : #{common.none}">tags</dd>
+</dl>
+
+<!--/* ADR-16 values of one todo revision (the values before that edit, tag names as they were). rev: TodoRevisionRow.
+       No todo-estimated-minutes hook here: that one marks the current value only. */-->
+<dl th:fragment="todoRevisionFields(rev)" class="dl-grid">
+    <dt th:text="#{todos.field.title}">title</dt>
+    <dd th:text="${rev.title}">title</dd>
+    <dt th:text="#{todos.field.dueDate}">due</dt>
+    <dd th:text="${rev.dueDate != null} ? ${rev.dueDate} : #{todos.item.noDue}">due</dd>
+    <dt th:text="#{todos.field.priority}">priority</dt>
+    <dd><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${rev.priority})}">priority</th:block></dd>
+    <dt th:text="#{todos.field.estimatedMinutes}">estimated</dt>
+    <dd class="num" th:text="#{common.minutes(${rev.estimatedMinutes})}">0</dd>
+    <dt th:text="#{todos.field.tags}">tags</dt>
+    <dd th:text="${rev.tagNames != null and !rev.tagNames.isEmpty()} ? ${#strings.listJoin(rev.tagNames, ', ')} : #{common.none}">tags</dd>
+</dl>
+
+<!--/* ADR-18 E8: submitted TodoForm shown read-only for copying. form: TodoForm; any value may be empty. */-->
+<dl th:fragment="todoInputReadonly(form)" class="dl-grid">
+    <dt th:text="#{todos.field.title}">title</dt>
+    <dd th:text="${#strings.isEmpty(form.title)} ? #{common.none} : ${form.title}">title</dd>
+    <dt th:text="#{todos.field.dueDate}">due</dt>
+    <dd th:text="${form.dueDate != null} ? ${form.dueDate} : #{todos.item.noDue}">due</dd>
+    <dt th:text="#{todos.field.priority}">priority</dt>
+    <dd><th:block th:if="${form.priority != null}"><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${form.priority})}">priority</th:block></th:block><th:block
+            th:if="${form.priority == null}" th:text="#{common.none}">none</th:block></dd>
+    <dt th:text="#{todos.field.estimatedMinutes}">estimated</dt>
+    <dd class="num" th:text="${form.estimatedMinutes != null} ? #{common.minutes(${form.estimatedMinutes})} : #{common.none}">0</dd>
+    <dt th:text="#{todos.field.tags}">tags</dt>
+    <dd th:text="${#strings.isEmpty(form.tags)} ? #{common.none} : ${form.tags}">tags</dd>
+</dl>
+
+<!--/* ADR-18 E8: submitted ExecutionForm shown read-only for copying. Times are the Seoul local values typed in. */-->
+<dl th:fragment="executionInputReadonly(form)" class="dl-grid">
+    <dt th:text="#{todos.detail.exec.startedAt}">start</dt>
+    <dd th:text="${form.startedAt != null} ? ${#temporals.format(form.startedAt, 'yyyy-MM-dd HH:mm:ss')} : #{common.none}">start</dd>
+    <dt th:text="#{todos.detail.exec.endedAt}">end</dt>
+    <dd th:text="${form.endedAt != null} ? ${#temporals.format(form.endedAt, 'yyyy-MM-dd HH:mm:ss')} : #{common.none}">end</dd>
+    <dt th:text="#{todos.detail.logs.col.blocker}">blocker</dt>
+    <dd class="pre-wrap" th:text="${#strings.isEmpty(form.blockerReason)} ? #{common.none} : ${form.blockerReason}">blocker</dd>
+</dl>
 
 </body>
 </html>

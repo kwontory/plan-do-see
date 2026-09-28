@@ -111,7 +111,7 @@
                 </tbody>
                 <tfoot>
                 <tr>
-                    <th scope="row" colspan="4" th:text="#{evidence.total(${#lists.size(todos)})}">total</th>
+                    <th scope="row" colspan="4" th:text="#{evidence.total(${page.totalCount})}">total</th>
                     <td class="num" th:text="#{common.minutes(${evidenceEstimatedMinutes})}">0</td>
                     <td class="num" th:text="#{common.minutes(${evidenceActualMinutes})}">0</td>
                     <td th:if="${mk == 'blocked'}"></td>
@@ -119,6 +119,11 @@
                 </tfoot>
             </table>
         </div>
+        <!--/* ADR-21: the footer totals and the check above cover the whole scope; this page shows a part of it. */-->
+        <p th:replace="~{fragments/layout :: allPagesNote(${page})}"></p>
+        <th:block th:with="todoBase=${logPage != null} ? @{/reviews/{id}/evidence(id=${review.id},metric=${mk},logPage=${logPage.number})} : @{/reviews/{id}/evidence(id=${review.id},metric=${mk})}">
+            <div th:replace="~{fragments/layout :: pager(${page}, 'page', ${todoBase}, '#ev-todo-heading', ${#messages.msg('pager.nav', #messages.msg('evidence.todos.region'))})}"></div>
+        </th:block>
     </section>
 
     <!--/* 4. Log evidence */-->
@@ -149,13 +154,17 @@
                 </tbody>
                 <tfoot>
                 <tr>
-                    <th scope="row" colspan="3" th:text="#{evidence.total(${#lists.size(logs)})}">total</th>
+                    <th scope="row" colspan="3" th:text="#{evidence.total(${logPage.totalCount})}">total</th>
                     <td class="num" th:text="#{common.minutes(${evidenceActualMinutes})}">0</td>
                     <td></td>
                 </tr>
                 </tfoot>
             </table>
         </div>
+        <p th:replace="~{fragments/layout :: allPagesNote(${logPage})}"></p>
+        <th:block th:with="logBase=${page != null} ? @{/reviews/{id}/evidence(id=${review.id},metric=${mk},page=${page.number})} : @{/reviews/{id}/evidence(id=${review.id},metric=${mk})}">
+            <div th:replace="~{fragments/layout :: pager(${logPage}, 'logPage', ${logBase}, '#ev-log-heading', ${#messages.msg('pager.nav', #messages.msg('evidence.logs.region'))})}"></div>
+        </th:block>
     </section>
 
     <p><a class="btn btn--secondary" th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{common.backToReview}">back</a></p>

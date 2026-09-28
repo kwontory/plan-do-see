@@ -94,10 +94,7 @@
         <ol reversed class="revision-list" th:unless="${revisions == null or revisions.isEmpty()}">
             <li th:each="rev : ${revisions}">
                 <article class="revision">
-                    <h3 th:text="#{plans.detail.revisions.item(${rev.revisionNo})}">revision</h3>
-                    <p class="muted"><th:block th:text="#{plans.detail.revisions.revisedAt}">revised</th:block> <time
-                            th:replace="~{fragments/layout :: datetime(${rev.revisedAt})}"></time></p>
-                    <p><span class="badge badge--readonly" th:text="#{badge.readonly}">before</span></p>
+                    <th:block th:replace="~{fragments/layout :: revisionHead(${rev.revisionNo}, ${rev.revisedAt})}"></th:block>
                     <dl class="dl-grid">
                         <dt th:text="#{plans.field.title}">title</dt>
                         <dd th:text="${rev.title}">title</dd>

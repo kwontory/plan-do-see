@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<!--/* ADR-18 E8 (screens.md 11.5.4): the todo was deleted while its edit form or execution form was being saved.
+       HTTP 409, nothing stored. Model: todoId, planId (list link), deletedFrom ("edit" | "execution"), and the submitted
+       form under its usual name (todoForm or executionForm). No database read, so there is no plan title.
+       The input is printed as plain escaped text for copying; there is no form and no save button. */-->
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(#{todos.deleted.title}, true)}">
+    <meta charset="UTF-8">
+    <title>deleted</title>
+</head>
+<body>
+<header th:replace="~{fragments/layout :: header('plans')}"></header>
+
+<main id="main" tabindex="-1">
+    <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
+        <ol>
+            <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
+            <li aria-current="page" th:text="#{breadcrumb.todos}">todos</li>
+        </ol>
+    </nav>
+    <h1 th:text="#{todos.deleted.title}">deleted</h1>
+
+    <div class="error-summary" role="alert" tabindex="-1" id="error-summary" data-js="error-summary">
+        <p data-test="todo-deleted" th:text="#{todos.deleted.body}">deleted</p>
+    </div>
+
+    <section class="section" id="my-input" tabindex="-1" aria-labelledby="my-input-heading" data-test="conflict-mine">
+        <th:block th:replace="~{fragments/layout :: conflictMineHead(2, false)}"></th:block>
+        <div class="readonly-box">
+            <th:block th:if="${deletedFrom == 'edit' and todoForm != null}">
+                <dl th:replace="~{fragments/todo :: todoInputReadonly(${todoForm})}"></dl>
+            </th:block>
+            <th:block th:if="${deletedFrom == 'execution' and executionForm != null}">
+                <dl th:replace="~{fragments/todo :: executionInputReadonly(${executionForm})}"></dl>
+            </th:block>
+        </div>
+    </section>
+
+    <p th:if="${planId != null}"><a class="btn btn--secondary" th:href="@{/plans/{id}/todos(id=${planId})}" href="#"
+                                    th:text="#{todos.deleted.toList}">list</a></p>
+    <p th:if="${planId == null}"><a class="btn btn--secondary" th:href="@{/plans}" href="/plans"
+                                    th:text="#{common.planList}">plans</a></p>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

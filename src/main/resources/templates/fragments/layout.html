@@ -77,18 +77,24 @@
 <th:block th:fragment="enumLabelIn(key, type, value)"
           th:text="${#messages.msg(key, #messages.msg('enum.' + type + '.' + value))}">label</th:block>
 
-<!--/* Error summary. Must be included inside a form with th:object. One heading for every case (ADR-18 E3):
-       validation errors, rule errors and the 409 conflict re-render (concurrency.form.retry) all mean "not saved".
-       Global errors have no field to jump to, so they are plain text. Inputs keep the submitted values (th:field). */-->
+<!--/* Error summary. Must be included where th:object is set (it may sit just above the form). One heading for every
+       case (ADR-18 E3): validation errors, rule errors and the 409 conflict re-render all mean "not saved".
+       Global errors have no field to jump to, so they are plain text. Inputs keep the submitted values (th:field).
+       Optional variables set by the including page with th:with:
+         nestedSummary=true  the summary sits inside an h2 section, so its heading is h3 (reviews/detail)
+         showJumps=true      a conflict page: links to the latest panel (#latest) and my input (#my-input) (11.5.2) */-->
 <div th:fragment="errorSummary" th:if="${#fields.hasErrors('*')}"
      class="error-summary" role="alert" tabindex="-1" id="error-summary" data-js="error-summary">
-    <h2 th:text="#{form.errorSummary.heading}">errors</h2>
+    <h3 th:if="${nestedSummary == true}" th:text="#{form.errorSummary.heading}">errors</h3>
+    <h2 th:unless="${nestedSummary == true}" th:text="#{form.errorSummary.heading}">errors</h2>
     <ul>
         <li th:each="err : ${#fields.detailedErrors()}">
             <a th:if="${!err.global}" th:href="${'#' + err.fieldName}" href="#" th:text="${err.message}">field error</a>
             <span th:if="${err.global}" data-test="form-global-error" th:text="${err.message}">global error</span>
         </li>
     </ul>
+    <p class="conflict-jumps" th:if="${showJumps == true}"><a href="#latest" th:text="#{conflict.jump.latest}">latest</a>
+        <a href="#my-input" th:text="#{conflict.jump.mine}">mine</a></p>
 </div>
 
 <!--/* Field error. Must be included inside a form with th:object. name: field name (also input id) */-->
@@ -97,6 +103,93 @@
     <th:block th:each="msg, st : ${#fields.errors(name)}"><span class="field-error__prefix"
             th:text="#{form.fieldError.prefix}">error</span> <span th:text="${msg}">message</span><br th:if="${!st.last}"></th:block>
 </p>
+
+<!--/* ADR-18 conflict screens (screens.md 11.5). The server decides what differs (model changedFields, a List of
+       form field names); these fragments only print it. */-->
+
+<!--/* "Changed" badge next to a label in the latest panel. field: form field name. */-->
+<span th:fragment="changedBadge(field)" th:if="${changedFields != null and changedFields.contains(field)}"
+      class="badge badge--changed" th:data-test="${'latest-changed-' + field}" th:text="#{badge.changed}">changed</span>
+
+<!--/* "Differs from the latest" note next to a form label. Its id (field-changed) goes into the input's
+       aria-describedby; aria-invalid is not set (the input is not wrong). */-->
+<span th:fragment="changedNote(field)" th:if="${changedFields != null and changedFields.contains(field)}"
+      class="changed-note" th:id="${field + '-changed'}" th:text="#{conflict.mine.changed}">differs</span>
+
+<!--/* Latest panel (read-only). level: 2 or 3 (heading level), updatedAt: OffsetDateTime or null,
+       loadUrl: GET URL of a fresh edit form or null (null = nothing can be edited, so no load link and no
+       "nothing differs" line), fields: fragment expression printing the latest values. */-->
+<section th:fragment="conflictLatest(level, updatedAt, loadUrl, fields)" id="latest" tabindex="-1"
+         class="current conflict-panel" data-test="conflict-latest" aria-labelledby="latest-heading">
+    <h2 th:if="${level == 2}" id="latest-heading" th:text="#{conflict.latest.heading}">latest</h2>
+    <h3 th:unless="${level == 2}" id="latest-heading" th:text="#{conflict.latest.heading}">latest</h3>
+    <p th:text="#{conflict.latest.intro}">intro</p>
+    <p class="muted" th:if="${updatedAt != null}"><th:block th:text="#{conflict.latest.updatedAt}">updated</th:block> <time
+            th:replace="~{fragments/layout :: datetime(${updatedAt})}"></time></p>
+    <th:block th:replace="${fields}"></th:block>
+    <p th:if="${loadUrl != null and (changedFields == null or changedFields.isEmpty())}"
+       th:text="#{conflict.latest.noDiff}">no difference</p>
+    <th:block th:if="${loadUrl != null}">
+        <p class="conflict-load"><a class="btn btn--secondary" th:href="${loadUrl}" href="#" aria-describedby="latest-load-help"
+                                    th:text="#{conflict.latest.load}">load</a></p>
+        <p class="field-help" id="latest-load-help" th:text="#{conflict.latest.loadHelp}">help</p>
+    </th:block>
+</section>
+
+<!--/* Heading and intro of the "my input" part. level: 2 or 3, editable: true when the input can be saved again. */-->
+<th:block th:fragment="conflictMineHead(level, editable)">
+    <h2 th:if="${level == 2}" id="my-input-heading" th:text="#{conflict.mine.heading}">mine</h2>
+    <h3 th:unless="${level == 2}" id="my-input-heading" th:text="#{conflict.mine.heading}">mine</h3>
+    <p th:text="${editable} ? #{conflict.mine.intro} : #{conflict.mine.readonlyIntro}">intro</p>
+</th:block>
+
+<!--/* Revision card head shared by plan and todo history (h3, time, "before" badge). */-->
+<th:block th:fragment="revisionHead(revisionNo, revisedAt)">
+    <h3 th:text="#{common.revision.item(${revisionNo})}">revision</h3>
+    <p class="muted"><th:block th:text="#{common.revision.revisedAt}">revised</th:block> <time
+            th:replace="~{fragments/layout :: datetime(${revisedAt})}"></time></p>
+    <p><span class="badge badge--readonly" th:text="#{badge.readonly}">before</span></p>
+</th:block>
+
+<!--/* ADR-21 page navigation. page: PageInfo (server computed; nothing renders for an empty list).
+       pageParam: query parameter of this list (page, logPage, historyPage). base: context URL of page 1 of this list with
+       every other condition already in it (search, filter, sort, the other list's page); page 1 is the base itself
+       because an absent parameter means page 1. anchor: "#id" of the list heading or ''. label: nav name.
+       Only a window of page numbers is shown (first, current-2..current+2, last) so long lists stay short. */-->
+<div th:fragment="pager(page, pageParam, base, anchor, label)" class="pager" th:if="${page != null and page.totalCount > 0}"
+     th:with="pre=${base + (#strings.contains(base, '?') ? '&' : '?') + pageParam + '='},
+              from=${page.number - 2 < 1 ? 1 : page.number - 2},
+              to=${page.number + 2 > page.totalPages ? page.totalPages : page.number + 2}">
+    <p class="pager__range" data-test="pager-range"
+       th:text="#{pager.range(${page.firstItem}, ${page.lastItem}, ${page.totalCount})}">1-50 / 50</p>
+    <nav class="pager__nav" th:if="${page.totalPages > 1}" th:attr="aria-label=${label}" data-test="pager">
+        <ul class="pager__list">
+            <li th:if="${page.hasPrevious}" th:with="n=${page.number - 1}"><a class="btn btn--secondary" rel="prev"
+                    th:href="${n == 1} ? ${base + anchor} : ${pre + n + anchor}" href="#"><th:block
+                    th:text="#{pager.previous}">prev</th:block><span class="visually-hidden"
+                    th:text="#{common.srContext(${#messages.msg('pager.page.sr', n)})}"></span></a></li>
+            <li th:if="${from > 1}"><a th:replace="~{fragments/layout :: pagerNumber(1, false, ${base + anchor})}"></a></li>
+            <li th:if="${from > 2}" class="pager__gap" aria-hidden="true" th:text="#{pager.gap}">...</li>
+            <li th:each="n : ${#numbers.sequence(from, to)}"><a
+                    th:replace="~{fragments/layout :: pagerNumber(${n}, ${n == page.number}, ${n == 1 ? base + anchor : pre + n + anchor})}"></a></li>
+            <li th:if="${to < page.totalPages - 1}" class="pager__gap" aria-hidden="true" th:text="#{pager.gap}">...</li>
+            <li th:if="${to < page.totalPages}"><a
+                    th:replace="~{fragments/layout :: pagerNumber(${page.totalPages}, false, ${pre + page.totalPages + anchor})}"></a></li>
+            <li th:if="${page.hasNext}" th:with="n=${page.number + 1}"><a class="btn btn--secondary" rel="next"
+                    th:href="${pre + n + anchor}" href="#"><th:block th:text="#{pager.next}">next</th:block><span
+                    class="visually-hidden" th:text="#{common.srContext(${#messages.msg('pager.page.sr', n)})}"></span></a></li>
+        </ul>
+    </nav>
+</div>
+
+<!--/* One page number link. The current page keeps a link with aria-current="page". */-->
+<a th:fragment="pagerNumber(n, current, href)" class="btn" th:classappend="${current} ? 'pager__current' : 'btn--secondary'"
+   th:href="${href}" href="#" th:attr="aria-current=${current} ? 'page' : null"><span aria-hidden="true"
+        th:text="#{pager.number(${n})}">1</span><span class="visually-hidden" th:text="#{pager.page.sr(${n})}">1</span></a>
+
+<!--/* Note under a paged table whose footer totals cover every page (ADR-21 3). */-->
+<p th:fragment="allPagesNote(page)" th:if="${page != null and page.totalPages > 1}" class="muted"
+   th:text="#{pager.allPagesNote}">totals cover all pages</p>
 
 </body>
 </html>

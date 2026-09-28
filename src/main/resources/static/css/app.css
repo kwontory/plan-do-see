@@ -929,3 +929,65 @@ td time {
         scroll-behavior: auto !important;
     }
 }
+
+/* ADR-18 edit conflict (screens.md 11.5): "changed" badge and note use the notice tokens (not danger: nothing is wrong).
+   One column at every width; DOM order = reading order. */
+.badge--changed,
+.changed-note {
+    color: var(--color-notice-text);
+    background: var(--color-notice-bg);
+    border-color: var(--color-notice-border);
+}
+
+.changed-note {
+    display: inline-block;
+    margin: 0 0 var(--space-1);
+    padding: 0 var(--space-2);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    border: var(--border-width) solid var(--color-notice-border);
+    border-radius: var(--radius-sm);
+}
+
+.conflict-panel {
+    margin-bottom: var(--space-5);
+}
+
+.conflict-jumps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    margin: var(--space-3) 0 0;
+}
+
+.conflict-jumps a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--target-min);
+}
+
+/* ADR-21 page navigation: 44px targets, wraps at 360px */
+.pager {
+    margin-top: var(--space-4);
+}
+
+.pager__range {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.pager__list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pager__gap {
+    min-width: var(--space-5);
+    text-align: center;
+    color: var(--color-text-muted);
+}
