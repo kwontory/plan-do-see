@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  Export (T06-C35, T06-C36, ADR-04): owned by #{userId}, soft-deleted rows and children of soft-deleted parents
+  excluded, every collection ordered by its unique key. Credential and email columns are never selected.
+-->
+<mapper namespace="com.plandosee.diary.export.infrastructure.ExportMapper">
+
+    <resultMap id="exportTagRow" type="com.plandosee.diary.export.domain.ExportTagRow">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="name" column="name"/>
+        <result property="normalizedName" column="normalized_name"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <resultMap id="exportTodoTagRow" type="com.plandosee.diary.export.domain.ExportTodoTagRow">
+        <result property="todoId" column="todo_id"/>
+        <result property="tagId" column="tag_id"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <select id="plans" resultMap="com.plandosee.diary.plan.infrastructure.PlanMapper.planRow">
+        SELECT p.id,
+               p.user_id,
+               p.title,
+               p.start_date,
+               p.end_date,
+               p.priority,
+               p.success_criteria,
+               p.estimated_minutes,
+               p.carried_improvement,
+               p.created_at,
+               p.updated_at
+        FROM plans p
+        WHERE p.user_id = #{userId}
+          AND p.deleted_at IS NULL
+        ORDER BY p.id ASC
+    </select>
+
+    <select id="planRevisions" resultMap="com.plandosee.diary.plan.infrastructure.PlanMapper.planRevisionRow">
+        SELECT r.id,
+               r.plan_id,
+               r.revision_no,
+               r.title,
+               r.start_date,
+               r.end_date,
+               r.priority,
+               r.success_criteria,
+               r.estimated_minutes,
+               r.carried_improvement,
+               r.revised_at
+        FROM plan_revisions r
+        JOIN plans p ON p.id = r.plan_id
+        WHERE p.user_id = #{userId}
+          AND p.deleted_at IS NULL
+        ORDER BY r.id ASC
+    </select>
+
+    <select id="todos" resultMap="com.plandosee.diary.todo.infrastructure.TodoMapper.todoRow">
+        SELECT t.id,
+               t.plan_id,
+               t.title,
+               t.due_date,
+               t.priority,
+               t.estimated_minutes,
+               t.status,
+               t.completion_cycle,
+               t.completed_at,
+               t.created_at,
+               t.updated_at
+        FROM todos t
+        JOIN plans p ON p.id = t.plan_id
+        WHERE <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+        ORDER BY t.id ASC
+    </select>
+
+    <select id="tags" resultMap="exportTagRow">
+        SELECT g.id,
+               g.user_id,
+               g.name,
+               g.normalized_name,
+               g.created_at,
+               g.updated_at
+        FROM tags g
+        WHERE g.user_id = #{userId}
+          AND g.deleted_at IS NULL
+        ORDER BY g.id ASC
+    </select>
+
+    <select id="todoTags" resultMap="exportTodoTagRow">
+        SELECT tt.todo_id,
+               tt.tag_id,
+               tt.created_at
+        FROM todo_tags tt
+        JOIN todos t ON t.id = tt.todo_id
+        JOIN plans p ON p.id = t.plan_id
+        JOIN tags g ON g.id = tt.tag_id
+        WHERE <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+          AND g.user_id = #{userId}
+          AND g.deleted_at IS NULL
+        ORDER BY tt.todo_id ASC, tt.tag_id ASC
+    </select>
+
+    <select id="executionLogs" resultMap="com.plandosee.diary.execution.infrastructure.ExecutionLogMapper.executionLogRow">
+        SELECT e.id,
+               e.todo_id,
+               NULL AS todo_title,
+               e.started_at,
+               e.ended_at,
+               e.actual_minutes,
+               e.blocker_reason,
+               e.created_at
+        FROM execution_logs e
+        JOIN todos t ON t.id = e.todo_id
+        JOIN plans p ON p.id = t.plan_id
+        WHERE <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+        ORDER BY e.id ASC
+    </select>
+
+    <select id="completionEvents" resultMap="com.plandosee.diary.todo.infrastructure.TodoMapper.completionEventRow">
+        SELECT c.id,
+               c.todo_id,
+               c.idempotency_key,
+               c.cycle_no,
+               c.completed_at,
+               c.created_at
+        FROM completion_events c
+        JOIN todos t ON t.id = c.todo_id
+        JOIN plans p ON p.id = t.plan_id
+        WHERE <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+        ORDER BY c.id ASC
+    </select>
+
+    <select id="reviews" resultMap="com.plandosee.diary.review.infrastructure.ReviewMapper.reviewRow">
+        SELECT r.id,
+               r.user_id,
+               r.plan_id,
+               r.period_start,
+               r.period_end,
+               r.improvement,
+               r.next_plan_id,
+               r.transferred_at,
+               r.created_at,
+               r.updated_at
+        FROM reviews r
+        JOIN plans p ON p.id = r.plan_id
+        WHERE r.user_id = #{userId}
+          AND r.deleted_at IS NULL
+          AND p.user_id = #{userId}
+          AND p.deleted_at IS NULL
+        ORDER BY r.id ASC
+    </select>
+</mapper>
