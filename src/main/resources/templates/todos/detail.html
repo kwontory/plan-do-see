@@ -113,7 +113,7 @@
                 <div class="field field--span2">
                     <label for="blockerReason" th:text="#{todos.detail.exec.blockerReason}">blocker</label>
                     <p th:replace="~{fragments/layout :: fieldError('blockerReason')}"></p>
-                    <textarea th:field="*{blockerReason}" rows="3"
+                    <textarea th:field="*{blockerReason}" rows="3" maxlength="1000"
                               th:attr="aria-describedby=${#fields.hasErrors('blockerReason')} ? 'blockerReason-help blockerReason-error' : 'blockerReason-help',aria-invalid=${#fields.hasErrors('blockerReason')} ? 'true' : null"></textarea>
                     <p class="field-help" id="blockerReason-help" th:text="#{todos.detail.exec.blockerReasonHelp}">help</p>
                 </div>

@@ -20,7 +20,7 @@ import com.plandosee.diary.todo.domain.TodoRules;
 /**
  * Todo create/edit form. Only the ADR-07 editable fields exist here; status, plan, and id cannot be submitted.
  * tags is a comma-separated list parsed by TagNames (each 1..TodoRules.TAG_NAME_MAX chars, case-insensitive
- * duplicates merged). Limits come from TodoRules (ADR-22).
+ * duplicates merged, at most TodoRules.TAGS_MAX tags). Limits come from TodoRules (ADR-22).
  */
 public class TodoForm {
 
@@ -54,7 +54,7 @@ public class TodoForm {
         return form;
     }
 
-    /** May throw DomainRuleException("tags", ...) for an over-long tag. */
+    /** May throw DomainRuleException("tags", ...) for an over-long tag or too many tags. */
     public TodoCommand toCommand() {
         return new TodoCommand(title, dueDate, priority, estimatedMinutes, TagNames.parse(tags));
     }

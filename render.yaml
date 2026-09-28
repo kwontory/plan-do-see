@@ -18,3 +18,11 @@ services:
         value: "true"
       - key: APP_DEMO_USER_ID
         value: 00000000-0000-4000-8000-000000000001
+      # Request scheme/host/port behind Render's proxy come from X-Forwarded-* applied by Tomcat's
+      # RemoteIpValve, only for connections from trusted internal proxies (default: private ranges and loopback).
+      # The same-origin write check compares the browser Origin (https://<service>.onrender.com) with that result.
+      # If every save returns 403 after deploy, add the proxy range here (never 0.0.0.0/0), for example:
+      #   - key: SERVER_TOMCAT_REMOTEIP_INTERNALPROXIES
+      #     value: 10.0.0.0/8
+      - key: FORWARD_HEADERS_STRATEGY
+        value: native

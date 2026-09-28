@@ -17,6 +17,7 @@ public final class FieldCodes {
     public static final String ESTIMATED_MINUTES_MIN = "validation.estimatedMinutes.min";
     public static final String ESTIMATED_MINUTES_MAX = "validation.estimatedMinutes.max";
     public static final String IMPROVEMENT_MAX = "validation.improvement.max";
+    public static final String BLOCKER_REASON_MAX = "validation.blockerReason.max";
 
     private FieldCodes() {
     }

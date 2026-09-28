@@ -4,14 +4,17 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import org.springframework.format.annotation.DateTimeFormat;
 
 import com.plandosee.diary.common.time.TimeConfig;
+import com.plandosee.diary.execution.domain.ExecutionRules;
 
 /**
  * S03 execution record form. datetime-local values (with or without seconds) are interpreted in Asia/Seoul.
- * blockerReason is optional; blank is stored as NULL by ExecutionService.
+ * blockerReason is optional (at most ExecutionRules.BLOCKER_REASON_MAX characters, LF line breaks, ADR-22); blank is
+ * stored as NULL by ExecutionService.
  */
 public class ExecutionForm {
 
@@ -23,6 +26,7 @@ public class ExecutionForm {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime endedAt;
 
+    @Size(max = ExecutionRules.BLOCKER_REASON_MAX, message = "{validation.blockerReason.max}")
     private String blockerReason;
 
     public static OffsetDateTime inSeoul(LocalDateTime value) {

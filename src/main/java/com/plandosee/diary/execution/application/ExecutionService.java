@@ -19,6 +19,7 @@ import com.plandosee.diary.execution.application.port.ExecutionLogMapper;
 import com.plandosee.diary.execution.domain.ActualMinutes;
 import com.plandosee.diary.execution.domain.ExecutionLogRow;
 import com.plandosee.diary.execution.domain.ExecutionLogTotals;
+import com.plandosee.diary.execution.domain.ExecutionRules;
 import com.plandosee.diary.todo.application.TodoService;
 
 /**
@@ -50,10 +51,12 @@ public class ExecutionService {
     /**
      * Takes the owned todo's row lock (TodoService.lockOwned) so a concurrent delete cannot leave a log under a
      * just-deleted todo: either the log commits first and the delete follows, or the delete wins and this throws
-     * {@link com.plandosee.diary.todo.application.TodoDeletedException} with nothing stored.
+     * {@link com.plandosee.diary.todo.application.TodoDeletedException} with nothing stored. The input is checked at
+     * the entrance with the form's codes (ADR-22): period (ActualMinutes) and blocker reason length (ExecutionRules).
      */
     public UUID record(UUID todoId, OffsetDateTime startedAt, OffsetDateTime endedAt, String blockerReason) {
         int actualMinutes = ActualMinutes.between(startedAt, endedAt);
+        ExecutionRules.checkBlockerReason(blockerReason);
         return writes.run(() -> {
             todoService.lockOwned(todoId);
             ExecutionLogRow log = new ExecutionLogRow();
