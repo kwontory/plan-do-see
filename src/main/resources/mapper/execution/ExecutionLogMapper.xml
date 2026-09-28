@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.plandosee.diary.execution.infrastructure.ExecutionLogMapper">
+
+    <resultMap id="executionLogRow" type="com.plandosee.diary.execution.domain.ExecutionLogRow">
+        <id property="id" column="id"/>
+        <result property="todoId" column="todo_id"/>
+        <result property="todoTitle" column="todo_title"/>
+        <result property="startedAt" column="started_at"/>
+        <result property="endedAt" column="ended_at"/>
+        <result property="actualMinutes" column="actual_minutes"/>
+        <result property="blockerReason" column="blocker_reason"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <!-- Called only after the owning todo is locked by the service in the same transaction. -->
+    <insert id="insert" parameterType="com.plandosee.diary.execution.domain.ExecutionLogRow">
+        INSERT INTO execution_logs (id, todo_id, started_at, ended_at, actual_minutes, blocker_reason, created_at)
+        VALUES (#{id}, #{todoId}, #{startedAt}, #{endedAt}, #{actualMinutes}, #{blockerReason}, #{createdAt})
+    </insert>
+
+    <select id="listForTodoOwned" resultMap="executionLogRow">
+        SELECT e.id,
+               e.todo_id,
+               t.title AS todo_title,
+               e.started_at,
+               e.ended_at,
+               e.actual_minutes,
+               e.blocker_reason,
+               e.created_at
+        FROM execution_logs e
+        JOIN todos t ON t.id = e.todo_id
+        JOIN plans p ON p.id = t.plan_id
+        WHERE e.todo_id = #{todoId}
+          AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+        ORDER BY e.started_at ASC, e.id ASC
+    </select>
+</mapper>
