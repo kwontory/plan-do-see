@@ -1,0 +1,18 @@
+# Render Blueprint for PlanDoSee Note. DB_* values are entered in the Render dashboard.
+services:
+  - type: web
+    name: plandosee-diary
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    autoDeploy: false
+    envVars:
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: APP_DEMO_USER_ID
+        value: 00000000-0000-4000-8000-000000000001
