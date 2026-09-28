@@ -841,6 +841,16 @@ a.flow__item:hover .flow__name {
     border-color: var(--color-primary);
 }
 
+.btn--secondary[aria-busy="true"],
+.btn--secondary:disabled {
+    color: var(--color-primary);
+}
+
+.btn[aria-busy="true"]:not(.btn--secondary),
+.btn:disabled:not(.btn--secondary) {
+    color: var(--color-on-primary);
+}
+
 .btn--secondary[aria-busy="true"]:hover,
 .btn--secondary:disabled:hover {
     background: var(--color-bg);
@@ -1880,12 +1890,19 @@ fieldset.field-group {
     }
 }
 
+/* The table area has a transparent 3px border that turns blue on focus: an outline would be hidden on two sides by
+   the sticky first column and the head row background. Cells take the 3px back so text stays on the baseline. */
 .table-wrap {
     overflow-x: auto;
     margin: 0 calc(-1 * var(--bleed)) var(--space-3);
+    border: var(--focus-width) solid transparent;
 }
 
-.table-wrap:focus-visible,
+.table-wrap:focus-visible {
+    outline: none;
+    border-color: var(--color-focus);
+}
+
 .metric-grid .link-card:focus-visible {
     outline-offset: calc(-1 * var(--focus-width));
 }
@@ -1907,12 +1924,12 @@ td {
 
 th:first-child,
 td:first-child {
-    padding-left: var(--bleed);
+    padding-left: calc(var(--bleed) - var(--focus-width));
 }
 
 th:last-child,
 td:last-child {
-    padding-right: var(--bleed);
+    padding-right: calc(var(--bleed) - var(--focus-width));
 }
 
 thead th {
@@ -1923,10 +1940,18 @@ thead th {
     vertical-align: bottom;
 }
 
+/* Numbers with their unit ("32분", "525600분") never break, in every table. */
 td.num,
 th.num {
     text-align: right;
     white-space: nowrap;
+    overflow-wrap: normal;
+}
+
+/* Column heads break only between words ("실제 / 시간"), never inside a word. */
+thead th {
+    overflow-wrap: normal;
+    word-break: keep-all;
 }
 
 tfoot th,
@@ -1967,12 +1992,12 @@ tfoot td {
 
     .table--fit th:first-child,
     .table--fit td:first-child {
-        padding-left: var(--bleed);
+        padding-left: calc(var(--bleed) - var(--focus-width));
     }
 
     .table--fit th:last-child,
     .table--fit td:last-child {
-        padding-right: var(--bleed);
+        padding-right: calc(var(--bleed) - var(--focus-width));
     }
 
     .table--fit time {
@@ -1988,16 +2013,8 @@ tfoot td {
         min-width: 5em;
     }
 
+    /* Heads may take two lines at word breaks; values (td.num, totals) keep the global nowrap rule. */
     .table--fit thead th {
-        white-space: normal;
-    }
-
-    .table--fit th.num,
-    .table--fit td.num {
-        width: 1%;
-    }
-
-    .table--fit td.num {
         white-space: normal;
     }
 
