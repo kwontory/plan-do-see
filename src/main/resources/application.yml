@@ -11,6 +11,12 @@ server:
     encoding:
       charset: UTF-8
       force: true
+    session:
+      # Flash attributes use the HTTP session; never expose its id in URLs (T06-C58).
+      tracking-modes: cookie
+      cookie:
+        http-only: true
+        same-site: lax
 
 spring:
   application:
