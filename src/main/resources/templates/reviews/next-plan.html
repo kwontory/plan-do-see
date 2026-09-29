@@ -10,7 +10,7 @@
     <title>next plan</title>
 </head>
 <body>
-<header th:replace="~{fragments/layout :: header('plans')}"></header>
+<header th:replace="~{fragments/shell :: shell('plans', ${unavailable ? null : plan}, 'see')}"></header>
 
 <main id="main" tabindex="-1" class="wrap">
     <div class="page-head">
@@ -31,29 +31,33 @@
 
     <!--/* Same text as the server rule error (D1): review.improvement.missing. On the ADR-19 stand-in the improvement is
            unknown (null), not missing, so the form is still shown. */-->
-    <th:block th:unless="${showForm}">
-        <div class="empty">
-            <p th:text="#{review.improvement.missing}">missing</p>
-            <p><a class="btn btn--secondary" th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{common.backToReview}">back</a></p>
-        </div>
-    </th:block>
+    <section class="section empty-state" th:unless="${showForm}" th:attr="aria-label=#{reviews.nextPlan.carry.heading}">
+        <span class="empty-state__icon" aria-hidden="true"><svg th:replace="~{fragments/layout :: icon('flag')}"></svg></span>
+        <p th:text="#{review.improvement.missing}">missing</p>
+        <a class="btn btn--line" th:href="@{/reviews/{id}(id=${review.id})}" href="#"><svg
+                th:replace="~{fragments/layout :: icon('chevron-left')}"></svg><span th:text="#{common.backToReview}">back</span></a>
+    </section>
 
     <th:block th:if="${showForm}">
         <th:block th:object="${planForm}" th:with="showJumps=${conflict}">
-            <div th:replace="~{fragments/layout :: errorSummary}"></div>
+            <div th:replace="~{fragments/layout :: errorAlert}"></div>
         </th:block>
 
         <!--/* ADR-18 E10 (screens.md 11.5.5): the improvement was already carried (model nextPlan). Nothing was created;
                the carried improvement and the next plan come first, then the input read-only for copying. */-->
         <th:block th:if="${conflict}">
-            <section th:replace="~{fragments/layout :: conflictLatest(2, null, null, ~{fragments/review :: improvementLatest(${review}, ${nextPlan})})}"></section>
-            <section class="section" id="my-input" tabindex="-1" aria-labelledby="my-input-heading" data-test="conflict-mine">
-                <th:block th:replace="~{fragments/layout :: conflictMineHead(2, false)}"></th:block>
-                <div class="readonly-box">
-                    <dl th:replace="~{fragments/plan :: planInputReadonly(${planForm})}"></dl>
-                </div>
-            </section>
-            <p class="back-row"><a class="btn btn--secondary" th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{common.backToReview}">back</a></p>
+            <div class="section conflict-layout">
+                <section th:replace="~{fragments/layout :: conflictLatest(2, null, null, ~{fragments/review :: improvementLatest(${review}, ${nextPlan})})}"></section>
+                <section class="conflict-col" id="my-input" tabindex="-1" aria-labelledby="my-input-heading" data-test="conflict-mine">
+                    <div class="conflict-col__head">
+                        <th:block th:replace="~{fragments/layout :: conflictMineHead(2, false)}"></th:block>
+                    </div>
+                    <div class="card conflict-panel conflict-panel--mine">
+                        <dl th:replace="~{fragments/plan :: planInputReadonly(${planForm})}"></dl>
+                    </div>
+                </section>
+            </div>
+            <p class="back-row"><a class="btn btn--line" th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{common.backToReview}">back</a></p>
         </th:block>
 
         <th:block th:unless="${conflict}">
@@ -71,12 +75,12 @@
 
             <section class="section" aria-labelledby="new-plan-heading">
                 <h2 id="new-plan-heading" th:text="#{reviews.nextPlan.newPlan.heading}">new plan</h2>
-                <form method="post" novalidate class="form form-area"
+                <form method="post" novalidate class="form form--v2 form-card" data-js="focus-first-invalid"
                       th:action="@{/reviews/{id}/next-plan(id=${review.id})}" th:object="${planForm}">
                     <th:block th:replace="~{fragments/plan :: planFields(${priorities})}"></th:block>
                     <div class="form-actions">
                         <button type="submit" class="btn" th:text="#{reviews.nextPlan.submit}">create</button>
-                        <a class="btn--quiet" th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{common.backToReview}">back</a>
+                        <a class="btn btn--line" th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{common.backToReview}">back</a>
                     </div>
                 </form>
             </section>

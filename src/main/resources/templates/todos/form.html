@@ -7,58 +7,123 @@
     <title>todo edit</title>
 </head>
 <body>
-<header th:replace="~{fragments/layout :: header('plans')}"></header>
+<header th:replace="~{fragments/shell :: shell('plans', ${plan}, 'do')}"></header>
 
 <main id="main" tabindex="-1" class="wrap">
     <div class="page-head">
-    <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
-        <ol>
-            <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
-            <!--/* planId is unknown on the ADR-19 stand-in (snapshotUnavailable): those two steps are left out. */-->
-            <th:block th:if="${todo.planId != null}">
-                <li><a th:href="@{/plans/{id}(id=${todo.planId})}" href="#"
-                       th:text="${plan != null} ? ${plan.title} : #{breadcrumb.thisPlan}">plan</a></li>
-                <li><a th:href="@{/plans/{id}/todos(id=${todo.planId})}" href="#" th:text="#{breadcrumb.todos}">todos</a></li>
-            </th:block>
-            <li><a th:href="@{/todos/{id}(id=${todo.id})}" href="#" th:text="${todo.title}">todo</a></li>
-            <li aria-current="page" th:text="#{breadcrumb.edit}">edit</li>
-        </ol>
-    </nav>
-    <div th:replace="~{fragments/layout :: flash}"></div>
-    <h1 th:text="#{todos.form.heading}">edit</h1>
-    <nav th:replace="~{fragments/layout :: flowSteps('do', ${todo.planId})}"></nav>
+        <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
+            <ol>
+                <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
+                <!--/* planId is unknown on the ADR-19 stand-in (snapshotUnavailable): those two steps are left out. */-->
+                <th:block th:if="${todo.planId != null}">
+                    <li><a th:href="@{/plans/{id}(id=${todo.planId})}" href="#"
+                           th:text="${plan != null} ? ${plan.title} : #{breadcrumb.thisPlan}">plan</a></li>
+                    <li><a th:href="@{/plans/{id}/todos(id=${todo.planId})}" href="#" th:text="#{breadcrumb.todos}">todos</a></li>
+                </th:block>
+                <li><a th:href="@{/todos/{id}(id=${todo.id})}" href="#" th:text="${todo.title}">todo</a></li>
+                <li aria-current="page" th:text="#{breadcrumb.edit}">edit</li>
+            </ol>
+        </nav>
+        <div th:replace="~{fragments/layout :: flash}"></div>
+        <h1 th:text="#{todos.form.heading}">edit</h1>
+        <p class="subtitle" th:unless="${conflict}" th:text="${todo.title}">todo</p>
+        <nav th:replace="~{fragments/layout :: flowSteps('do', ${todo.planId})}"></nav>
     </div>
-    <!--/* ADR-18 (screens.md 11.5.2): summary -> latest (read-only) -> my input (kept, can be saved again). */-->
+
+    <!--/* ADR-18 (screens.md 11.5.2): "not saved" alert -> latest (read-only, left) | my input (kept, right). */-->
     <th:block th:object="${todoForm}" th:with="showJumps=${latest != null}">
-        <div th:replace="~{fragments/layout :: errorSummary}"></div>
+        <div th:replace="~{fragments/layout :: errorAlert}"></div>
     </th:block>
     <p class="note" th:if="${snapshotUnavailable == true}" th:text="#{conflict.latest.unavailable}">unavailable</p>
-    <th:block th:if="${latest != null}">
-        <section th:replace="~{fragments/layout :: conflictLatest(2, ${latest.updatedAt}, @{/todos/{id}/edit(id=${todo.id})}, ~{fragments/todo :: todoLatestFields})}"></section>
-    </th:block>
 
-    <div class="form-area" th:attr="id=${conflict} ? 'my-input' : null,tabindex=${conflict} ? '-1' : null,data-test=${conflict} ? 'conflict-mine' : null,aria-labelledby=${conflict} ? 'my-input-heading' : null,role=${conflict} ? 'region' : null">
-        <th:block th:if="${conflict}">
-            <th:block th:replace="~{fragments/layout :: conflictMineHead(2, true)}"></th:block>
+    <div class="section" th:classappend="${latest != null} ? 'conflict-layout' : 'form-page'">
+        <th:block th:if="${latest != null}">
+            <section th:replace="~{fragments/layout :: conflictLatest(2, ${latest.updatedAt}, @{/todos/{id}/edit(id=${todo.id})}, ~{fragments/todo :: todoLatestFields})}"></section>
         </th:block>
-        <div class="note">
-            <p th:text="#{todos.form.note}">note</p>
-            <p th:text="#{todos.form.revisionNote}">revision note</p>
-        </div>
 
-        <form method="post" novalidate class="form"
-              th:action="@{/todos/{id}(id=${todo.id})}" th:object="${todoForm}">
-            <input type="hidden" name="_method" value="put">
-            <input type="hidden" th:field="*{version}">
-            <div class="form-grid form-grid--2">
-                <th:block th:replace="~{fragments/todo :: todoFields(${priorities})}"></th:block>
+        <!--/* On a conflict this column is head (heading, intro, notes) + form card, sharing the head row and the card
+               row with the latest column (.conflict-col, CSS subgrid). Otherwise the head wrapper is left out. */-->
+        <section class="form-area" th:classappend="${latest != null} ? 'conflict-col'"
+                 th:attr="id=${conflict} ? 'my-input' : null,tabindex=${conflict} ? '-1' : null,data-test=${conflict} ? 'conflict-mine' : null,aria-labelledby=${conflict} ? 'my-input-heading' : null,aria-label=${conflict} ? null : #{todos.form.heading}">
+            <div class="conflict-col__head" th:remove="${latest != null} ? 'none' : 'tag'">
+                <div class="form-area__head" th:if="${conflict}">
+                    <th:block th:replace="~{fragments/layout :: conflictMineHead(2, true)}"></th:block>
+                </div>
+                <div class="hint" role="note">
+                    <p th:text="#{todos.form.note}">note</p>
+                    <p th:text="#{todos.form.revisionNote}">revision note</p>
+                </div>
             </div>
-            <div class="form-actions">
-                <button type="submit" class="btn" th:attr="data-test=${conflict} ? 'conflict-resubmit' : null"
-                        th:text="${conflict} ? #{conflict.mine.resubmit} : #{common.saveEdit}">save</button>
-                <a class="btn--quiet" th:href="@{/todos/{id}(id=${todo.id})}" href="#" th:text="#{common.cancel}">cancel</a>
-            </div>
-        </form>
+
+            <!--/* v2 field order (canvas note dev-error-focus): label -> input -> field error -> help; aria-describedby lists
+                   the error id first, then the help, then the ADR-18 "differs from the latest" note. */-->
+            <form method="post" novalidate class="form form--v2 form-card" data-js="focus-first-invalid"
+                  th:action="@{/todos/{id}(id=${todo.id})}" th:object="${todoForm}">
+                <input type="hidden" name="_method" value="put">
+                <input type="hidden" th:field="*{version}">
+                <div class="field" th:with="err=${#fields.hasErrors('title')}, chg=${changedFields != null and changedFields.contains('title')}">
+                    <label for="title"><th:block th:text="#{form.todo.title.label}">title</th:block><span
+                            th:replace="~{fragments/layout :: changedMark('title')}"></span></label>
+                    <span th:replace="~{fragments/layout :: changedNote('title')}"></span>
+                    <input type="text" th:field="*{title}" maxlength="200" required
+                           th:attr="aria-describedby=${(err ? 'title-error ' : '') + 'title-help' + (chg ? ' title-changed' : '')},aria-invalid=${err} ? 'true' : null">
+                    <p th:replace="~{fragments/layout :: fieldMessage('title')}"></p>
+                    <p class="field-help" id="title-help" th:text="#{form.title.help}">help</p>
+                </div>
+                <div class="form-grid form-grid--2">
+                    <div class="field" th:with="err=${#fields.hasErrors('dueDate')}, chg=${changedFields != null and changedFields.contains('dueDate')}">
+                        <label for="dueDate"><th:block th:text="#{form.todo.dueDate.label}">due</th:block><span
+                                th:replace="~{fragments/layout :: changedMark('dueDate')}"></span></label>
+                        <span th:replace="~{fragments/layout :: changedNote('dueDate')}"></span>
+                        <input type="date" th:field="*{dueDate}"
+                               th:attr="aria-describedby=${(err ? 'dueDate-error ' : '') + 'dueDate-help' + (chg ? ' dueDate-changed' : '')},aria-invalid=${err} ? 'true' : null">
+                        <p th:replace="~{fragments/layout :: fieldMessage('dueDate')}"></p>
+                        <p class="field-help" id="dueDate-help" th:text="#{form.todo.dueDate.help}">help</p>
+                    </div>
+                    <div class="field" th:with="err=${#fields.hasErrors('priority')}, chg=${changedFields != null and changedFields.contains('priority')},
+                                                desc=${#strings.trim((err ? 'priority-error ' : '') + (chg ? 'priority-changed' : ''))}">
+                        <label for="priority"><th:block th:text="#{form.priority.label}">priority</th:block><span
+                                th:replace="~{fragments/layout :: changedMark('priority')}"></span></label>
+                        <span th:replace="~{fragments/layout :: changedNote('priority')}"></span>
+                        <select th:field="*{priority}" required
+                                th:attr="aria-describedby=${#strings.isEmpty(desc)} ? null : ${desc},aria-invalid=${err} ? 'true' : null">
+                            <option value="" th:text="#{common.select.placeholder}">select</option>
+                            <option th:each="pr : ${priorities}" th:value="${pr}"><th:block
+                                    th:replace="~{fragments/layout :: enumLabel('Priority', ${pr})}">priority</th:block></option>
+                        </select>
+                        <p th:replace="~{fragments/layout :: fieldMessage('priority')}"></p>
+                    </div>
+                </div>
+                <div class="form-grid form-grid--2">
+                    <div class="field" th:with="err=${#fields.hasErrors('estimatedMinutes')}, chg=${changedFields != null and changedFields.contains('estimatedMinutes')}">
+                        <label for="estimatedMinutes"><th:block th:text="#{form.estimatedMinutes.label}">minutes</th:block><span
+                                th:replace="~{fragments/layout :: changedMark('estimatedMinutes')}"></span></label>
+                        <span th:replace="~{fragments/layout :: changedNote('estimatedMinutes')}"></span>
+                        <span class="input-unit">
+                            <input type="number" th:field="*{estimatedMinutes}" min="0" max="525600" step="1" inputmode="numeric" required
+                                   th:attr="aria-describedby=${(err ? 'estimatedMinutes-error ' : '') + 'estimatedMinutes-help' + (chg ? ' estimatedMinutes-changed' : '')},aria-invalid=${err} ? 'true' : null">
+                            <span aria-hidden="true" th:text="#{form.unit.minutes}">min</span>
+                        </span>
+                        <p th:replace="~{fragments/layout :: fieldMessage('estimatedMinutes')}"></p>
+                        <p class="field-help" id="estimatedMinutes-help" th:text="#{form.todo.estimatedMinutes.help}">help</p>
+                    </div>
+                </div>
+                <div class="field" th:with="err=${#fields.hasErrors('tags')}, chg=${changedFields != null and changedFields.contains('tags')}">
+                    <label for="tags"><th:block th:text="#{form.todo.tags.label}">tags</th:block><span
+                            th:replace="~{fragments/layout :: changedMark('tags')}"></span></label>
+                    <span th:replace="~{fragments/layout :: changedNote('tags')}"></span>
+                    <input type="text" th:field="*{tags}"
+                           th:attr="aria-describedby=${(err ? 'tags-error ' : '') + 'tags-help' + (chg ? ' tags-changed' : '')},aria-invalid=${err} ? 'true' : null">
+                    <p th:replace="~{fragments/layout :: fieldMessage('tags')}"></p>
+                    <p class="field-help" id="tags-help" th:text="#{form.todo.tags.help}">help</p>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn" th:attr="data-test=${conflict} ? 'conflict-resubmit' : null"
+                            th:text="${conflict} ? #{conflict.mine.resubmit} : #{common.saveEdit}">save</button>
+                    <a class="btn btn--line" th:href="@{/todos/{id}(id=${todo.id})}" href="#" th:text="#{common.cancel}">cancel</a>
+                </div>
+            </form>
+        </section>
     </div>
 </main>
 

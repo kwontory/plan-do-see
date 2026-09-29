@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* App shell (v2). Wide screens (>=1024px): a left sidebar (brand, main menu, the open plan with its
+       Plan/Do/See links, today in Seoul) next to the page; the public banner sits above the page column.
+       Narrow screens: banner, brand and the main menu as tabs on one top bar; the plan links and today move out
+       (the page's step indicator and the footer carry them).
+       activeNav: 'home' | 'plans' | 'export' | 'none'.
+       openPlan: the plan this page belongs to (id, title, priority; title may be null on the ADR-19 stand-in) or null.
+       planStep: 'plan' | 'do' | 'see' (the current plan link) or null. The only place that builds these URLs. */-->
+<th:block th:fragment="shell(activeNav, openPlan, planStep)">
+<a class="skip-link" href="#main" th:text="#{layout.skipLink}">skip</a>
+<aside class="public-banner" th:attr="aria-label=#{layout.banner.label}">
+    <div class="wrap"><p class="public-banner__box"><strong class="public-banner__label" th:text="#{layout.banner.label}">notice</strong>
+        <span class="public-banner__text" data-test="public-banner"
+              th:text="${publicNotice} ?: #{public.notice}">notice text</span></p></div>
+</aside>
+<header class="site-header">
+    <a class="brand" th:href="@{/}" href="/"><th:block th:replace="~{fragments/brand :: logo}"></th:block></a>
+    <nav class="main-nav" th:attr="aria-label=#{layout.nav.label}">
+        <ul>
+            <li><a th:href="@{/}" href="/" th:attr="aria-current=${activeNav == 'home'} ? 'page' : null"><svg
+                    th:replace="~{fragments/layout :: icon('home')}"></svg><span th:text="#{layout.nav.home}">home</span></a></li>
+            <li><a th:href="@{/plans}" href="/plans" th:attr="aria-current=${activeNav == 'plans'} ? 'page' : null"><svg
+                    th:replace="~{fragments/layout :: icon('list')}"></svg><span th:text="#{layout.nav.plans}">plans</span></a></li>
+            <li><a th:href="@{/export}" href="/export" th:attr="aria-current=${activeNav == 'export'} ? 'page' : null"><svg
+                    th:replace="~{fragments/layout :: icon('download')}"></svg><span th:text="#{layout.nav.export}">export</span></a></li>
+        </ul>
+    </nav>
+    <div class="side-plan" th:if="${openPlan != null and openPlan.id != null}">
+        <p class="side-plan__label" th:text="#{layout.side.openPlan}">open plan</p>
+        <p class="side-plan__title"><span class="side-plan__dot" aria-hidden="true" th:if="${openPlan.priority != null}"
+                th:classappend="${'side-plan__dot--' + #strings.toLowerCase(openPlan.priority)}"></span><span
+                th:text="${openPlan.title} ?: #{breadcrumb.thisPlan}">plan</span></p>
+        <nav class="sub-nav" th:attr="aria-label=#{layout.side.planNav}">
+            <ul>
+                <li th:each="s : ${#strings.arraySplit('plan,do,see', ',')}"><a
+                        th:href="${s == 'plan'} ? @{/plans/{id}(id=${openPlan.id})} : (${s == 'do'} ? @{/plans/{id}/todos(id=${openPlan.id})} : @{/plans/{id}(id=${openPlan.id})} + '#reviews')"
+                        href="#" th:attr="aria-current=${s == planStep} ? 'page' : null"><span
+                        th:text="${#messages.msg('layout.side.step.' + s)}">plan</span><span class="sub-nav__alias" aria-hidden="true"
+                        th:text="${#messages.msg('flow.alias.' + s)}">Plan</span></a></li>
+            </ul>
+        </nav>
+    </div>
+    <p class="side-foot" th:if="${today != null}"><span th:text="#{layout.side.today}">today</span> <strong><time
+            th:attr="datetime=${today}" th:text="${today}">2026-01-01</time></strong><br><span
+            th:text="#{layout.footer.zone}">zone</span></p>
+</header>
+</th:block>
+
+</body>
+</html>

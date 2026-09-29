@@ -8,18 +8,77 @@
 <header th:replace="~{fragments/layout :: header('home')}"></header>
 
 <main id="main" tabindex="-1" class="wrap home">
-    <div class="page-head">
-        <div th:replace="~{fragments/layout :: flash}"></div>
-        <h1 class="home-title"><span class="brand__main" th:text="#{layout.brand.main}">PlanDoSee</span> <span
-                class="brand__sub" th:text="#{layout.brand.sub}">Note</span></h1>
-        <p class="subtitle" th:text="#{home.intro}">intro</p>
-    </div>
+    <div th:replace="~{fragments/layout :: flash}"></div>
 
-    <section aria-labelledby="notice-heading" class="section">
-        <h2 id="notice-heading" th:text="#{home.notice.heading}">notice</h2>
-        <div class="notice-box">
-            <p id="public-notice" class="notice-box__text" data-test="public-notice" th:text="${publicNotice}">notice text</p>
-            <p class="notice-box__advice" th:text="#{home.notice.advice}">advice</p>
+    <section class="hero" aria-labelledby="home-title">
+        <div class="hero__text">
+            <!--/* The wordmark is drawn as outlines (fragments/brand.html); its name is visually hidden text. */-->
+            <h1 id="home-title" class="hero__title"><th:block th:replace="~{fragments/brand :: wordmark}"></th:block></h1>
+            <p class="hero__intro" th:text="#{home.intro}">intro</p>
+            <p class="hero__cta">
+                <a class="btn" th:href="@{/plans/new}" href="/plans/new"><svg
+                        th:replace="~{fragments/layout :: icon('plus')}"></svg><span th:text="#{plans.new}">new</span></a>
+                <a class="btn btn--line" th:href="@{/plans}" href="/plans" th:text="#{home.cta.plans}">plans</a>
+            </p>
+        </div>
+        <!--/* Decorative example (not the user's data): hidden from assistive technology, nothing in it can take focus.
+               Same row look as the todo list (task, check, chips). Hidden on narrow screens. */-->
+        <div class="hero__peek" aria-hidden="true">
+            <p class="hero__peek-label" th:text="#{home.preview.label}">example</p>
+            <ul class="tasks tasks--preview">
+                <li class="task">
+                    <span class="check check--high"><span class="check__ring"><svg
+                            th:replace="~{fragments/layout :: icon('check')}"></svg></span></span>
+                    <div class="task__body">
+                        <p class="task__title" th:text="#{home.preview.1.title}">title</p>
+                        <p class="chips">
+                            <span class="chip chip--overdue"><svg th:replace="~{fragments/layout :: icon('calendar')}"></svg><span
+                                    th:text="#{home.preview.1.due}">due</span></span>
+                            <span class="pri pri--high" th:text="#{home.preview.1.priority}">priority</span>
+                            <span class="chip"><svg th:replace="~{fragments/layout :: icon('clock')}"></svg><span
+                                    th:text="#{home.preview.1.estimated}">estimated</span></span>
+                            <span class="chip chip--tag"><svg th:replace="~{fragments/layout :: icon('tag')}"></svg><span
+                                    th:text="#{home.preview.1.tag1}">tag</span></span>
+                            <span class="chip chip--tag"><svg th:replace="~{fragments/layout :: icon('tag')}"></svg><span
+                                    th:text="#{home.preview.1.tag2}">tag</span></span>
+                        </p>
+                    </div>
+                </li>
+                <li class="task task--done">
+                    <span class="check check--done"><span class="check__ring"><svg
+                            th:replace="~{fragments/layout :: icon('check')}"></svg></span></span>
+                    <div class="task__body">
+                        <p class="task__title" th:text="#{home.preview.2.title}">title</p>
+                        <p class="chips">
+                            <span class="chip chip--today"><svg th:replace="~{fragments/layout :: icon('calendar')}"></svg><span
+                                    th:text="#{home.preview.2.due}">due</span></span>
+                            <span class="pri pri--medium" th:text="#{home.preview.2.priority}">priority</span>
+                            <span class="chip"><svg th:replace="~{fragments/layout :: icon('clock')}"></svg><span
+                                    th:text="#{home.preview.2.estimated}">estimated</span></span>
+                            <span class="chip chip--tag"><svg th:replace="~{fragments/layout :: icon('tag')}"></svg><span
+                                    th:text="#{home.preview.2.tag1}">tag</span></span>
+                        </p>
+                    </div>
+                </li>
+                <li class="task">
+                    <span class="check check--medium"><span class="check__ring"><svg
+                            th:replace="~{fragments/layout :: icon('check')}"></svg></span></span>
+                    <div class="task__body">
+                        <p class="task__title" th:text="#{home.preview.3.title}">title</p>
+                        <p class="chips">
+                            <span class="chip"><svg th:replace="~{fragments/layout :: icon('calendar')}"></svg><span
+                                    th:text="#{home.preview.3.due}">due</span></span>
+                            <span class="pri pri--medium" th:text="#{home.preview.3.priority}">priority</span>
+                            <span class="chip"><svg th:replace="~{fragments/layout :: icon('clock')}"></svg><span
+                                    th:text="#{home.preview.3.estimated}">estimated</span></span>
+                            <span class="chip chip--tag"><svg th:replace="~{fragments/layout :: icon('tag')}"></svg><span
+                                    th:text="#{home.preview.3.tag1}">tag</span></span>
+                            <span class="chip chip--tag"><svg th:replace="~{fragments/layout :: icon('tag')}"></svg><span
+                                    th:text="#{home.preview.3.tag2}">tag</span></span>
+                        </p>
+                    </div>
+                </li>
+            </ul>
         </div>
     </section>
 
@@ -29,12 +88,15 @@
     </section>
 
     <section aria-labelledby="plans-heading" class="section">
-        <div class="section-head">
-            <h2 id="plans-heading" th:text="#{home.plans.heading}">plans</h2>
-            <a class="btn" th:href="@{/plans/new}" href="/plans/new" th:text="#{plans.new}">new</a>
-        </div>
+        <h2 id="plans-heading" th:text="#{home.plans.heading}">plans</h2>
         <th:block th:replace="~{fragments/plan :: planList(${plans})}"></th:block>
         <div th:replace="~{fragments/layout :: pager(${pageNav}, 'page', @{/}, '#plans-heading', #{plans.list.pagerLabel})}"></div>
+    </section>
+
+    <section aria-labelledby="notice-heading" class="section card card--soft home-notice">
+        <h2 id="notice-heading" th:text="#{home.notice.heading}">notice</h2>
+        <p id="public-notice" class="home-notice__text" data-test="public-notice" th:text="${publicNotice}">notice text</p>
+        <p class="home-notice__advice" th:text="#{home.notice.advice}">advice</p>
     </section>
 </main>
 

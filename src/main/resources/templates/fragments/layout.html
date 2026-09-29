@@ -8,41 +8,41 @@
     <title th:text="${hasError} ? #{layout.title.error(${pageTitle})} : #{layout.title.normal(${pageTitle})}">PlanDoSee Note</title>
     <link rel="stylesheet" th:href="@{/css/fonts.css}" href="/css/fonts.css">
     <link rel="stylesheet" th:href="@{/css/app.css}" href="/css/app.css">
+    <link rel="stylesheet" th:href="@{/css/pages.css}" href="/css/pages.css">
     <script th:src="@{/js/app.js}" src="/js/app.js" defer></script>
 </head>
 <body>
 
-<header th:fragment="header(activeNav)" class="site-header">
-    <a class="skip-link" href="#main" th:text="#{layout.skipLink}">skip</a>
-    <div class="public-banner">
-        <div class="wrap"><strong class="public-banner__label" th:text="#{layout.banner.label}">notice</strong>
-            <span class="public-banner__text" data-test="public-banner"
-                  th:text="${publicNotice} ?: #{public.notice}">notice text</span></div>
-    </div>
-    <div class="site-bar">
-        <div class="wrap site-bar__inner">
-        <!--/* Wordmark: two spans with one space between them, so it reads as two words. */-->
-        <a class="brand" th:href="@{/}" href="/"><span class="brand__main" th:text="#{layout.brand.main}">PlanDoSee</span> <span
-                class="brand__sub" th:text="#{layout.brand.sub}">Note</span></a>
-        <nav class="main-nav" th:attr="aria-label=#{layout.nav.label}">
-            <ul>
-                <li><a th:href="@{/}" href="/"
-                       th:classappend="${activeNav == 'home'} ? 'is-current'"
-                       th:attr="aria-current=${activeNav == 'home'} ? 'page' : null"
-                       th:text="#{layout.nav.home}">home</a></li>
-                <li><a th:href="@{/plans}" href="/plans"
-                       th:classappend="${activeNav == 'plans'} ? 'is-current'"
-                       th:attr="aria-current=${activeNav == 'plans'} ? 'page' : null"
-                       th:text="#{layout.nav.plans}">plans</a></li>
-                <li><a th:href="@{/export}" href="/export"
-                       th:classappend="${activeNav == 'export'} ? 'is-current'"
-                       th:attr="aria-current=${activeNav == 'export'} ? 'page' : null"
-                       th:text="#{layout.nav.export}">export</a></li>
-            </ul>
-        </nav>
-        </div>
-    </div>
-</header>
+<!--/* App shell for pages that belong to no plan (fragments/shell.html). activeNav: 'home' | 'plans' | 'export' | 'none'.
+       This file has no <header> element on purpose: the selector "header" would also match it. */-->
+<th:block th:fragment="header(activeNav)"><th:block
+        th:replace="~{fragments/shell :: shell(${activeNav}, null, null)}"></th:block></th:block>
+
+<!--/* App shell for pages of one plan: same arguments as fragments/shell :: shell (see there). Either name works. */-->
+<th:block th:fragment="shell(activeNav, openPlan, planStep)"><th:block
+        th:replace="~{fragments/shell :: shell(${activeNav}, ${openPlan}, ${planStep})}"></th:block></th:block>
+
+<!--/* Inline stroke icon (v2 design). Decorative: the text next to it or a visually hidden label names the control.
+       name: home | list | download | plus | check | calendar | clock | tag | edit | trash | info | search |
+       chevron-left | chevron-right | doc | flag | triangle. Size comes from CSS (.icon, 18px; .icon--sm, 15px). */-->
+<svg th:fragment="icon(name)" class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"
+     th:switch="${name}"><th:block th:case="'home'"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></th:block><th:block
+        th:case="'list'"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></th:block><th:block
+        th:case="'download'"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></th:block><th:block
+        th:case="'plus'"><path d="M12 5v14M5 12h14"/></th:block><th:block
+        th:case="'check'"><path d="m5 12.5 4.5 4.5L19 7.5"/></th:block><th:block
+        th:case="'calendar'"><rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></th:block><th:block
+        th:case="'clock'"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></th:block><th:block
+        th:case="'tag'"><path d="M3.5 12.3V4.5a1 1 0 0 1 1-1h7.8l8.2 8.2a1 1 0 0 1 0 1.4l-7.4 7.4a1 1 0 0 1-1.4 0z"/><circle cx="8" cy="8" r="1.3"/></th:block><th:block
+        th:case="'edit'"><path d="M4 20h4L19 9l-4-4L4 16z"/></th:block><th:block
+        th:case="'trash'"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></th:block><th:block
+        th:case="'info'"><circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/></th:block><th:block
+        th:case="'search'"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></th:block><th:block
+        th:case="'chevron-left'"><path d="m15 5-7 7 7 7"/></th:block><th:block
+        th:case="'chevron-right'"><path d="m9 5 7 7-7 7"/></th:block><th:block
+        th:case="'doc'"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></th:block><th:block
+        th:case="'flag'"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></th:block><th:block
+        th:case="'triangle'"><path d="M12 4.5 21 19.5H3z"/></th:block></svg>
 
 <!--/* PRG result notice. flashKey: message key, flashArgs: optional Object[] (web-contract revision 3) */-->
 <div th:fragment="flash" class="flash" role="status" aria-live="polite" data-js="flash"
@@ -52,6 +52,7 @@
     <span class="flash__text" data-test="flash"
           th:text="${flashArgs == null} ? ${#messages.msg(flashKey)} : ${#messages.msgWithParams(flashKey, flashArgs)}">message</span></th:block></div>
 
+<!--/* Narrow screens only: the wide sidebar shows the same line (side-foot). */-->
 <footer th:fragment="footer" class="site-footer">
     <div class="wrap"><p><span th:text="#{layout.footer.zone}">zone</span><th:block th:if="${today != null}"> <span
             th:text="#{layout.footer.todayLabel}">today</span> <time th:attr="datetime=${today}" th:text="${today}">2026-01-01</time></th:block></p></div>
@@ -79,23 +80,21 @@
         class="flow__name" th:text="${#messages.msg('flow.step.' + s)}">plan</span><span class="flow__alias" aria-hidden="true"
         th:text="${#messages.msg('flow.alias.' + s)}">Plan</span></th:block>
 
-<!--/* Home "how to use" list: the same four steps as flowSteps, each with its description (home.steps.*).
+<!--/* Home "how to use" cards: the same four steps as flowSteps, each with its description (home.steps.*).
        Numbers and aliases are decorative. */-->
-<ol th:fragment="flowIntro" class="flow-intro">
-    <li th:each="s, st : ${#strings.arraySplit('plan,do,see,next', ',')}" class="flow-intro__item">
-        <span class="flow__num" aria-hidden="true" th:text="${st.count}">1</span>
-        <div class="flow-intro__body">
-            <h3><th:block th:text="${#messages.msg('flow.step.' + s)}">plan</th:block> <span class="flow__alias"
-                    aria-hidden="true" th:text="${#messages.msg('flow.alias.' + s)}">Plan</span></h3>
-            <p th:text="${#messages.msg('home.steps.' + s)}">description</p>
-        </div>
+<ol th:fragment="flowIntro" class="flow-cards">
+    <li th:each="s, st : ${#strings.arraySplit('plan,do,see,next', ',')}" class="flow-card">
+        <p class="flow-card__top" aria-hidden="true"><span class="flow-card__num" th:text="${st.count}">1</span><span
+                class="flow-card__alias" th:text="${#messages.msg('flow.alias.' + s)}">Plan</span></p>
+        <h3 th:text="${#messages.msg('flow.step.' + s)}">plan</h3>
+        <p th:text="${#messages.msg('home.steps.' + s)}">description</p>
     </li>
 </ol>
 
-<!--/* Decorative step tag above a section heading (plan detail, review). n: fixed number in the template, s: step.
-       Shows the English alias so it does not repeat the Korean h2 below it. */-->
-<p th:fragment="stepTag(n, s)" class="step-tag" aria-hidden="true"><span class="flow__num" th:text="${n}">1</span><span
-        th:text="${#messages.msg('flow.alias.' + s)}">Plan</span></p>
+<!--/* Decorative step tag above a card heading (plan detail, review): a pill "2 · DO". n: fixed number in the
+       template, s: step. Shows the English alias so it does not repeat the Korean h2 below it. */-->
+<p th:fragment="stepTag(n, s)" class="step-tag" aria-hidden="true"
+   th:text="${#messages.msg('flow.stepTag', n, #messages.msg('flow.alias.' + s))}">1 · Plan</p>
 
 <!--/* Seoul date-time display. value: OffsetDateTime. displayZone: common model attribute (Asia/Seoul) */-->
 <time th:fragment="datetime(value)"
@@ -123,63 +122,90 @@
 <th:block th:fragment="enumLabelIn(key, type, value)"
           th:text="${#messages.msg(key, #messages.msg('enum.' + type + '.' + value))}">label</th:block>
 
-<!--/* Error summary. Must be included where th:object is set (it may sit just above the form). One heading for every
-       case (ADR-18 E3): validation errors, rule errors and the 409 conflict re-render all mean "not saved".
-       Global errors have no field to jump to, so they are plain text. Inputs keep the submitted values (th:field).
-       Optional variables set by the including page with th:with:
-         nestedSummary=true  the summary sits inside an h2 section, so its heading is h3 (reviews/detail)
+<!--/* Form error pattern (canvas note dev-error-focus). Field order: label -> input -> fieldMessage -> help;
+       the input's aria-describedby lists the error id before the help id. Only the message text is red.
+       errorAlert: one "not saved" heading (role=alert, ADR-18 E3: validation errors, rule errors and the 409 conflict
+       re-render all mean "not saved") and only the errors that have no field (global errors); field errors are shown
+       under their inputs, and focus goes to the first invalid field (static/js/app.js, hook
+       data-js="focus-first-invalid" on the form). Inputs keep the submitted values (th:field).
+       Must be included where th:object is set (it may sit just above the form). Optional th:with variables:
+         nestedSummary=true  the alert sits inside an h2 section, so its heading is h3 (reviews/detail)
          showJumps=true      a conflict page: links to the latest panel (#latest) and my input (#my-input) (11.5.2) */-->
-<div th:fragment="errorSummary" th:if="${#fields.hasErrors('*')}"
-     class="error-summary" role="alert" tabindex="-1" id="error-summary" data-js="error-summary">
+<div th:fragment="errorAlert" th:if="${#fields.hasErrors('*')}"
+     class="error-alert" role="alert" tabindex="-1" id="error-summary" data-js="error-summary">
     <h3 th:if="${nestedSummary == true}" th:text="#{form.errorSummary.heading}">errors</h3>
     <h2 th:unless="${nestedSummary == true}" th:text="#{form.errorSummary.heading}">errors</h2>
-    <ul>
-        <li th:each="err : ${#fields.detailedErrors()}">
-            <a th:if="${!err.global}" th:href="${'#' + err.fieldName}" href="#" th:text="${err.message}">field error</a>
-            <span th:if="${err.global}" data-test="form-global-error" th:text="${err.message}">global error</span>
-        </li>
+    <ul th:if="${#fields.hasGlobalErrors()}">
+        <li th:each="msg : ${#fields.globalErrors()}"><span data-test="form-global-error" th:text="${msg}">global error</span></li>
     </ul>
     <p class="conflict-jumps" th:if="${showJumps == true}"><a href="#latest" th:text="#{conflict.jump.latest}">latest</a>
         <a href="#my-input" th:text="#{conflict.jump.mine}">mine</a></p>
 </div>
 
-<!--/* Field error. Must be included inside a form with th:object. name: field name (also input id) */-->
-<p th:fragment="fieldError(name)" th:if="${#fields.hasErrors(name)}"
-   class="field-error" th:id="${name + '-error'}" th:data-test="${'field-error-' + name}">
-    <th:block th:each="msg, st : ${#fields.errors(name)}"><span class="field-error__prefix"
-            th:text="#{form.fieldError.prefix}">error</span> <span th:text="${msg}">message</span><br th:if="${!st.last}"></th:block>
-</p>
+<!--/* v2 field error under the input. name: field name (also input id); id name-error, data-test field-error-name.
+       The "error:" prefix stays for screen readers; the icon is the visual cue next to the red text. */-->
+<p th:fragment="fieldMessage(name)" th:if="${#fields.hasErrors(name)}"
+   class="error-text" th:id="${name + '-error'}" th:data-test="${'field-error-' + name}"><svg
+        th:replace="~{fragments/layout :: icon('info')}"></svg><span><th:block th:each="msg, st : ${#fields.errors(name)}"><span
+        class="visually-hidden" th:text="#{form.fieldError.prefix}">error</span> <span th:text="${msg}">message</span><br
+        th:if="${!st.last}"></th:block></span></p>
 
 <!--/* ADR-18 conflict screens (screens.md 11.5). The server decides what differs (model changedFields, a List of
-       form field names); these fragments only print it. */-->
+       form field names); these fragments only print it. What differs is shown with a highlighter and a triangle (user
+       decision 2026-09-29): the value is painted yellow (mark.hl on the latest value; the input itself on my side via
+       its aria-describedby "-changed" id), and a small triangle sits right after the item's name (dt on the left,
+       label on the right). Color is not the only cue: the triangle is a shape, and a visually hidden word names the
+       difference for screen readers (no explaining line on the page: user decision 2026-09-29). */-->
 
-<!--/* "Changed" badge next to a label in the latest panel. field: form field name. */-->
-<span th:fragment="changedBadge(field)" th:if="${changedFields != null and changedFields.contains(field)}"
-      class="badge badge--changed" th:data-test="${'latest-changed-' + field}" th:text="#{badge.changed}">changed</span>
+<!--/* Decorative triangle after the name of a changed item (inside a label or dt). field: form field name. */-->
+<span th:fragment="changedMark(field)" th:if="${changedFields != null and changedFields.contains(field)}"
+      class="changed-mark" aria-hidden="true"><svg th:replace="~{fragments/layout :: icon('triangle')}"></svg></span>
 
-<!--/* "Differs from the latest" note next to a form label. Its id (field-changed) goes into the input's
-       aria-describedby; aria-invalid is not set (the input is not wrong). */-->
+<!--/* Latest panel dt: triangle + hidden "changed" word (the dd value is highlighted). field: form field name. */-->
+<th:block th:fragment="changedBadge(field)" th:if="${changedFields != null and changedFields.contains(field)}"><span
+        th:replace="~{fragments/layout :: changedMark(${field})}"></span><span class="visually-hidden"
+        th:data-test="${'latest-changed-' + field}" th:text="#{badge.changed}">changed</span></th:block>
+
+<!--/* One latest value (dd) of a conflict panel. field: form field name, text: the value as text, cls: dd class or null
+       (pre-wrap, num). A changed value is wrapped in mark.hl (highlighter); otherwise the plain text. */-->
+<dd th:fragment="latestValue(field, text, cls)" th:class="${cls}"><mark class="hl" th:remove="${changedFields != null and changedFields.contains(field)} ? 'none' : 'tag'"
+        th:text="${text}">value</mark></dd>
+
+<!--/* The same as latestValue for a value drawn by a fragment (content: fragment expression, e.g. enumLabel). */-->
+<dd th:fragment="latestContent(field, content, cls)" th:class="${cls}"><mark class="hl"
+        th:remove="${changedFields != null and changedFields.contains(field)} ? 'none' : 'tag'"><th:block
+        th:replace="${content}">value</th:block></mark></dd>
+
+<!--/* Hidden "differs from the latest" note next to a form label. Its id (field-changed) goes into the input's
+       aria-describedby, which also paints the input yellow (CSS); aria-invalid is not set (the input is not wrong). */-->
 <span th:fragment="changedNote(field)" th:if="${changedFields != null and changedFields.contains(field)}"
-      class="changed-note" th:id="${field + '-changed'}" th:text="#{conflict.mine.changed}">differs</span>
+      class="visually-hidden" th:id="${field + '-changed'}" th:text="#{conflict.mine.changed}">differs</span>
 
-<!--/* Latest panel (read-only). level: 2 or 3 (heading level), updatedAt: OffsetDateTime or null,
-       loadUrl: GET URL of a fresh edit form or null (null = nothing can be edited, so no load link and no
-       "nothing differs" line), fields: fragment expression printing the latest values. */-->
+<!--/* Latest column (read-only): heading and intro above the card, the values and the load link inside the card, like
+       the "my input" column (conflictMineHead above its form card). On a two-column conflict page (.conflict-layout)
+       both columns share one head row and one card row (CSS subgrid), so the two cards always start and end on the
+       same lines. level: 2 or 3 (heading level), updatedAt: OffsetDateTime or null, loadUrl: GET URL of a fresh edit
+       form or null (null = nothing can be edited, so no load link and no "nothing differs" line), fields: fragment
+       expression printing the latest values. */-->
 <section th:fragment="conflictLatest(level, updatedAt, loadUrl, fields)" id="latest" tabindex="-1"
-         class="card conflict-panel" data-test="conflict-latest" aria-labelledby="latest-heading">
-    <h2 th:if="${level == 2}" id="latest-heading" th:text="#{conflict.latest.heading}">latest</h2>
-    <h3 th:unless="${level == 2}" id="latest-heading" th:text="#{conflict.latest.heading}">latest</h3>
-    <p th:text="#{conflict.latest.intro}">intro</p>
-    <p class="muted" th:if="${updatedAt != null}"><th:block th:text="#{conflict.latest.updatedAt}">updated</th:block> <time
-            th:replace="~{fragments/layout :: datetime(${updatedAt})}"></time></p>
-    <th:block th:replace="${fields}"></th:block>
-    <p th:if="${loadUrl != null and (changedFields == null or changedFields.isEmpty())}"
-       th:text="#{conflict.latest.noDiff}">no difference</p>
-    <th:block th:if="${loadUrl != null}">
-        <p class="conflict-load"><a class="btn btn--secondary" th:href="${loadUrl}" href="#" aria-describedby="latest-load-help"
-                                    th:text="#{conflict.latest.load}">load</a></p>
-        <p class="field-help" id="latest-load-help" th:text="#{conflict.latest.loadHelp}">help</p>
-    </th:block>
+         class="conflict-col" data-test="conflict-latest" aria-labelledby="latest-heading">
+    <div class="conflict-col__head">
+        <h2 th:if="${level == 2}" id="latest-heading" th:text="#{conflict.latest.heading}">latest</h2>
+        <h3 th:unless="${level == 2}" id="latest-heading" th:text="#{conflict.latest.heading}">latest</h3>
+        <p th:text="#{conflict.latest.intro}">intro</p>
+        <p th:if="${updatedAt != null}"><th:block th:text="#{conflict.latest.updatedAt}">updated</th:block> <time
+                th:replace="~{fragments/layout :: datetime(${updatedAt})}"></time></p>
+    </div>
+    <div class="card conflict-panel">
+        <th:block th:replace="${fields}"></th:block>
+        <p th:if="${loadUrl != null and (changedFields == null or changedFields.isEmpty())}"
+           th:text="#{conflict.latest.noDiff}">no difference</p>
+        <th:block th:if="${loadUrl != null}">
+            <p class="conflict-load"><a class="btn btn--line" th:href="${loadUrl}" href="#" aria-describedby="latest-load-help"
+                                        th:text="#{conflict.latest.load}">load</a></p>
+            <p class="field-help" id="latest-load-help" th:text="#{conflict.latest.loadHelp}">help</p>
+        </th:block>
+    </div>
 </section>
 
 <!--/* Heading and intro of the "my input" part. level: 2 or 3, editable: true when the input can be saved again. */-->

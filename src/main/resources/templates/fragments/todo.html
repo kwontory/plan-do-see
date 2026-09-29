@@ -17,88 +17,101 @@
     <input type="hidden" name="page" th:value="${filter != null ? filter.page : null}">
 </th:block>
 
-<!--/* Status + derived badges. todo: TodoRow or EvidenceTodo with the server flags completed, overdue, dueToday
+<!--/* Status + derived badges as pills (v2): state (in progress grey / completed green with a check), then overdue
+       (red with a flag) or due today. todo: TodoRow or EvidenceTodo with the server flags completed, overdue, dueToday
        (web-contract revision 4, ADR-17 F-2: the template does not compare dates). dueToday looks at the date only,
-       so the badge also checks !completed. */-->
-<!--/* Text + decorative mark (aria-hidden); color is secondary. */-->
+       so the badge also checks !completed. The word carries the meaning; color and icon are secondary. */-->
 <th:block th:fragment="statusBadges(todo)">
-    <span th:if="${todo.completed}" class="status"><span aria-hidden="true">✓ </span><th:block
+    <span th:if="${todo.completed}" class="badge badge--done"><svg th:replace="~{fragments/layout :: icon('check')}"></svg><th:block
             th:text="#{enum.TodoStatus.COMPLETED}">done</th:block></span>
-    <span th:unless="${todo.completed}" class="status"><span aria-hidden="true">○ </span><th:block
-            th:text="#{enum.TodoStatus.IN_PROGRESS}">in progress</th:block></span>
-    <span th:if="${todo.overdue}" class="flag flag--overdue"><span aria-hidden="true">! </span><th:block
+    <span th:unless="${todo.completed}" class="badge badge--state" th:text="#{enum.TodoStatus.IN_PROGRESS}">in progress</span>
+    <span th:if="${todo.overdue}" class="badge badge--over"><svg th:replace="~{fragments/layout :: icon('flag')}"></svg><th:block
             th:text="#{badge.overdue}">overdue</th:block></span>
-    <span th:if="${!todo.completed and todo.dueToday}" class="flag flag--today" th:text="#{badge.dueToday}">today</span>
+    <span th:if="${!todo.completed and todo.dueToday}" class="badge badge--today" th:text="#{badge.dueToday}">today</span>
 </th:block>
 
-<!--/* TodoForm fields. Must be included inside a form with th:object="${todoForm}". On an ADR-18 conflict page the
-       model changedFields adds a "differs from the latest" note (changedNote) to aria-describedby.
-       Order inside a field: label -> changed note -> field error -> input -> help (help below the input).
-       The including page wraps these in its grid (form-grid--4 on the add form, form-grid--2 on the edit form). */-->
-<th:block th:fragment="todoFields(priorities)">
-    <div class="field field--span2" th:with="err=${#fields.hasErrors('title')}, chg=${changedFields != null and changedFields.contains('title')}">
-        <label for="title" th:text="#{form.todo.title.label}">title</label>
-        <span th:replace="~{fragments/layout :: changedNote('title')}"></span>
-        <p th:replace="~{fragments/layout :: fieldError('title')}"></p>
-        <input type="text" th:field="*{title}" maxlength="200" required
-               th:attr="aria-describedby=${'title-help' + (err ? ' title-error' : '') + (chg ? ' title-changed' : '')},aria-invalid=${err} ? 'true' : null">
-        <p class="field-help" id="title-help" th:text="#{form.title.help}">help</p>
+<!--/* Due date chip (list row and detail): calendar icon, the date, and " · overdue" / " · due today" from the server
+       flags (overdue, dueToday; the template does not compare dates). withLabel=true adds a hidden "due date" word for
+       rows where no label names the value (list); the detail page has its own dt. */-->
+<span th:fragment="dueChip(todo, withLabel)" class="chip"
+      th:classappend="${todo.overdue} ? 'chip--overdue' : (${!todo.completed and todo.dueToday} ? 'chip--today')"><svg
+        th:replace="~{fragments/layout :: icon('calendar')}"></svg><span class="visually-hidden" th:if="${withLabel and todo.dueDate != null}"
+        th:text="#{todos.field.dueDate} + ' '">due </span><span class="num"
+        th:text="${todo.dueDate == null} ? #{todos.item.noDue}
+            : (${todo.overdue} ? ${#messages.msg('todos.item.dueWithFlag', todo.dueDate, #messages.msg('badge.overdue'))}
+            : (${!todo.completed and todo.dueToday} ? ${#messages.msg('todos.item.dueWithFlag', todo.dueDate, #messages.msg('badge.dueToday'))}
+            : ${todo.dueDate}))">due</span></span>
+
+<!--/* S02 add form (v2 composer). Must be included inside a form with th:object="${todoForm}".
+       v2 error pattern: label -> input -> error (fieldMessage) -> help; aria-describedby lists the error before the help.
+       The title label and help are visually hidden until the title has an error (the placeholder shows them; with an
+       error the placeholder is dropped because the visible label names the field);
+       the other fields' help lines sit under the row (todoComposerHelp) and keep their ids. */-->
+<th:block th:fragment="todoComposerFields(priorities)">
+    <div class="composer__title" th:with="err=${#fields.hasErrors('title')}"
+         th:classappend="${err} ? 'composer__title--error'">
+        <label for="title" th:classappend="${!err} ? 'visually-hidden'" th:text="#{form.todo.title.label}">title</label>
+        <input type="text" th:field="*{title}" maxlength="200" required th:placeholder="${err} ? null : #{todos.add.titlePlaceholder}"
+               th:attr="aria-describedby=${(err ? 'title-error ' : '') + 'title-help'},aria-invalid=${err} ? 'true' : null">
+        <p th:replace="~{fragments/layout :: fieldMessage('title')}"></p>
+        <p class="field-help" id="title-help" th:classappend="${!err} ? 'visually-hidden'" th:text="#{form.title.help}">help</p>
     </div>
-    <div class="field" th:with="err=${#fields.hasErrors('dueDate')}, chg=${changedFields != null and changedFields.contains('dueDate')}">
-        <label for="dueDate" th:text="#{form.todo.dueDate.label}">due</label>
-        <span th:replace="~{fragments/layout :: changedNote('dueDate')}"></span>
-        <p th:replace="~{fragments/layout :: fieldError('dueDate')}"></p>
-        <input type="date" th:field="*{dueDate}"
-               th:attr="aria-describedby=${'dueDate-help' + (err ? ' dueDate-error' : '') + (chg ? ' dueDate-changed' : '')},aria-invalid=${err} ? 'true' : null">
-        <p class="field-help" id="dueDate-help" th:text="#{form.todo.dueDate.help}">help</p>
-    </div>
-    <div class="field" th:with="err=${#fields.hasErrors('priority')}, chg=${changedFields != null and changedFields.contains('priority')},
-                                desc=${#strings.trim((err ? 'priority-error ' : '') + (chg ? 'priority-changed' : ''))}">
-        <label for="priority" th:text="#{form.priority.label}">priority</label>
-        <span th:replace="~{fragments/layout :: changedNote('priority')}"></span>
-        <p th:replace="~{fragments/layout :: fieldError('priority')}"></p>
-        <select th:field="*{priority}" required
-                th:attr="aria-describedby=${#strings.isEmpty(desc)} ? null : ${desc},aria-invalid=${err} ? 'true' : null">
-            <option value="" th:text="#{common.select.placeholder}">select</option>
-            <option th:each="pr : ${priorities}" th:value="${pr}"><th:block
-                    th:replace="~{fragments/layout :: enumLabel('Priority', ${pr})}">priority</th:block></option>
-        </select>
-    </div>
-    <div class="field" th:with="err=${#fields.hasErrors('estimatedMinutes')}, chg=${changedFields != null and changedFields.contains('estimatedMinutes')}">
-        <label for="estimatedMinutes" th:text="#{form.estimatedMinutes.label}">minutes</label>
-        <span th:replace="~{fragments/layout :: changedNote('estimatedMinutes')}"></span>
-        <p th:replace="~{fragments/layout :: fieldError('estimatedMinutes')}"></p>
-        <span class="input-unit">
-            <input type="number" th:field="*{estimatedMinutes}" min="0" max="525600" step="1" inputmode="numeric" required
-                   th:attr="aria-describedby=${'estimatedMinutes-help' + (err ? ' estimatedMinutes-error' : '') + (chg ? ' estimatedMinutes-changed' : '')},aria-invalid=${err} ? 'true' : null">
-            <span aria-hidden="true" th:text="#{form.unit.minutes}">min</span>
-        </span>
-        <p class="field-help" id="estimatedMinutes-help" th:text="#{form.todo.estimatedMinutes.help}">help</p>
-    </div>
-    <div class="field field--span3" th:with="err=${#fields.hasErrors('tags')}, chg=${changedFields != null and changedFields.contains('tags')}">
-        <label for="tags" th:text="#{form.todo.tags.label}">tags</label>
-        <span th:replace="~{fragments/layout :: changedNote('tags')}"></span>
-        <p th:replace="~{fragments/layout :: fieldError('tags')}"></p>
-        <input type="text" th:field="*{tags}"
-               th:attr="aria-describedby=${'tags-help' + (err ? ' tags-error' : '') + (chg ? ' tags-changed' : '')},aria-invalid=${err} ? 'true' : null">
-        <p class="field-help" id="tags-help" th:text="#{form.todo.tags.help}">help</p>
+    <div class="composer__row">
+        <div class="field" th:with="err=${#fields.hasErrors('dueDate')}">
+            <label for="dueDate" th:text="#{form.todo.dueDate.label}">due</label>
+            <input type="date" th:field="*{dueDate}"
+                   th:attr="aria-describedby=${(err ? 'dueDate-error ' : '') + 'dueDate-help'},aria-invalid=${err} ? 'true' : null">
+            <p th:replace="~{fragments/layout :: fieldMessage('dueDate')}"></p>
+        </div>
+        <div class="field" th:with="err=${#fields.hasErrors('priority')}">
+            <label for="priority" th:text="#{form.priority.label}">priority</label>
+            <select th:field="*{priority}" required
+                    th:attr="aria-describedby=${err} ? 'priority-error' : null,aria-invalid=${err} ? 'true' : null">
+                <option value="" th:text="#{common.select.placeholder}">select</option>
+                <option th:each="pr : ${priorities}" th:value="${pr}"><th:block
+                        th:replace="~{fragments/layout :: enumLabel('Priority', ${pr})}">priority</th:block></option>
+            </select>
+            <p th:replace="~{fragments/layout :: fieldMessage('priority')}"></p>
+        </div>
+        <div class="field" th:with="err=${#fields.hasErrors('estimatedMinutes')}">
+            <label for="estimatedMinutes" th:text="#{form.estimatedMinutes.label}">minutes</label>
+            <span class="input-unit">
+                <input type="number" th:field="*{estimatedMinutes}" min="0" max="525600" step="1" inputmode="numeric" required
+                       th:attr="aria-describedby=${(err ? 'estimatedMinutes-error ' : '') + 'estimatedMinutes-help'},aria-invalid=${err} ? 'true' : null">
+                <span aria-hidden="true" th:text="#{form.unit.minutes}">min</span>
+            </span>
+            <p th:replace="~{fragments/layout :: fieldMessage('estimatedMinutes')}"></p>
+        </div>
+        <div class="field" th:with="err=${#fields.hasErrors('tags')}">
+            <label for="tags" th:text="#{form.todo.tags.label}">tags</label>
+            <input type="text" th:field="*{tags}" th:placeholder="#{todos.add.tagsPlaceholder}"
+                   th:attr="aria-describedby=${(err ? 'tags-error ' : '') + 'tags-help'},aria-invalid=${err} ? 'true' : null">
+            <p th:replace="~{fragments/layout :: fieldMessage('tags')}"></p>
+        </div>
     </div>
 </th:block>
+
+<!--/* Help lines of the add form's row fields (ids referenced by todoComposerFields). */-->
+<div th:fragment="todoComposerHelp" class="composer__help">
+    <p class="field-help" id="dueDate-help" th:text="#{todos.add.help.dueDate}">help</p>
+    <p class="field-help" id="estimatedMinutes-help" th:text="#{todos.add.help.estimatedMinutes}">help</p>
+    <p class="field-help" id="tags-help" th:text="#{todos.add.help.tags}">help</p>
+</div>
 
 <!--/* ADR-18 latest panel values of a todo (model latest: TodoRow with tags). Status is shown but not compared (E7). */-->
 <dl th:fragment="todoLatestFields" class="dl-grid">
     <dt><th:block th:text="#{todos.field.title}">title</th:block> <span th:replace="~{fragments/layout :: changedBadge('title')}"></span></dt>
-    <dd th:text="${latest.title}">title</dd>
+    <dd th:replace="~{fragments/layout :: latestValue('title', ${latest.title}, null)}"></dd>
     <dt th:text="#{todos.filter.status.label}">status</dt>
     <dd><th:block th:replace="~{fragments/layout :: enumLabel('TodoStatus', ${latest.status})}">status</th:block></dd>
     <dt><th:block th:text="#{todos.field.dueDate}">due</th:block> <span th:replace="~{fragments/layout :: changedBadge('dueDate')}"></span></dt>
-    <dd th:text="${latest.dueDate != null} ? ${latest.dueDate} : #{todos.item.noDue}">due</dd>
+    <dd th:replace="~{fragments/layout :: latestValue('dueDate', ${latest.dueDate != null} ? ${#strings.toString(latest.dueDate)} : #{todos.item.noDue}, 'num')}"></dd>
     <dt><th:block th:text="#{todos.field.priority}">priority</th:block> <span th:replace="~{fragments/layout :: changedBadge('priority')}"></span></dt>
-    <dd><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${latest.priority})}">priority</th:block></dd>
+    <dd th:replace="~{fragments/layout :: latestContent('priority', ~{fragments/layout :: enumLabel('Priority', ${latest.priority})}, null)}"></dd>
     <dt><th:block th:text="#{todos.field.estimatedMinutes}">estimated</th:block> <span th:replace="~{fragments/layout :: changedBadge('estimatedMinutes')}"></span></dt>
-    <dd class="num" th:text="#{common.minutes(${latest.estimatedMinutes})}">0</dd>
+    <dd th:replace="~{fragments/layout :: latestValue('estimatedMinutes', #{common.minutes(${latest.estimatedMinutes})}, 'num')}"></dd>
     <dt><th:block th:text="#{todos.field.tags}">tags</th:block> <span th:replace="~{fragments/layout :: changedBadge('tags')}"></span></dt>
-    <dd th:text="${latest.tags != null and !latest.tags.isEmpty()} ? ${#strings.listJoin(latest.tags.![name], ', ')} : #{common.none}">tags</dd>
+    <dd th:replace="~{fragments/layout :: latestValue('tags', ${latest.tags != null and !latest.tags.isEmpty()} ? ${#strings.listJoin(latest.tags.![name], ', ')} : #{common.none}, null)}"></dd>
 </dl>
 
 <!--/* ADR-16 values of one todo revision (the values before that edit, tag names as they were). rev: TodoRevisionRow.

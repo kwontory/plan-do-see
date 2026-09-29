@@ -1,0 +1,565 @@
+/* PlanDoSee Note - screen styles (v2 design, docs/design/mockups/canvas-v2) for plans, todo detail/edit, reviews,
+   evidence, next plan, export and error pages. Tokens, the app shell and shared parts (cards, column layouts, form
+   cards, tables, metric tiles, hints) live in app.css.
+   Classes are for looks only (ADR-17): behaviour uses data-js, tests use data-test.
+   User rules (canvas comments): cards 16px apart, sections 48px apart (38 narrow), heading 16px above its content,
+   cards in one row share the row height with their last line on one baseline, stacked columns keep the 16px gap.
+   Column layouts follow the page column width (container "page" on main), not the window width. */
+
+/* ---------- Section rhythm ---------- */
+/* Every block directly in main that is a section (cards, grids, column layouts too) sits 48px (38 narrow) below the
+   previous one, even when the block also has a card or grid class with its own margin. */
+main > .section {
+    margin-top: var(--gap-section);
+    margin-bottom: 0;
+}
+
+/* ---------- Plan detail: current plan | Do and See ---------- */
+.plan-board {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--gap-card);
+    align-items: stretch;
+}
+
+.plan-board > * {
+    min-width: 0;
+    margin: 0;
+}
+
+@container page (min-width: 720px) {
+    .plan-board {
+        grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    }
+}
+
+.plan-current {
+    container-type: inline-size;
+}
+
+.plan-current .dl-grid {
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+}
+
+.review-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-top: var(--border-width) solid var(--color-border);
+}
+
+.review-item {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2) var(--space-3);
+    align-items: center;
+    padding-block: var(--space-3);
+    border-bottom: var(--border-width) solid var(--color-border);
+}
+
+.review-item p {
+    margin: 0;
+}
+
+.review-item__main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: 0;
+}
+
+.review-item__period {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-bold);
+}
+
+.review-create {
+    margin-top: var(--space-4);
+}
+
+.review-create .field-help {
+    margin: 0 0 10px;
+}
+
+@container (max-width: 299px) {
+    .review-item {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .review-item .btn {
+        justify-self: start;
+    }
+}
+
+/* ---------- Todo detail ---------- */
+.two .card .dl-grid,
+.plan-current .dl-grid {
+    display: grid;
+    gap: 10px var(--space-4);
+}
+
+.two .card .dl-grid {
+    grid-template-columns: minmax(7rem, 9.5rem) minmax(0, 1fr);
+}
+
+.two .card .dl-grid dt,
+.plan-current .dl-grid dt {
+    line-height: 22px;
+}
+
+.two .card .dl-grid dd,
+.plan-current .dl-grid dd {
+    margin: 0;
+}
+
+.dl-grid .chips {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+@container (max-width: 379px) {
+    .two .card .dl-grid,
+    .plan-current .dl-grid,
+    .card > .dl-grid {
+        grid-template-columns: 6rem minmax(0, 1fr);
+        font-size: var(--font-size-sm);
+    }
+}
+
+.exec-form,
+.improvement-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.exec-form > *,
+.improvement-form > * {
+    margin: 0;
+}
+
+.exec-form .form-actions,
+.improvement-form .form-actions {
+    margin-top: var(--space-1);
+}
+
+/* Save row: the button, then a lock note that explains records cannot change. */
+.lock {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    font-size: var(--font-size-xs);
+    line-height: 20px;
+    color: var(--color-text-muted);
+}
+
+.lock .icon {
+    width: 15px;
+    height: 15px;
+}
+
+.completion-form {
+    margin: 0 0 var(--space-2);
+}
+
+/* ---------- Review: time group (estimated and actual cards | bars and the variance card) ---------- */
+/* Narrow: the two cards side by side, the bar card under them. Wide: cards stacked on the left, the bar card on the
+   right; both columns end on one line (the left cards and the variance card grow) so the "evidence" lines align. */
+.time-board {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--gap-card);
+    align-items: stretch;
+}
+
+.time-board > * {
+    min-width: 0;
+    margin: 0;
+}
+
+.time-board__compare {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.time-board__compare > .stat {
+    flex: 1;
+}
+
+@container page (min-width: 720px) {
+    .time-board {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .time-board__cards {
+        grid-template-columns: minmax(0, 1fr);
+        grid-auto-rows: 1fr;
+    }
+}
+
+/* Bars (decorative, aria-hidden): label | track | value. The fill width is an SVG width percentage from the server.
+   Fixed label and value columns, so both tracks have the same length and the two fills compare truly. */
+.bars {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.bar {
+    display: grid;
+    grid-template-columns: 5rem minmax(0, 1fr) 5rem;
+    gap: var(--space-3);
+    align-items: center;
+    font-size: var(--font-size-sm);
+    line-height: 20px;
+}
+
+.bar__track {
+    display: block;
+    width: 100%;
+    height: 14px;
+    overflow: hidden;
+    background: var(--color-surface);
+    border-radius: 7px;
+}
+
+.bar__fill {
+    fill: var(--color-primary);
+}
+
+.bar__fill--estimated {
+    fill: var(--color-bar-estimated);
+}
+
+.bar__value {
+    font-weight: var(--font-weight-bold);
+    text-align: right;
+    white-space: nowrap;
+}
+
+@container page (max-width: 379px) {
+    .bar {
+        grid-template-columns: 3rem minmax(0, 1fr) 4.5rem;
+        gap: var(--space-2);
+    }
+}
+
+/* Carried improvement inside the improvement card (already handed to the next plan). */
+.handoff > * {
+    margin: 0 0 var(--space-2);
+}
+
+.handoff > :last-child {
+    margin-bottom: 0;
+}
+
+/* ---------- Evidence ---------- */
+.evidence-conclusion__text {
+    margin: 0;
+}
+
+.evidence-summary .evidence-conclusion__text {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    font-size: var(--font-size-base);
+}
+
+/* Verdict pill: text + decorative mark; color is secondary (D8). */
+.verdict-line {
+    display: inline-flex;
+    align-items: center;
+    height: 28px;
+    margin: 0;
+    padding: 0 10px;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    line-height: 20px;
+    border-radius: 999px;
+}
+
+.verdict--ok {
+    color: var(--color-success);
+    background: var(--color-success-bg);
+}
+
+.verdict--bad {
+    color: var(--color-danger);
+    background: var(--color-danger-bg);
+}
+
+/* The separator before the verdict is hidden so reading order equals visual order. */
+.verdict-sep {
+    display: none;
+}
+
+.evidence-summary .small-note {
+    margin-top: var(--space-3);
+}
+
+/* ---------- Conflict screens (ADR-18): latest (left, read-only) | my input (right) ---------- */
+/* Each column is a head (heading, intro, notes) and a card. Narrow: the columns stack, each head above its card
+   (DOM and reading order: latest heading, latest card, my heading, my form). Wide: the two columns share one head row
+   and one card row (subgrid), so both cards start on one line whatever the heads' lengths, and end on one line. */
+.conflict-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--gap-card);
+    align-items: stretch;
+}
+
+.conflict-layout > * {
+    min-width: 0;
+    margin: 0;
+}
+
+/* The cards (not the columns) read their own width, so paired fields stack in a narrow card. The columns themselves
+   must not be containers: containment would turn their subgrid off. */
+.conflict-layout .form-card,
+.conflict-layout .conflict-panel {
+    container-type: inline-size;
+}
+
+.conflict-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.conflict-col > * {
+    margin: 0;
+}
+
+.conflict-col__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.conflict-col__head > * {
+    margin: 0;
+}
+
+.conflict-col__head h2,
+.conflict-col__head h3 {
+    margin: 0;
+}
+
+.conflict-col__head > p,
+.conflict-col__head .form-area__head p {
+    font-size: var(--font-size-sm);
+    line-height: 22px;
+    color: var(--color-text-muted);
+}
+
+.conflict-col__head .form-area__head {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.conflict-col__head .form-area__head > * {
+    margin: 0;
+}
+
+/* In a column head the form hint and the carried improvement are plain note text (no box), so the only boxes in a column are its card: the two
+   cards start on one line and nothing above them looks like a card. */
+.conflict-col__head .hint,
+.conflict-col__head .readonly-box {
+    margin: 0;
+    padding: 0;
+    text-align: left;
+    color: var(--color-text-muted);
+    background: none;
+    border: 0;
+}
+
+@container page (min-width: 720px) {
+    .conflict-layout {
+        grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+        grid-template-rows: auto 1fr;
+        row-gap: var(--space-3);
+    }
+
+    .conflict-layout > .conflict-col {
+        display: grid;
+        grid-row: span 2;
+        grid-template-rows: subgrid;
+        gap: inherit;
+        row-gap: var(--space-3);
+    }
+
+    .conflict-layout > .conflict-col > .conflict-col__head {
+        align-self: start;
+    }
+}
+
+.conflict-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: 0;
+    background: var(--color-canvas);
+}
+
+.conflict-panel > * {
+    margin: 0;
+}
+
+.conflict-panel--mine {
+    background: var(--color-bg);
+}
+
+.conflict-panel .dl-grid {
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1fr);
+    gap: 10px var(--space-4);
+}
+
+.conflict-panel .dl-grid dd {
+    margin: 0;
+}
+
+.conflict-panel .conflict-load {
+    margin: auto 0 0;
+    padding-top: var(--space-2);
+}
+
+.conflict-panel .conflict-load + .field-help {
+    margin-top: 0;
+}
+
+/* Review improvement card: the latest column and my input stack inside the card. */
+.card .conflict-col {
+    margin: 0 0 var(--space-4);
+}
+
+.card .conflict-panel {
+    padding: var(--space-4);
+}
+
+/* ---------- Export ---------- */
+.export-download {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-4);
+}
+
+.export-download__warning {
+    margin: 0;
+    padding: 14px 20px;
+    font-size: var(--font-size-sm);
+    line-height: 1.55;
+    text-align: center;
+    background: var(--color-notice-bg);
+    border: var(--border-width) solid var(--color-notice-line);
+    border-radius: var(--radius-sm);
+}
+
+.export-download .btn {
+    margin: 0;
+}
+
+@container page (min-width: 720px) {
+    .export-download {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .export-download__warning {
+        flex: 1;
+    }
+}
+
+.card-grid--3 {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.card-grid--3 > .card {
+    margin: 0;
+}
+
+@container page (min-width: 720px) {
+    .card-grid--3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.plain-bullets {
+    margin: 0;
+    padding-left: 0;
+    list-style: none;
+    font-size: var(--font-size-sm);
+    line-height: 22px;
+}
+
+.plain-bullets li {
+    position: relative;
+    padding-left: 14px;
+}
+
+.plain-bullets li + li {
+    margin-top: var(--space-1);
+}
+
+.plain-bullets li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--color-line-strong);
+}
+
+/* ---------- Next plan: "back to review" row under the conflict columns ---------- */
+.back-row {
+    margin-top: var(--space-6);
+}
+
+/* ---------- Error pages ---------- */
+.center-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    max-width: 520px;
+    margin: var(--space-6) auto 0;
+    padding: 40px 32px;
+    text-align: center;
+}
+
+.center-card > * {
+    margin: 0;
+}
+
+.center-card__code {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.12em;
+    color: var(--color-primary);
+}
+
+.center-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+}
+
+@container page (max-width: 559px) {
+    .center-card {
+        padding: var(--space-6) var(--space-4);
+    }
+
+    .center-card__actions .btn {
+        flex: 1;
+    }
+}

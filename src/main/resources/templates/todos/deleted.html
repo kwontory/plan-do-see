@@ -22,11 +22,12 @@
         <h1 th:text="#{todos.deleted.title}">deleted</h1>
     </div>
 
-    <div class="error-summary" role="alert" tabindex="-1" id="error-summary" data-js="error-summary">
+    <!--/* Same "not saved" box as the form alerts (errorAlert), without a field list. */-->
+    <div class="error-alert" role="alert" tabindex="-1" id="error-summary" data-js="error-summary">
         <p data-test="todo-deleted" th:text="#{todos.deleted.body}">deleted</p>
     </div>
 
-    <section class="section" id="my-input" tabindex="-1" aria-labelledby="my-input-heading" data-test="conflict-mine">
+    <section class="section card card--soft" id="my-input" tabindex="-1" aria-labelledby="my-input-heading" data-test="conflict-mine">
         <th:block th:replace="~{fragments/layout :: conflictMineHead(2, false)}"></th:block>
         <div class="readonly-box">
             <th:block th:if="${deletedFrom == 'edit' and todoForm != null}">
@@ -38,9 +39,9 @@
         </div>
     </section>
 
-    <p class="back-row" th:if="${planId != null}"><a class="btn btn--secondary" th:href="@{/plans/{id}/todos(id=${planId})}" href="#"
+    <p class="back-row" th:if="${planId != null}"><a class="btn btn--line" th:href="@{/plans/{id}/todos(id=${planId})}" href="#"
                                     th:text="#{todos.deleted.toList}">list</a></p>
-    <p class="back-row" th:if="${planId == null}"><a class="btn btn--secondary" th:href="@{/plans}" href="/plans"
+    <p class="back-row" th:if="${planId == null}"><a class="btn btn--line" th:href="@{/plans}" href="/plans"
                                     th:text="#{common.planList}">plans</a></p>
 </main>
 

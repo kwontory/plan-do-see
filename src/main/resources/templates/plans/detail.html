@@ -5,7 +5,7 @@
     <title>plan</title>
 </head>
 <body>
-<header th:replace="~{fragments/layout :: header('plans')}"></header>
+<header th:replace="~{fragments/shell :: shell('plans', ${plan}, 'plan')}"></header>
 
 <main id="main" tabindex="-1" class="wrap"
       th:with="hasRevisions=${revisions != null and !revisions.isEmpty()}">
@@ -17,7 +17,15 @@
             </ol>
         </nav>
         <div th:replace="~{fragments/layout :: flash}"></div>
-        <h1 th:text="${plan.title}">plan</h1>
+        <div class="section-head">
+            <div class="section-head__text">
+                <h1 th:text="${plan.title}">plan</h1>
+                <p class="subtitle subtitle--parts num"><span th:text="#{common.period(${plan.startDate}, ${plan.endDate})}">period</span><span
+                        th:text="#{plans.item.estimated(${plan.estimatedMinutes})}">estimated</span></p>
+            </div>
+            <a class="btn btn--line" th:href="@{/plans/{id}/edit(id=${plan.id})}" href="#"><svg
+                    th:replace="~{fragments/layout :: icon('edit')}"></svg><span th:text="#{plans.detail.edit}">edit</span></a>
+        </div>
         <nav th:replace="~{fragments/layout :: flowSteps('plan', ${plan.id})}"></nav>
     </div>
 
@@ -35,17 +43,20 @@
         </div>
     </section>
 
-    <!--/* The stacked card (paper layers) means "revisions exist below"; the jump link says the same in words. */-->
-    <section class="section" aria-labelledby="current-heading">
-        <p th:replace="~{fragments/layout :: stepTag(1, 'plan')}"></p>
-        <h2 id="current-heading"><th:block th:text="#{plans.detail.current.heading}">current</th:block> <span
-                class="badge badge--current" th:text="#{badge.current}">current value</span></h2>
-        <div class="card" th:classappend="${hasRevisions} ? 'card--stacked'">
+    <!--/* Current plan (left) next to Do and See (right, stacked). Both columns end on the same line; the last card on
+           the right grows to fill. On narrow screens the columns stack with the card gap between them. */-->
+    <div class="section plan-board">
+        <section class="card plan-current" aria-labelledby="current-heading">
+            <div class="card__head">
+                <h2 id="current-heading" th:text="#{plans.detail.current.heading}">current</h2>
+                <span class="badge badge--current" th:text="#{badge.current}">current value</span>
+            </div>
             <dl class="dl-grid">
                 <dt th:text="#{plans.field.period}">period</dt>
                 <dd class="num" th:text="#{common.period(${plan.startDate}, ${plan.endDate})}">period</dd>
                 <dt th:text="#{plans.field.priority}">priority</dt>
-                <dd><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${plan.priority})}">priority</th:block></dd>
+                <dd><span class="pri" th:classappend="${'pri--' + #strings.toLowerCase(plan.priority)}"><th:block
+                        th:replace="~{fragments/layout :: enumLabel('Priority', ${plan.priority})}">priority</th:block></span></dd>
                 <dt th:text="#{plans.field.successCriteria}">criteria</dt>
                 <dd class="pre-wrap" th:text="${plan.successCriteria}">criteria</dd>
                 <dt th:text="#{plans.field.estimatedMinutes}">estimated</dt>
@@ -56,53 +67,54 @@
                 <dt th:text="#{plans.field.updatedAt}">updated</dt>
                 <dd class="num"><time th:replace="~{fragments/layout :: datetime(${plan.updatedAt})}"></time></dd>
             </dl>
-            <p class="card-actions"><a class="btn btn--secondary" th:href="@{/plans/{id}/edit(id=${plan.id})}" href="#" th:text="#{plans.detail.edit}">edit</a>
-                <a th:if="${hasRevisions}" class="btn--quiet card-actions__end" href="#revisions-heading"
-                   th:text="#{common.revision.jump}">revisions</a></p>
+            <p class="card__foot" th:if="${hasRevisions}"><a class="lnk" href="#revisions-heading"
+                    th:text="#{common.revision.jump}">revisions</a></p>
+        </section>
+
+        <div class="card-stack">
+            <section class="card" aria-labelledby="todo-heading">
+                <p th:replace="~{fragments/layout :: stepTag(2, 'do')}"></p>
+                <h2 id="todo-heading" th:text="#{plans.detail.todos.heading}">todos</h2>
+                <p class="small-note card__intro" th:text="#{plans.detail.todos.intro}">intro</p>
+                <p><a class="btn" th:href="@{/plans/{id}/todos(id=${plan.id})}" href="#" th:text="#{plans.detail.todos.open}">open</a></p>
+            </section>
+
+            <section class="card" aria-labelledby="reviews-heading" id="reviews">
+                <p th:replace="~{fragments/layout :: stepTag(3, 'see')}"></p>
+                <h2 id="reviews-heading" th:text="#{plans.detail.reviews.heading}">reviews</h2>
+                <p class="small-note card__intro" th:text="#{plans.detail.reviews.sortNote}">sort</p>
+                <p class="empty" th:if="${reviews == null or reviews.isEmpty()}" th:text="#{plans.detail.reviews.empty}">empty</p>
+                <ul class="review-list" th:unless="${reviews == null or reviews.isEmpty()}">
+                    <li th:each="r : ${reviews}" class="review-item"
+                        th:with="hasImprovement=${r.improvement != null and !#strings.isEmpty(r.improvement)}">
+                        <div class="review-item__main">
+                            <p class="review-item__period num" th:text="#{plans.detail.reviewPeriod(${r.periodStart}, ${r.periodEnd})}">period</p>
+                            <p class="chips">
+                                <span class="chip"><th:block th:text="#{common.createdAt}">created</th:block>&nbsp;<time
+                                        class="num" th:replace="~{fragments/layout :: datetime(${r.createdAt})}"></time></span>
+                                <span th:if="${r.nextPlanId != null}" class="chip status-transferred"><span aria-hidden="true">→ </span><th:block
+                                        th:text="#{badge.transferred}">transferred</th:block></span>
+                                <span th:if="${r.nextPlanId == null and !hasImprovement}" class="chip" th:text="#{plans.detail.reviews.noImprovement}">none</span>
+                                <span th:if="${r.nextPlanId == null and hasImprovement}" class="chip status-has" th:text="#{plans.detail.reviews.hasImprovement}">has</span>
+                            </p>
+                        </div>
+                        <a class="btn btn--line btn--sm" th:href="@{/reviews/{id}(id=${r.id})}" href="#"><th:block th:text="#{plans.detail.reviews.open}">open</th:block><span
+                                class="visually-hidden" th:text="#{common.srContext(${#messages.msg('common.period', r.periodStart, r.periodEnd)})}"></span></a>
+                    </li>
+                </ul>
+                <form method="post" class="review-create" th:action="@{/plans/{id}/reviews(id=${plan.id})}">
+                    <p id="review-create-help" class="field-help"
+                       th:text="#{plans.detail.reviews.createHelp(${plan.startDate}, ${plan.endDate})}">help</p>
+                    <button type="submit" class="btn btn--line" aria-describedby="review-create-help"
+                            th:text="#{plans.detail.reviews.create}">create</button>
+                </form>
+            </section>
         </div>
-    </section>
-
-    <section class="section" aria-labelledby="todo-heading">
-        <p th:replace="~{fragments/layout :: stepTag(2, 'do')}"></p>
-        <h2 id="todo-heading" th:text="#{plans.detail.todos.heading}">todos</h2>
-        <p th:text="#{plans.detail.todos.intro}">intro</p>
-        <p><a class="btn" th:href="@{/plans/{id}/todos(id=${plan.id})}" href="#" th:text="#{plans.detail.todos.open}">open</a></p>
-    </section>
-
-    <section class="section" aria-labelledby="reviews-heading" id="reviews">
-        <p th:replace="~{fragments/layout :: stepTag(3, 'see')}"></p>
-        <h2 id="reviews-heading" th:text="#{plans.detail.reviews.heading}">reviews</h2>
-        <p class="sort-note" th:text="#{plans.detail.reviews.sortNote}">sort</p>
-        <p class="empty" th:if="${reviews == null or reviews.isEmpty()}" th:text="#{plans.detail.reviews.empty}">empty</p>
-        <ul class="row-list review-list" th:unless="${reviews == null or reviews.isEmpty()}">
-            <li th:each="r : ${reviews}" class="review-item"
-                th:with="hasImprovement=${r.improvement != null and !#strings.isEmpty(r.improvement)}">
-                <div class="review-item__main">
-                    <p class="review-item__period num" th:text="#{plans.detail.reviewPeriod(${r.periodStart}, ${r.periodEnd})}">period</p>
-                    <p class="meta">
-                        <span><th:block th:text="#{common.createdAt}">created</th:block> <time
-                                th:replace="~{fragments/layout :: datetime(${r.createdAt})}"></time></span>
-                        <span th:if="${r.nextPlanId != null}" class="status-transferred"><span aria-hidden="true">→ </span><th:block
-                                th:text="#{badge.transferred}">transferred</th:block></span>
-                        <span th:if="${r.nextPlanId == null and !hasImprovement}" th:text="#{plans.detail.reviews.noImprovement}">none</span>
-                        <span th:if="${r.nextPlanId == null and hasImprovement}" class="status-has" th:text="#{plans.detail.reviews.hasImprovement}">has</span>
-                    </p>
-                </div>
-                <p class="review-item__aux"><a class="btn--quiet" th:href="@{/reviews/{id}(id=${r.id})}" href="#"><th:block th:text="#{plans.detail.reviews.open}">open</th:block><span
-                        class="visually-hidden" th:text="#{common.srContext(${#messages.msg('common.period', r.periodStart, r.periodEnd)})}"></span></a></p>
-            </li>
-        </ul>
-        <form method="post" class="form form--inline" th:action="@{/plans/{id}/reviews(id=${plan.id})}"
-              aria-describedby="review-create-help">
-            <p id="review-create-help" class="field-help"
-               th:text="#{plans.detail.reviews.createHelp(${plan.startDate}, ${plan.endDate})}">help</p>
-            <button type="submit" class="btn btn--secondary" th:text="#{plans.detail.reviews.create}">create</button>
-        </form>
-    </section>
+    </div>
 
     <section class="section" aria-labelledby="revisions-heading">
         <h2 id="revisions-heading" th:text="#{plans.detail.revisions.heading}">revisions</h2>
-        <p class="muted" th:text="#{plans.detail.revisions.intro}">intro</p>
+        <p class="sort-note" th:text="#{plans.detail.revisions.intro}">intro</p>
         <p class="empty" th:if="${revisions == null or revisions.isEmpty()}" th:text="#{plans.detail.revisions.empty}">empty</p>
         <ol reversed class="revision-list" th:unless="${revisions == null or revisions.isEmpty()}">
             <li th:each="rev : ${revisions}">
@@ -112,7 +124,7 @@
                         <dt th:text="#{plans.field.title}">title</dt>
                         <dd th:text="${rev.title}">title</dd>
                         <dt th:text="#{plans.field.period}">period</dt>
-                        <dd th:text="#{common.period(${rev.startDate}, ${rev.endDate})}">period</dd>
+                        <dd class="num" th:text="#{common.period(${rev.startDate}, ${rev.endDate})}">period</dd>
                         <dt th:text="#{plans.field.priority}">priority</dt>
                         <dd><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${rev.priority})}">priority</th:block></dd>
                         <dt th:text="#{plans.field.successCriteria}">criteria</dt>

@@ -9,7 +9,7 @@
     <title>review</title>
 </head>
 <body>
-<header th:replace="~{fragments/layout :: header('plans')}"></header>
+<header th:replace="~{fragments/shell :: shell('plans', ${unavailable ? null : plan}, 'see')}"></header>
 
 <main id="main" tabindex="-1" class="wrap">
     <div class="page-head">
@@ -33,54 +33,66 @@
            (section 3) is drawn. */-->
     <th:block th:unless="${unavailable}">
     <!--/* 1. Basis */-->
-    <section class="section" aria-labelledby="basis-heading">
-        <h2 id="basis-heading" th:text="#{reviews.detail.basis.heading}">basis</h2>
+    <section class="section card card--soft" aria-labelledby="basis-heading">
+        <h2 id="basis-heading" class="card__title" th:text="#{reviews.detail.basis.heading}">basis</h2>
         <dl class="dl-grid">
             <dt th:text="#{reviews.detail.basis.period}">period</dt>
-            <dd th:text="#{common.period(${review.periodStart}, ${review.periodEnd})}">period</dd>
+            <dd class="num" th:text="#{common.period(${review.periodStart}, ${review.periodEnd})}">period</dd>
             <dt th:text="#{reviews.detail.basis.today}">today</dt>
-            <dd th:text="#{common.seoulToday(${summary.today})}">today</dd>
+            <dd class="num" th:text="#{common.seoulToday(${summary.today})}">today</dd>
             <dt th:text="#{reviews.detail.basis.target}">target</dt>
             <dd th:text="#{reviews.detail.basis.targetValue}">target</dd>
         </dl>
-        <p class="small-note" th:text="#{reviews.detail.basis.snapshotNote}">snapshot</p>
-        <p class="small-note" th:text="#{reviews.detail.basis.planEstimateNote(${plan.estimatedMinutes})}">plan estimate</p>
+        <p class="small-note card__foot"><th:block th:text="#{reviews.detail.basis.snapshotNote}">snapshot</th:block> <th:block
+                th:text="#{reviews.detail.basis.planEstimateNote(${plan.estimatedMinutes})}">plan estimate</th:block></p>
     </section>
 
     <!--/* 2. Metrics. The server sends metricValues (key -> value); card order, groups, labels, units, sign and links are
-           decided here (ADR-13, web-contract revision 3). Two groups: counts, then time. */-->
+           decided here (ADR-13, web-contract revision 3). Two groups: counts, then time. Cards in one row have the
+           same height and their "evidence" line sits at the bottom. */-->
     <section class="section" aria-labelledby="metrics-heading"
-             th:with="countOrder=${#strings.arraySplit('planned,completed,overdue,blocked', ',')},
-                      timeOrder=${#strings.arraySplit('estimated,actual,variance', ',')}">
-        <h2 id="metrics-heading" th:text="#{reviews.detail.metrics.heading}">metrics</h2>
-        <p class="note" th:if="${summary.plannedCount == 0}" th:text="#{reviews.detail.metrics.allZero}">all zero</p>
-        <p th:text="#{reviews.detail.metrics.intro}">intro</p>
-        <div class="metric-group">
-            <h3 th:text="#{reviews.detail.metrics.group.count}">counts</h3>
-            <ul class="metric-grid metric-grid--4">
-                <li th:each="key : ${countOrder}"><a th:replace="~{fragments/review :: metricCard(${key}, ${metricValues.get(key)}, ${review.id})}"></a></li>
-            </ul>
+             th:with="countOrder=${#strings.arraySplit('planned,completed,overdue,blocked', ',')}">
+        <div class="section-head">
+            <h2 id="metrics-heading" th:text="#{reviews.detail.metrics.group.count}">counts</h2>
+            <p class="section-head__note" th:text="#{reviews.detail.metrics.intro}">intro</p>
         </div>
-        <div class="metric-group">
-            <h3 th:text="#{reviews.detail.metrics.group.time}">time</h3>
-            <ul class="metric-grid metric-grid--3 metric-grid--flow">
+        <p class="note" th:if="${summary.plannedCount == 0}" th:text="#{reviews.detail.metrics.allZero}">all zero</p>
+        <ul class="stat-grid stat-grid--4">
+            <li th:each="key : ${countOrder}"><a th:replace="~{fragments/review :: metricCard(${key}, ${metricValues.get(key)}, ${review.id})}"></a></li>
+        </ul>
+    </section>
+
+    <!--/* Time group: estimated and actual cards (left, stacked on wide page columns), and one card with the bars and the
+           variance card (right). The bar widths are server values (summary.bars, ADR-27: the larger sum is 100); they
+           are drawn with SVG presentation attributes because the CSP blocks inline styles (ADR-26). The bars are
+           decoration (aria-hidden): the cards next to them carry the same numbers. */-->
+    <section class="section" aria-labelledby="time-heading"
+             th:with="timeOrder=${#strings.arraySplit('estimated,actual', ',')}">
+        <h2 id="time-heading" th:text="#{reviews.detail.metrics.group.time}">time</h2>
+        <div class="time-board">
+            <ul class="stat-grid time-board__cards">
                 <li th:each="key : ${timeOrder}"><a th:replace="~{fragments/review :: metricCard(${key}, ${metricValues.get(key)}, ${review.id})}"></a></li>
             </ul>
+            <div class="card time-board__compare">
+                <div th:replace="~{fragments/review :: timeBars(${summary})}"></div>
+                <a th:replace="~{fragments/review :: metricCard('variance', ${metricValues.get('variance')}, ${review.id})}"></a>
+            </div>
         </div>
     </section>
     </th:block>
 
-    <!--/* 3. Improvement. ADR-18 (screens.md 11.5.2, 11.5.5): on a conflict (model latest) the order is summary ->
-           latest (read-only) -> my input. Not yet carried: my input stays in the form and can be saved again.
-           Already carried to a next plan: my input is shown read-only for copying, with no form. Headings are h3
-           inside this h2 section. */-->
-    <section class="section" aria-labelledby="improvement-heading"
+    <!--/* 3. Improvement (left) and 4. next plan (right). ADR-18 (screens.md 11.5.2, 11.5.5): on a conflict (model
+           latest) the improvement card holds alert -> latest (read-only) -> my input. Not yet carried: my input stays
+           in the form and can be saved again. Already carried: my input is shown read-only for copying, with no form.
+           Headings are h3 inside the h2 card. */-->
+    <div class="section two" th:classappend="${unavailable} ? 'two--single'">
+    <section class="card" aria-labelledby="improvement-heading"
              th:with="conflict=${latest != null},
                       loadUrl=${transferred} ? null : @{/reviews/{id}(id=${review.id})} + '#improvement-heading'">
-        <h2 id="improvement-heading" th:text="#{reviews.detail.improvement.heading}">improvement</h2>
+        <h2 id="improvement-heading" class="card__title" th:text="#{reviews.detail.improvement.heading}">improvement</h2>
         <th:block th:if="${improvementForm != null}" th:object="${improvementForm}"
                   th:with="nestedSummary=true, showJumps=${conflict}">
-            <div th:replace="~{fragments/layout :: errorSummary}"></div>
+            <div th:replace="~{fragments/layout :: errorAlert}"></div>
         </th:block>
         <th:block th:if="${conflict}">
             <section th:replace="~{fragments/layout :: conflictLatest(3, ${transferred ? null : latest.updatedAt}, ${loadUrl}, ~{fragments/review :: improvementLatest(${latest}, ${nextPlan})})}"></section>
@@ -91,37 +103,38 @@
             <th:block th:if="${conflict}">
                 <th:block th:replace="~{fragments/layout :: conflictMineHead(3, true)}"></th:block>
             </th:block>
-            <form method="post" novalidate class="form form-area"
+            <form method="post" novalidate class="form form--v2 improvement-form" data-js="focus-first-invalid"
                   th:action="@{/reviews/{id}/improvement(id=${review.id})}" th:object="${improvementForm}">
                 <input type="hidden" name="_method" value="put">
                 <input type="hidden" th:field="*{version}">
                 <div class="field" th:with="err=${#fields.hasErrors('improvement')}, chg=${changedFields != null and changedFields.contains('improvement')}">
-                    <label for="improvement" th:text="#{reviews.detail.improvement.label}">improvement</label>
+                    <label for="improvement"><th:block th:text="#{reviews.detail.improvement.label}">improvement</th:block><span
+                            th:replace="~{fragments/layout :: changedMark('improvement')}"></span></label>
                     <span th:replace="~{fragments/layout :: changedNote('improvement')}"></span>
-                    <p th:replace="~{fragments/layout :: fieldError('improvement')}"></p>
                     <textarea th:field="*{improvement}" rows="5" maxlength="1000"
-                              th:attr="aria-describedby=${'improvement-help' + (err ? ' improvement-error' : '') + (chg ? ' improvement-changed' : '')},aria-invalid=${err} ? 'true' : null"></textarea>
+                              th:attr="aria-describedby=${(err ? 'improvement-error ' : '') + 'improvement-help' + (chg ? ' improvement-changed' : '')},aria-invalid=${err} ? 'true' : null"></textarea>
+                    <p th:replace="~{fragments/layout :: fieldMessage('improvement')}"></p>
                     <p class="field-help" id="improvement-help" th:text="#{reviews.detail.improvement.help}">help</p>
                 </div>
                 <!--/* Primary button follows the next step: once an improvement is saved (and not carried), the primary
-                       action is "create next plan" below, so saving again is secondary (except on a conflict). */-->
+                       action is "create next plan" beside it, so saving again is secondary (except on a conflict). */-->
                 <div class="form-actions">
-                    <button type="submit" th:class="${conflict or !hasImprovement} ? 'btn' : 'btn btn--secondary'"
+                    <button type="submit" th:class="${conflict or !hasImprovement} ? 'btn' : 'btn btn--line'"
                             th:attr="data-test=${conflict} ? 'conflict-resubmit' : null"
                             th:text="${conflict} ? #{conflict.mine.resubmit} : #{reviews.detail.improvement.submit}">save</button>
                 </div>
             </form>
         </div>
 
-        <div th:if="${transferred and !conflict}" class="card card--handoff">
+        <div th:if="${transferred and !conflict}" class="handoff">
             <p class="status-transferred"><span aria-hidden="true">→ </span><th:block th:text="#{badge.transferred}">transferred</th:block></p>
             <p class="pre-wrap" th:text="${review.improvement}">improvement</p>
-            <p class="muted" th:if="${review.transferredAt != null}"><th:block th:text="#{reviews.detail.improvement.transferredAt}">at</th:block> <time
+            <p class="small-note" th:if="${review.transferredAt != null}"><th:block th:text="#{reviews.detail.improvement.transferredAt}">at</th:block> <time
                     th:replace="~{fragments/layout :: datetime(${review.transferredAt})}"></time></p>
-            <p class="muted" th:text="#{reviews.detail.improvement.locked}">locked</p>
+            <p class="small-note" th:text="#{reviews.detail.improvement.locked}">locked</p>
         </div>
 
-        <!--/* Already carried: the input cannot be saved; id="improvement" is the target of the summary's field error link. */-->
+        <!--/* Already carried: the input cannot be saved; shown read-only for copying. */-->
         <div th:if="${transferred and conflict}" id="my-input" tabindex="-1" role="region"
              aria-labelledby="my-input-heading" data-test="conflict-mine">
             <th:block th:replace="~{fragments/layout :: conflictMineHead(3, false)}"></th:block>
@@ -132,20 +145,21 @@
     </section>
 
     <!--/* 4. Next plan (left out on the ADR-19 stand-in: whether the review was carried is unknown) */-->
-    <section class="section" aria-labelledby="next-heading" th:unless="${unavailable}">
+    <section class="card card--soft" aria-labelledby="next-heading" th:unless="${unavailable}">
         <p th:replace="~{fragments/layout :: stepTag(4, 'next')}"></p>
         <h2 id="next-heading" th:text="#{reviews.detail.next.heading}">next</h2>
-        <p th:if="${!transferred and !hasImprovement}" th:text="#{reviews.detail.next.needImprovement}">need</p>
+        <p class="small-note card__intro" th:if="${!transferred and !hasImprovement}" th:text="#{reviews.detail.next.needImprovement}">need</p>
         <th:block th:if="${!transferred and hasImprovement}">
-            <p th:text="#{reviews.detail.next.ready}">ready</p>
-            <p><a th:class="${latest != null} ? 'btn btn--secondary' : 'btn'" th:href="@{/reviews/{id}/next-plan(id=${review.id})}" href="#" th:text="#{reviews.detail.next.create}">create</a></p>
+            <p class="small-note card__intro" th:text="#{reviews.detail.next.ready}">ready</p>
+            <p><a th:class="${latest != null} ? 'btn btn--line' : 'btn'" th:href="@{/reviews/{id}/next-plan(id=${review.id})}" href="#" th:text="#{reviews.detail.next.create}">create</a></p>
         </th:block>
         <th:block th:if="${transferred}">
-            <p th:text="#{reviews.detail.next.done}">done</p>
-            <p th:if="${nextPlan != null}" class="muted" th:text="#{reviews.detail.next.title(${nextPlan.title})}">next</p>
-            <p><a th:href="@{/plans/{id}(id=${review.nextPlanId})}" href="#" th:text="#{reviews.detail.next.view}">view</a></p>
+            <p class="small-note card__intro" th:text="#{reviews.detail.next.done}">done</p>
+            <p th:if="${nextPlan != null}" th:text="#{reviews.detail.next.title(${nextPlan.title})}">next</p>
+            <p><a class="btn btn--line" th:href="@{/plans/{id}(id=${review.nextPlanId})}" href="#" th:text="#{reviews.detail.next.view}">view</a></p>
         </th:block>
     </section>
+    </div>
 </main>
 
 <footer th:replace="~{fragments/layout :: footer}"></footer>

@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<!--/* ADR-17 F-3: shared error page. Each error/<status>.html passes only its message keys. */-->
+<!--/* ADR-17 F-3: shared error page. Each error/<status>.html passes only its status number (decorative, hidden from
+       assistive technology) and its message keys. */-->
 <html lang="ko" xmlns:th="http://www.thymeleaf.org"
-      th:fragment="errorPage(titleKey, bodyKey)"
+      th:fragment="errorPage(code, titleKey, bodyKey)"
       th:with="errorTitle=${#messages.msg(titleKey)}">
 <head th:replace="~{fragments/layout :: head(${errorTitle}, false)}">
     <meta charset="UTF-8">
@@ -11,14 +12,16 @@
 <header th:replace="~{fragments/layout :: header('none')}"></header>
 
 <main id="main" tabindex="-1" class="wrap">
-    <div class="page-head">
-        <h1 th:text="${errorTitle}">error</h1>
-        <p class="subtitle subtitle--body" th:text="${#messages.msg(bodyKey)}">error</p>
-    </div>
-    <ul class="link-row">
-        <li><a class="btn" th:href="@{/}" href="/" th:text="#{common.home}">home</a></li>
-        <li><a class="btn btn--secondary" th:href="@{/plans}" href="/plans" th:text="#{common.planList}">plans</a></li>
-    </ul>
+    <section class="card center-card" aria-labelledby="error-title">
+        <p class="center-card__code num" aria-hidden="true" th:text="${code}">404</p>
+        <h1 id="error-title" th:text="${errorTitle}">error</h1>
+        <p class="subtitle" th:text="${#messages.msg(bodyKey)}">error</p>
+        <p class="center-card__actions">
+            <a class="btn" th:href="@{/}" href="/"><svg th:replace="~{fragments/layout :: icon('home')}"></svg><span
+                    th:text="#{common.home}">home</span></a>
+            <a class="btn btn--line" th:href="@{/plans}" href="/plans" th:text="#{common.planList}">plans</a>
+        </p>
+    </section>
 </main>
 
 <footer th:replace="~{fragments/layout :: footer}"></footer>

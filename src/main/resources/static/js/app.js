@@ -5,7 +5,9 @@
  * Never write user strings through innerHTML; this file only moves existing DOM nodes
  * and sets fixed textContent.
  * Elements are found by behaviour attributes only (ADR-17 F-5): data-js="flash",
- * data-js="error-summary", data-js="delete-confirm", data-no-lock, data-submitting.
+ * data-js="error-summary", data-js="focus-first-invalid", data-js="busy-label", data-js="delete-confirm", data-no-lock,
+ * data-submitting. data-js may hold several space-separated names (matched with ~=).
+ * State written here for CSS: aria-busy on a busy button, data-focus-origin="script" on an element focused by this file.
  * Style classes (class) and test hooks (data-test) are never used as selectors here.
  */
 (function () {
@@ -16,16 +18,23 @@
     var BUSY_TEXT = busyMeta ? busyMeta.getAttribute('content') : '...';
     var originals = new WeakMap();
 
+    // The part of a button whose text changes while busy: a [data-js~="busy-label"] inside the button (so an icon or a
+    // fixed-size round button keeps its shape), otherwise the whole button.
+    function labelOf(button) {
+        return button.querySelector('[data-js~="busy-label"]') || button;
+    }
+
     function lock(button) {
         if (!button || originals.has(button)) {
             return;
         }
+        var target = labelOf(button);
         var saved = [];
-        button.childNodes.forEach(function (node) {
+        target.childNodes.forEach(function (node) {
             saved.push(node.cloneNode(true));
         });
-        originals.set(button, saved);
-        button.textContent = BUSY_TEXT;
+        originals.set(button, {target: target, nodes: saved});
+        target.textContent = BUSY_TEXT;
         button.disabled = true;
         button.setAttribute('aria-busy', 'true');
     }
@@ -35,7 +44,7 @@
         if (!saved) {
             return;
         }
-        button.replaceChildren.apply(button, saved.map(function (node) {
+        saved.target.replaceChildren.apply(saved.target, saved.nodes.map(function (node) {
             return node.cloneNode(true);
         }));
         button.disabled = false;
@@ -79,33 +88,63 @@
     // Screen readers often skip live-region content that exists before load, so the region is
     // emptied and the same nodes are put back shortly after. Nodes are moved, never re-parsed.
     function reannounceFlash() {
-        var flash = document.querySelector('[data-js="flash"]');
+        var flash = document.querySelector('[data-js~="flash"]');
         if (!flash || !flash.textContent.trim()) {
             return;
         }
-        var nodes = Array.prototype.slice.call(flash.childNodes);
-        flash.replaceChildren();
+        reannounce(flash);
+    }
+
+    // Re-announce the "not saved" alert (role=alert) that was already in the page at load: like the flash, the
+    // nodes are taken out and put back so screen readers read it, while focus stays on the first invalid field.
+    function reannounce(region) {
+        var nodes = Array.prototype.slice.call(region.childNodes);
+        region.replaceChildren();
         window.setTimeout(function () {
-            flash.replaceChildren.apply(flash, nodes);
+            region.replaceChildren.apply(region, nodes);
         }, 150);
     }
 
+    // Save failed (canvas note dev-error-focus): focus the first invalid field in screen order inside a form marked
+    // data-js="focus-first-invalid". The field carries aria-invalid="true" and its aria-describedby starts with the
+    // error text id, so the field, the error and the help are read together. With no focusable invalid field (only
+    // global errors, a conflict, a read-only copy) the alert itself gets focus as before.
     document.addEventListener('DOMContentLoaded', function () {
-        var summary = document.querySelector('[data-js="error-summary"]');
+        var summary = document.querySelector('[data-js~="error-summary"]');
+        var invalid = document.querySelector('[data-js~="focus-first-invalid"] [aria-invalid="true"]');
+        if (invalid) {
+            invalid.focus();
+            if (document.activeElement === invalid) {
+                if (summary) {
+                    reannounce(summary);
+                }
+                return;
+            }
+        }
         if (summary) {
-            // Validation errors: focus the summary (role=alert) instead of re-announcing the flash.
-            summary.focus();
+            focusQuietly(summary);
             return;
         }
         reannounceFlash();
     });
+
+    // Focus moved by this script (not by the user) is marked with data-focus-origin="script" until the element loses
+    // focus, so the CSS can leave out the keyboard focus ring there (the box itself is already prominent). When the user
+    // reaches the element with the keyboard later, the attribute is gone and the normal focus ring shows.
+    function focusQuietly(element) {
+        element.setAttribute('data-focus-origin', 'script');
+        element.addEventListener('blur', function () {
+            element.removeAttribute('data-focus-origin');
+        }, {once: true});
+        element.focus();
+    }
 
     // Delete confirmation: Escape closes the open <details> and returns focus to its summary.
     document.addEventListener('keydown', function (event) {
         if (event.key !== 'Escape') {
             return;
         }
-        var details = event.target instanceof Element ? event.target.closest('[data-js="delete-confirm"]') : null;
+        var details = event.target instanceof Element ? event.target.closest('[data-js~="delete-confirm"]') : null;
         if (!details || !details.open) {
             return;
         }

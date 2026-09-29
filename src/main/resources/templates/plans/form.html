@@ -9,7 +9,7 @@
     <title>plan form</title>
 </head>
 <body>
-<header th:replace="~{fragments/layout :: header('plans')}"></header>
+<header th:replace="~{fragments/shell :: shell('plans', ${isEdit ? plan : null}, ${isEdit ? 'plan' : null})}"></header>
 
 <main id="main" tabindex="-1" class="wrap">
     <div class="page-head">
@@ -25,45 +25,57 @@
         </nav>
         <div th:replace="~{fragments/layout :: flash}"></div>
         <h1 th:text="${pageHeading}">plan form</h1>
+        <p class="subtitle" th:if="${isEdit and !conflict}" th:text="${plan.title}">plan</p>
+        <p class="subtitle" th:unless="${isEdit}" th:text="#{home.steps.plan}">intro</p>
         <nav th:replace="~{fragments/layout :: flowSteps('plan', ${isEdit ? plan.id : null})}"></nav>
     </div>
 
-    <!--/* ADR-18 (screens.md 11.5.2): summary -> latest (read-only) -> my input (kept, can be saved again).
-           Without a conflict only the summary (when there are errors) and the form are shown. */-->
+    <!--/* ADR-18 (screens.md 11.5.2): "not saved" alert -> latest (read-only, left) | my input (kept, can be saved
+           again, right). Without a conflict only the alert (when there are errors) and the form are shown. */-->
     <th:block th:object="${planForm}" th:with="showJumps=${latest != null}">
-        <div th:replace="~{fragments/layout :: errorSummary}"></div>
+        <div th:replace="~{fragments/layout :: errorAlert}"></div>
     </th:block>
     <p class="note" th:if="${snapshotUnavailable == true}" th:text="#{conflict.latest.unavailable}">unavailable</p>
-    <th:block th:if="${latest != null}">
-        <section th:replace="~{fragments/layout :: conflictLatest(2, ${latest.updatedAt}, @{/plans/{id}/edit(id=${plan.id})}, ~{fragments/plan :: planLatestFields})}"></section>
-    </th:block>
 
-    <div class="form-area" th:attr="id=${conflict} ? 'my-input' : null,tabindex=${conflict} ? '-1' : null,data-test=${conflict} ? 'conflict-mine' : null,aria-labelledby=${conflict} ? 'my-input-heading' : null,role=${conflict} ? 'region' : null">
-        <th:block th:if="${conflict}">
-            <th:block th:replace="~{fragments/layout :: conflictMineHead(2, true)}"></th:block>
+    <div class="section" th:classappend="${latest != null} ? 'conflict-layout' : 'form-page'">
+        <th:block th:if="${latest != null}">
+            <section th:replace="~{fragments/layout :: conflictLatest(2, ${latest.updatedAt}, @{/plans/{id}/edit(id=${plan.id})}, ~{fragments/plan :: planLatestFields})}"></section>
         </th:block>
-        <p class="note" th:if="${isEdit}" th:text="#{plans.form.editNote}">note</p>
 
-        <div class="readonly-box"
-             th:if="${isEdit and plan.carriedImprovement != null and !#strings.isEmpty(plan.carriedImprovement)}">
-            <p class="readonly-box__label"><span class="status-carried"><span aria-hidden="true">↳ </span><th:block
-                    th:text="#{badge.carried}">carried</th:block></span>
-                <span class="muted" th:text="#{plans.form.carriedReadonly}">read only</span></p>
-            <p class="pre-wrap" th:text="${plan.carriedImprovement}">improvement</p>
-        </div>
+        <!--/* On a conflict (latest shown) this column is head (heading, intro, notes) + form card, sharing the head row
+               and the card row with the latest column (.conflict-col, CSS subgrid). Otherwise the head wrapper is left
+               out (th:remove tag) and its parts stack above the form. */-->
+        <section class="form-area" th:classappend="${latest != null} ? 'conflict-col'"
+                 th:attr="id=${conflict} ? 'my-input' : null,tabindex=${conflict} ? '-1' : null,data-test=${conflict} ? 'conflict-mine' : null,aria-labelledby=${conflict} ? 'my-input-heading' : null,aria-label=${conflict} ? null : ${pageHeading}">
+            <div class="conflict-col__head" th:remove="${latest != null} ? 'none' : 'tag'">
+                <div class="form-area__head" th:if="${conflict}">
+                    <th:block th:replace="~{fragments/layout :: conflictMineHead(2, true)}"></th:block>
+                    <p class="small-note" th:if="${isEdit}" th:text="#{plans.form.editNote}">note</p>
+                </div>
+                <div class="hint" role="note" th:if="${isEdit and !conflict}"><p th:text="#{plans.form.editNote}">note</p></div>
 
-        <form method="post" novalidate class="form"
-              th:action="${isEdit} ? @{/plans/{id}(id=${plan.id})} : @{/plans}"
-              th:object="${planForm}">
-            <input type="hidden" name="_method" value="put" th:if="${isEdit}">
-            <input type="hidden" th:if="${isEdit}" th:field="*{version}">
-            <th:block th:replace="~{fragments/plan :: planFields(${priorities})}"></th:block>
-            <div class="form-actions">
-                <button type="submit" class="btn" th:attr="data-test=${conflict} ? 'conflict-resubmit' : null"
-                        th:text="${conflict} ? #{conflict.mine.resubmit} : (${isEdit} ? #{common.saveEdit} : #{plans.form.submitCreate})">save</button>
-                <a class="btn--quiet" th:href="${isEdit} ? @{/plans/{id}(id=${plan.id})} : @{/plans}" href="/plans" th:text="#{common.cancel}">cancel</a>
+                <div class="readonly-box"
+                     th:if="${isEdit and plan.carriedImprovement != null and !#strings.isEmpty(plan.carriedImprovement)}">
+                    <p class="readonly-box__label"><span class="status-carried"><span aria-hidden="true">↳ </span><th:block
+                            th:text="#{badge.carried}">carried</th:block></span>
+                        <span class="muted" th:text="#{plans.form.carriedReadonly}">read only</span></p>
+                    <p class="pre-wrap" th:text="${plan.carriedImprovement}">improvement</p>
+                </div>
             </div>
-        </form>
+
+            <form method="post" novalidate class="form form--v2 form-card" data-js="focus-first-invalid"
+                  th:action="${isEdit} ? @{/plans/{id}(id=${plan.id})} : @{/plans}"
+                  th:object="${planForm}">
+                <input type="hidden" name="_method" value="put" th:if="${isEdit}">
+                <input type="hidden" th:if="${isEdit}" th:field="*{version}">
+                <th:block th:replace="~{fragments/plan :: planFields(${priorities})}"></th:block>
+                <div class="form-actions">
+                    <button type="submit" class="btn" th:attr="data-test=${conflict} ? 'conflict-resubmit' : null"
+                            th:text="${conflict} ? #{conflict.mine.resubmit} : (${isEdit} ? #{common.saveEdit} : #{plans.form.submitCreate})">save</button>
+                    <a class="btn btn--line" th:href="${isEdit} ? @{/plans/{id}(id=${plan.id})} : @{/plans}" href="/plans" th:text="#{common.cancel}">cancel</a>
+                </div>
+            </form>
+        </section>
     </div>
 </main>
 

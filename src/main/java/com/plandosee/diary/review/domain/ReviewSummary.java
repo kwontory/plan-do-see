@@ -26,4 +26,9 @@ public record ReviewSummary(
                 counts.getVarianceMinutes(),
                 today);
     }
+
+    /** ADR-27: estimated/actual bar widths derived from this summary's minute sums (not a record component). */
+    public ReviewBars bars() {
+        return ReviewBars.of(estimatedMinutes, actualMinutes);
+    }
 }

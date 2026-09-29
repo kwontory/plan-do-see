@@ -20,14 +20,15 @@
     </div>
 
     <!--/* The public warning sits right before the download button. */-->
-    <div class="export-download">
-        <p class="notice-box notice-box--inline" th:text="#{export.publicWarning}">warning</p>
-        <p><a class="btn" th:href="@{/export/download}" href="/export/download" th:text="#{export.download}">download</a></p>
-    </div>
+    <section class="section card export-download" th:attr="aria-label=#{export.download}">
+        <p class="export-download__warning" th:text="#{export.publicWarning}">warning</p>
+        <a class="btn" th:href="@{/export/download}" href="/export/download"><svg
+                th:replace="~{fragments/layout :: icon('download')}"></svg><span th:text="#{export.download}">download</span></a>
+    </section>
 
-    <div class="section export-grid">
-        <section class="export-col" aria-labelledby="included-heading">
-            <h2 id="included-heading" th:text="#{export.included.heading}">included</h2>
+    <div class="section card-grid card-grid--3">
+        <section class="card" aria-labelledby="included-heading">
+            <h2 id="included-heading" class="card__title" th:text="#{export.included.heading}">included</h2>
             <ul class="plain-bullets">
                 <li th:text="#{export.included.plans}">plans</li>
                 <li th:text="#{export.included.revisions}">revisions</li>
@@ -44,16 +45,16 @@
             </ul>
         </section>
 
-        <section class="export-col" aria-labelledby="excluded-heading">
-            <h2 id="excluded-heading" th:text="#{export.excluded.heading}">excluded</h2>
+        <section class="card" aria-labelledby="excluded-heading">
+            <h2 id="excluded-heading" class="card__title" th:text="#{export.excluded.heading}">excluded</h2>
             <ul class="plain-bullets">
                 <li th:text="#{export.excluded.deleted}">deleted</li>
                 <li th:text="#{export.excluded.secrets}">secrets</li>
             </ul>
         </section>
 
-        <section class="export-col" aria-labelledby="format-heading">
-            <h2 id="format-heading" th:text="#{export.format.heading}">format</h2>
+        <section class="card" aria-labelledby="format-heading">
+            <h2 id="format-heading" class="card__title" th:text="#{export.format.heading}">format</h2>
             <ul class="plain-bullets">
                 <li th:text="#{export.format.fileName}">file name</li>
                 <li th:text="#{export.format.encoding}">encoding</li>
