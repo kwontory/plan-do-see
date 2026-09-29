@@ -6,27 +6,27 @@ import java.time.OffsetDateTime;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-import org.springframework.format.annotation.DateTimeFormat;
-
+import com.plandosee.diary.common.domain.TextInput;
 import com.plandosee.diary.common.time.TimeConfig;
+import com.plandosee.diary.common.web.PlainText;
 import com.plandosee.diary.execution.domain.ExecutionRules;
 
 /**
- * S03 execution record form. datetime-local values (with or without seconds) are interpreted in Asia/Seoul.
+ * S03 execution record form. datetime-local values (with or without seconds, never with an offset: FormBindingAdvice)
+ * are interpreted in Asia/Seoul.
  * blockerReason is optional (at most ExecutionRules.BLOCKER_REASON_MAX characters, LF line breaks, ADR-22); blank is
  * stored as NULL by ExecutionService.
  */
 public class ExecutionForm {
 
     @NotNull(message = "{validation.startedAt.required}")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime startedAt;
 
     @NotNull(message = "{validation.endedAt.required}")
-    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime endedAt;
 
     @Size(max = ExecutionRules.BLOCKER_REASON_MAX, message = "{validation.blockerReason.max}")
+    @PlainText(TextInput.Lines.MULTI)
     private String blockerReason;
 
     public static OffsetDateTime inSeoul(LocalDateTime value) {

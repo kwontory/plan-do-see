@@ -22,15 +22,19 @@
 
 <!--/* One metric card of the review screen (S04). key: metric key, v: server value, reviewId: review id.
        Labels, units and the sign of the variance are chosen here (ADR-13); the card links to the evidence (T06-C83).
-       The variance shows its sign only ("+12", "-41", "0"); the description says which way is more or less. */-->
+       Time metrics (model metricDurations: estimated, actual, variance) print as days, hours and minutes with each number
+       large and each unit small (layout :: durationStat, ADR-29); counts print the number and metric.<key>.unit.
+       The variance shows its sign only ("+30분", "-1시간 5분", "0분"); the description says which way is more or less. */-->
 <a th:fragment="metricCard(key, v, reviewId)" class="stat" th:classappend="${key == 'variance'} ? 'stat--variance'"
    th:href="@{/reviews/{id}/evidence(id=${reviewId},metric=${key})}" href="#"
    th:attr="aria-describedby=|metric-desc-${key}|">
     <span class="stat__label" th:text="${#messages.msg('metric.' + key + '.label')}">label</span>
     <span class="visually-hidden"> </span>
-    <span class="stat__value num" th:attr="data-test=|metric-value-${key}|" th:data-value="${v}"><th:block
-            th:if="${key == 'variance' and v > 0}" th:text="'+'">+</th:block><th:block
-            th:text="${v}">0</th:block><small th:text="${#messages.msg('metric.' + key + '.unit')}">unit</small></span>
+    <span class="stat__value num" th:attr="data-test=|metric-value-${key}|" th:data-value="${v}"
+          th:with="d=${metricDurations != null ? metricDurations.get(key) : null}"><th:block th:if="${d != null}"><th:block
+            th:replace="~{fragments/layout :: durationStat(${d}, ${key == 'variance'})}">0</th:block></th:block><th:block
+            th:if="${d == null}"><th:block th:text="${v}">0</th:block><small
+            th:text="${#messages.msg('metric.' + key + '.unit')}">unit</small></th:block></span>
     <span class="stat__desc" aria-hidden="true" th:id="|metric-desc-${key}|"
           th:text="${#messages.msg('metric.' + key + '.description')}">description</span>
     <span class="stat__cta"><span class="visually-hidden">, </span><th:block
@@ -46,13 +50,13 @@
         <span class="bar__label" th:text="#{reviews.detail.bars.estimated}">estimated</span>
         <svg class="bar__track" focusable="false"><rect class="bar__fill bar__fill--estimated" x="0" y="0" height="100%" rx="7"
                 th:attr="width=|${summary.bars.estimatedPercent}%|" width="0%"/></svg>
-        <span class="bar__value num" th:text="#{common.minutes(${summary.estimatedMinutes})}">0</span>
+        <span class="bar__value num"><th:block th:replace="~{fragments/layout :: duration(${summary.estimatedDuration})}">0</th:block></span>
     </div>
     <div class="bar">
         <span class="bar__label" th:text="#{reviews.detail.bars.actual}">actual</span>
         <svg class="bar__track" focusable="false"><rect class="bar__fill" x="0" y="0" height="100%" rx="7"
                 th:attr="width=|${summary.bars.actualPercent}%|" width="0%"/></svg>
-        <span class="bar__value num" th:text="#{common.minutes(${summary.actualMinutes})}">0</span>
+        <span class="bar__value num"><th:block th:replace="~{fragments/layout :: duration(${summary.actualDuration})}">0</th:block></span>
     </div>
 </div>
 

@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.tomcat.util.http.InvalidParameterException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
@@ -50,6 +51,17 @@ public class GlobalExceptionHandler {
     public String constraintViolation(DataIntegrityViolationException ex) {
         log.warn("event=constraint_violation constraint={}",
                 ConstraintViolationTranslator.constraintName(ex).orElse("unknown"));
+        return "error/400";
+    }
+
+    /**
+     * ADR-30 (IV-05): request parameters Tomcat cannot decode (a bad percent escape such as {@code %ZZ}, bytes that
+     * are not UTF-8) are the client's fault: 400, not 500. Found anywhere in the cause chain; the log has the type only.
+     */
+    @ExceptionHandler(InvalidParameterException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String undecodableParameters(InvalidParameterException ex) {
+        log.warn("event=bad_request type={}", ex.getClass().getName());
         return "error/400";
     }
 
@@ -98,8 +110,22 @@ public class GlobalExceptionHandler {
             response.setStatus(HttpStatus.SERVICE_UNAVAILABLE.value());
             return ConflictKeys.BUSY_VIEW;
         }
+        if (causedBy(ex, InvalidParameterException.class)) {
+            log.warn("event=bad_request type={}", InvalidParameterException.class.getName());
+            response.setStatus(HttpStatus.BAD_REQUEST.value());
+            return "error/400";
+        }
         log.error("event=unhandled_error type={}", ex.getClass().getName());
         response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
         return "error/500";
+    }
+
+    private static boolean causedBy(Throwable ex, Class<? extends Throwable> type) {
+        for (Throwable t = ex; t != null; t = t.getCause() == t ? null : t.getCause()) {
+            if (type.isInstance(t)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -16,10 +16,8 @@ import com.plandosee.diary.common.paging.PageInfo;
 import com.plandosee.diary.common.paging.PageSettings;
 import com.plandosee.diary.common.time.SeoulDates;
 import com.plandosee.diary.execution.application.port.ExecutionLogMapper;
-import com.plandosee.diary.execution.domain.ActualMinutes;
 import com.plandosee.diary.execution.domain.ExecutionLogRow;
 import com.plandosee.diary.execution.domain.ExecutionLogTotals;
-import com.plandosee.diary.execution.domain.ExecutionRules;
 import com.plandosee.diary.todo.application.TodoService;
 
 /**
@@ -51,21 +49,28 @@ public class ExecutionService {
     /**
      * Takes the owned todo's row lock (TodoService.lockOwned) so a concurrent delete cannot leave a log under a
      * just-deleted todo: either the log commits first and the delete follows, or the delete wins and this throws
-     * {@link com.plandosee.diary.todo.application.TodoDeletedException} with nothing stored. The input is checked at
-     * the entrance with the form's codes (ADR-22): period (ActualMinutes) and blocker reason length (ExecutionRules).
+     * {@link com.plandosee.diary.todo.application.TodoDeletedException} with nothing stored. The input is checked by
+     * building the command first (ADR-22 / ADR-30, the form's codes): Seoul-date range, period and its length limit,
+     * blocker reason.
      */
     public UUID record(UUID todoId, OffsetDateTime startedAt, OffsetDateTime endedAt, String blockerReason) {
-        int actualMinutes = ActualMinutes.between(startedAt, endedAt);
-        ExecutionRules.checkBlockerReason(blockerReason);
+        return record(todoId, new ExecutionCommand(startedAt, endedAt, blockerReason));
+    }
+
+    public UUID record(UUID todoId, ExecutionCommand command) {
+        if (command == null) {
+            throw new IllegalArgumentException("execution command");
+        }
+        int actualMinutes = command.actualMinutes();
         return writes.run(() -> {
             todoService.lockOwned(todoId);
             ExecutionLogRow log = new ExecutionLogRow();
             log.setId(idGenerator.newId());
             log.setTodoId(todoId);
-            log.setStartedAt(startedAt);
-            log.setEndedAt(endedAt);
+            log.setStartedAt(command.startedAt());
+            log.setEndedAt(command.endedAt());
             log.setActualMinutes(actualMinutes);
-            log.setBlockerReason(normalizeBlocker(blockerReason));
+            log.setBlockerReason(command.blockerReason());
             log.setCreatedAt(seoulDates.now().atOffset(ZoneOffset.UTC));
             executionLogMapper.insert(log);
             return log.getId();
@@ -97,13 +102,5 @@ public class ExecutionService {
         List<ExecutionLogRow> logs = info.totalCount() == 0 ? List.of()
                 : executionLogMapper.listForTodoOwnedPage(userId, todoId, info.limit(), info.offset());
         return new TodoExecutionLogs(logs, totals.getActualMinutes(), info);
-    }
-
-    static String normalizeBlocker(String blockerReason) {
-        if (blockerReason == null) {
-            return null;
-        }
-        String trimmed = blockerReason.strip();
-        return trimmed.isEmpty() ? null : trimmed;
     }
 }

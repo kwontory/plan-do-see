@@ -1,23 +1,40 @@
 package com.plandosee.diary.todo.web;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.plandosee.diary.common.domain.Priority;
+import com.plandosee.diary.common.domain.TextInput;
+import com.plandosee.diary.common.domain.UuidText;
+import com.plandosee.diary.common.error.FieldViolation;
 import com.plandosee.diary.common.paging.PageRequest;
 import com.plandosee.diary.todo.domain.DueFilter;
+import com.plandosee.diary.todo.domain.TodoRules;
 import com.plandosee.diary.todo.domain.TodoSort;
 import com.plandosee.diary.todo.domain.TodoStatus;
 
 /**
  * S02 search/filter/sort state (ADR-06) and page (ADR-21). Bound from the query string on GET and from hidden fields
  * on list POSTs (web-contract revision 1 Q10). Unknown values are dropped (sort falls back to DUE, page to 1), so
- * only allowlisted values ever reach SQL or a redirect URL.
+ * only allowlisted values ever reach SQL or a redirect URL. The search text is checked with TodoRules.SEARCH_QUERY
+ * (ADR-30 revised, IV-04): a rejected text is kept as typed so the list can show it with a field error, and it is
+ * never searched ({@link #searchViolations()}; the service's TodoFilter applies the same rule). The tag id must be a
+ * canonical UUID (UuidText).
  */
 public class TodoListQuery {
+
+    /**
+     * Longest search text a list URL carries (redirects, page links): twice SEARCH_QUERY_MAX. A valid text and a
+     * rejected one of up to this length are carried as they are, so the next list shows the same search or the same
+     * rejection; a longer text (only from a hand-made request, the search box has maxlength) is cut to this length
+     * and is still over the limit. 100 Hangul characters are 900 bytes percent-encoded, far below the 8 KB header
+     * buffer (IV-04).
+     */
+    static final int CARRIED_QUERY_MAX = TodoRules.SEARCH_QUERY_MAX * 2;
 
     private String q;
     private String status;
@@ -30,7 +47,7 @@ public class TodoListQuery {
     /** A copy with every value parsed against its allowlist and rendered back in canonical form. */
     public TodoListQuery normalized() {
         TodoListQuery n = new TodoListQuery();
-        n.q = q == null || q.isBlank() ? null : q.strip();
+        n.q = TextInput.normalize(q);
         n.status = statusValue() == null ? null : statusValue().name();
         n.priority = priorityValue() == null ? null : priorityValue().name();
         n.tagId = tagIdValue() == null ? null : tagIdValue().toString();
@@ -55,7 +72,7 @@ public class TodoListQuery {
         Map<String, Object> vars = new LinkedHashMap<>();
         vars.put("planId", planId);
         UriComponentsBuilder builder = UriComponentsBuilder.fromPath("/plans/{planId}/todos");
-        addParam(builder, vars, "q", n.q);
+        addParam(builder, vars, "q", TextInput.truncate(n.q, CARRIED_QUERY_MAX));
         addParam(builder, vars, "status", n.status);
         addParam(builder, vars, "priority", n.priority);
         addParam(builder, vars, "tagId", n.tagId);
@@ -74,6 +91,13 @@ public class TodoListQuery {
             builder.queryParam(name, "{" + name + "}");
             vars.put(name, value);
         }
+    }
+
+    /**
+     * The broken rules of the search text (TodoRules.SEARCH_QUERY, field "q"); empty when the list may be searched.
+     */
+    public List<FieldViolation> searchViolations() {
+        return TodoRules.searchQueryViolations(q);
     }
 
     public TodoStatus statusValue() {
@@ -101,11 +125,7 @@ public class TodoListQuery {
         if (tagId == null || tagId.isBlank()) {
             return null;
         }
-        try {
-            return UUID.fromString(tagId.strip());
-        } catch (IllegalArgumentException ex) {
-            return null;
-        }
+        return UuidText.parse(tagId.strip());
     }
 
     private static <E extends Enum<E>> E parseEnum(Class<E> type, String value) {

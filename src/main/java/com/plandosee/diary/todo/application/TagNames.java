@@ -1,16 +1,14 @@
 package com.plandosee.diary.todo.application;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
+import com.plandosee.diary.common.domain.InputCheck;
 import com.plandosee.diary.todo.domain.TodoRules;
 
 /**
- * Parses the comma-separated tag input (ADR-07). Duplicates that differ only by case or spaces collapse to one; more
- * than {@link #MAX_COUNT} distinct names is rejected with {@link #TOO_MANY} (ADR-22 amendment 2).
+ * Parses the comma-separated tag input of the form (ADR-07) with the one tag-list rule (TodoRules.tagNames, ADR-30):
+ * duplicates that differ only by case or spaces collapse to one; an over-long or broken name, or more than
+ * {@link #MAX_COUNT} distinct names, is DomainRuleException on the field {@code tags}.
  */
 public final class TagNames {
 
@@ -25,20 +23,10 @@ public final class TagNames {
     }
 
     public static List<String> parse(String raw) {
-        if (raw == null || raw.isBlank()) {
-            return List.of();
-        }
-        Map<String, String> unique = new LinkedHashMap<>();
-        for (String part : raw.split(",")) {
-            String name = part.strip();
-            if (name.isEmpty()) {
-                continue;
-            }
-            TodoRules.checkTagName(name);
-            unique.putIfAbsent(name.toLowerCase(Locale.ROOT), name);
-            TodoRules.checkTagCount(unique.size());
-        }
-        return new ArrayList<>(unique.values());
+        InputCheck check = new InputCheck();
+        List<String> names = TodoRules.tagNames(check, "tags", TodoRules.splitTagInput(raw));
+        check.done();
+        return names;
     }
 
     public static String join(List<String> names) {

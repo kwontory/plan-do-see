@@ -8,8 +8,9 @@
                dueKey=${#strings.toString(filter.due)},
                sortKey=${#strings.toString(filter.sort)},
                unavailable=${snapshotUnavailable == true},
+               rejected=${searchRejected == true},
                filterActive=${!#strings.isEmpty(qText) or !#strings.isEmpty(statusKey) or !#strings.isEmpty(priorityKey) or !#strings.isEmpty(tagKey) or !#strings.isEmpty(dueKey)}">
-<head th:replace="~{fragments/layout :: head(${unavailable} ? #{todos.list.heading} : #{todos.list.pageTitle(${plan.title})}, ${formError})}">
+<head th:replace="~{fragments/layout :: head(${unavailable} ? #{todos.list.heading} : #{todos.list.pageTitle(${plan.title})}, ${formError or rejected})}">
     <meta charset="UTF-8">
     <title>todos</title>
 </head>
@@ -51,15 +52,18 @@
         </form>
     </section>
 
-    <!--/* 2. Search and filter (one toolbar row on wide screens) */-->
+    <!--/* 2. Search and filter (one toolbar row on wide screens). A rejected search text (searchRejected: too long,
+           line break or control character) comes back as a field error on filter.q: the error sits under the search box
+           (fieldMessage, id q-error), the box keeps the typed text and gets focus (focus-first-invalid). */-->
     <section class="section" aria-labelledby="filter-heading">
         <h2 id="filter-heading" class="visually-hidden" th:text="#{todos.filter.heading}">filter</h2>
-        <form method="get" role="search" aria-labelledby="filter-heading" class="toolbar"
-              th:action="@{/plans/{id}/todos(id=${plan.id})}">
-            <div class="field toolbar__q">
+        <form method="get" role="search" aria-labelledby="filter-heading" class="toolbar" data-js="focus-first-invalid"
+              th:action="@{/plans/{id}/todos(id=${plan.id})}" th:object="${filter}">
+            <div class="field toolbar__q" th:with="qErr=${#fields.hasErrors('q')}">
                 <label for="filter-q" th:text="#{todos.filter.q.label}">q</label>
-                <input type="search" id="filter-q" name="q" aria-describedby="filter-q-help"
-                       th:value="${filter.q}">
+                <input type="search" id="filter-q" name="q" th:value="${filter.q}" th:maxlength="${searchQueryMax}"
+                       th:attr="aria-describedby=${(qErr ? 'q-error ' : '') + 'filter-q-help'},aria-invalid=${qErr} ? 'true' : null">
+                <p th:replace="~{fragments/layout :: fieldMessage('q')}"></p>
             </div>
             <div class="field">
                 <label for="filter-status" th:text="#{todos.filter.status.label}">status</label>
@@ -115,13 +119,15 @@
             </div>
         </form>
         <div class="toolbar__help">
-            <p class="field-help" id="filter-q-help" th:text="#{todos.filter.q.help}">help</p>
+            <p class="field-help" id="filter-q-help"><th:block th:text="#{todos.filter.q.help}">help</th:block><th:block
+                    th:if="${searchQueryMax != null}" th:text="' ' + #{todos.filter.q.max(${searchQueryMax})}"> max</th:block></p>
             <p class="field-help" id="filter-due-help" th:text="#{todos.filter.due.help(${today})}">help</p>
         </div>
     </section>
 
-    <!--/* 3. List */-->
-    <section class="section" aria-labelledby="list-heading">
+    <!--/* 3. List. Rejected search (searchRejected, ADR-30 rev. 1, user decision 2026-09-29): the whole section is left
+           out, heading included; only the search box error explains why nothing is listed. */-->
+    <section class="section" aria-labelledby="list-heading" th:unless="${rejected}">
         <!--/* ADR-21: the whole list's count (server), not the rows of this page. */-->
         <h2 id="list-heading"><th:block th:text="#{todos.list.listHeading}">list</th:block><th:block th:unless="${unavailable}"> <span
                 class="badge badge--count num" th:text="#{common.count(${page.totalCount})}">0</span></th:block></h2>
@@ -189,8 +195,8 @@
                         <span th:replace="~{fragments/todo :: dueChip(${todo}, true)}"></span>
                         <span class="pri" th:classappend="${'pri--' + pri}"><th:block
                                 th:replace="~{fragments/layout :: enumLabelIn('todos.item.priority', 'Priority', ${todo.priority})}">priority</th:block></span>
-                        <span class="chip"><svg th:replace="~{fragments/layout :: icon('clock')}"></svg><span
-                                th:text="#{todos.item.estimated(${todo.estimatedMinutes})}">estimated</span></span>
+                        <span class="chip"><svg th:replace="~{fragments/layout :: icon('clock')}"></svg><span><th:block
+                                th:text="#{todos.item.estimatedLabel}">estimated</th:block> <th:block th:replace="~{fragments/layout :: duration(${todo.estimatedDuration})}">0</th:block></span></span>
                         <span class="chip chip--tag" th:each="tag : ${todo.tags}" data-test="todo-tag" th:data-value="${tag.name}"><svg
                                 th:replace="~{fragments/layout :: icon('tag')}"></svg><span class="visually-hidden"
                                 th:text="#{todos.field.tags}">tag</span> <span th:text="${tag.name}">tag</span></span>

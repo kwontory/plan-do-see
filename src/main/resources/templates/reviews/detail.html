@@ -44,7 +44,8 @@
             <dd th:text="#{reviews.detail.basis.targetValue}">target</dd>
         </dl>
         <p class="small-note card__foot"><th:block th:text="#{reviews.detail.basis.snapshotNote}">snapshot</th:block> <th:block
-                th:text="#{reviews.detail.basis.planEstimateNote(${plan.estimatedMinutes})}">plan estimate</th:block></p>
+                th:text="#{reviews.detail.basis.planEstimateLead}">plan estimate</th:block><th:block th:replace="~{fragments/layout :: duration(${plan.estimatedDuration})}">0</th:block><th:block
+                th:text="#{reviews.detail.basis.planEstimateTail}">plan estimate</th:block></p>
     </section>
 
     <!--/* 2. Metrics. The server sends metricValues (key -> value); card order, groups, labels, units, sign and links are

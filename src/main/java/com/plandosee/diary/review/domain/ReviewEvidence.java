@@ -2,6 +2,7 @@ package com.plandosee.diary.review.domain;
 
 import java.util.List;
 
+import com.plandosee.diary.common.domain.DurationParts;
 import com.plandosee.diary.common.paging.PageInfo;
 import com.plandosee.diary.execution.domain.ExecutionLogRow;
 
@@ -34,6 +35,19 @@ public record ReviewEvidence(
 
     public long evidenceVarianceMinutes() {
         return evidenceActualMinutes - evidenceEstimatedMinutes;
+    }
+
+    /** ADR-29: the evidence sums split into days, hours and minutes for display. */
+    public DurationParts evidenceEstimatedDuration() {
+        return DurationParts.of(evidenceEstimatedMinutes);
+    }
+
+    public DurationParts evidenceActualDuration() {
+        return DurationParts.of(evidenceActualMinutes);
+    }
+
+    public DurationParts evidenceVarianceDuration() {
+        return DurationParts.of(evidenceVarianceMinutes());
     }
 
     /**

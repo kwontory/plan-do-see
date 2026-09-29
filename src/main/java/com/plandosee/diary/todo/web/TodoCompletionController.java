@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.plandosee.diary.common.domain.UuidText;
 import com.plandosee.diary.common.error.RetryLaterException;
 import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.web.ConflictKeys;
@@ -73,6 +74,9 @@ public class TodoCompletionController {
             return redirect(todoId, outcome.planId(), returnTo, filter);
         } catch (TodoDeletedException ex) {
             return deleted(ex, redirect, filter);
+        } catch (DomainRuleException ex) {
+            // ADR-30: a stored value an old row still breaks (V5 NOT VALID CHECK), shown as its rule code.
+            FlashMessages.add(redirect, ex.code(), ex.args());
         } catch (RetryLaterException ex) {
             FlashMessages.add(redirect, ConflictResponses.flashKey(ex, ConflictKeys.FLASH_RETRY));
         }
@@ -121,10 +125,6 @@ public class TodoCompletionController {
         if (value == null || value.isBlank()) {
             return null;
         }
-        try {
-            return UUID.fromString(value.strip());
-        } catch (IllegalArgumentException ex) {
-            return null;
-        }
+        return UuidText.parse(value.strip());
     }
 }

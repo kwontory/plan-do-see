@@ -1,15 +1,15 @@
 package com.plandosee.diary.plan.domain;
 
-import java.time.LocalDate;
-
 import com.plandosee.diary.common.domain.FieldCodes;
-import com.plandosee.diary.common.domain.FieldRules;
-import com.plandosee.diary.common.domain.Priority;
+import com.plandosee.diary.common.domain.IntRange;
+import com.plandosee.diary.common.domain.TextRule;
 
 /**
- * ADR-22: the one place for the plan field rules (DEC-07). PlanForm's annotations and PlanService's entry check use
- * these values, and they equal the V1 CHECK constraints (ck_plans_title, ck_plans_success_criteria,
- * ck_plans_estimated_minutes, ck_plans_period); ValidationRulesConsistencyTest compares all three.
+ * ADR-22 / ADR-30: the one place for the plan field rules (DEC-07). Only declarations: which common tool applies to
+ * which field with which constant. PlanCommand checks every command with them (InputCheck), PlanForm's annotations
+ * use the same constants, and they equal the CHECK constraints (V1 ck_plans_title, ck_plans_success_criteria,
+ * ck_plans_estimated_minutes, ck_plans_period; V5 date ranges, ADR-30); ValidationRulesConsistencyTest compares them.
+ * Dates use DateBounds (ADR-29) and the period rule PlanPeriod.
  */
 public final class PlanRules {
 
@@ -18,23 +18,13 @@ public final class PlanRules {
     public static final int ESTIMATED_MINUTES_MIN = 0;
     public static final int ESTIMATED_MINUTES_MAX = 525_600;
 
-    private PlanRules() {
-    }
+    public static final TextRule TITLE =
+            TextRule.singleLine(TITLE_MAX, FieldCodes.TITLE_REQUIRED, FieldCodes.TITLE_MAX);
+    public static final TextRule SUCCESS_CRITERIA =
+            TextRule.multiLine(SUCCESS_CRITERIA_MAX, FieldCodes.SUCCESS_CRITERIA_REQUIRED, FieldCodes.SUCCESS_CRITERIA_MAX);
+    public static final IntRange ESTIMATED_MINUTES = new IntRange(ESTIMATED_MINUTES_MIN, ESTIMATED_MINUTES_MAX,
+            FieldCodes.ESTIMATED_MINUTES_MIN, FieldCodes.ESTIMATED_MINUTES_MAX);
 
-    /**
-     * Throws DomainRuleException(field, code) for the first broken rule, with the same code the form shows
-     * (FieldCodes, PlanPeriod.END_BEFORE_START).
-     */
-    public static void check(String title, LocalDate startDate, LocalDate endDate, Priority priority,
-                             String successCriteria, int estimatedMinutes) {
-        FieldRules.requireText("title", title, TITLE_MAX, FieldCodes.TITLE_REQUIRED, FieldCodes.TITLE_MAX);
-        FieldRules.require("startDate", startDate, FieldCodes.START_DATE_REQUIRED);
-        FieldRules.require("endDate", endDate, FieldCodes.END_DATE_REQUIRED);
-        PlanPeriod.check(startDate, endDate);
-        FieldRules.require("priority", priority, FieldCodes.PRIORITY_REQUIRED);
-        FieldRules.requireText("successCriteria", successCriteria, SUCCESS_CRITERIA_MAX,
-                FieldCodes.SUCCESS_CRITERIA_REQUIRED, FieldCodes.SUCCESS_CRITERIA_MAX);
-        FieldRules.range("estimatedMinutes", estimatedMinutes, ESTIMATED_MINUTES_MIN, ESTIMATED_MINUTES_MAX,
-                FieldCodes.ESTIMATED_MINUTES_MIN, FieldCodes.ESTIMATED_MINUTES_MAX);
+    private PlanRules() {
     }
 }

@@ -7,12 +7,14 @@ import org.springframework.stereotype.Component;
 import com.plandosee.diary.common.error.ConstraintCode;
 import com.plandosee.diary.common.error.ConstraintCodeSource;
 import com.plandosee.diary.common.error.ConstraintViolationTranslator;
+import com.plandosee.diary.common.domain.DateBounds;
 import com.plandosee.diary.common.domain.FieldCodes;
 import com.plandosee.diary.execution.domain.ActualMinutes;
 
 /**
- * ADR-22: execution record constraints (V1, V4) and the code each means. ExecutionService checks the same rules first
- * (ActualMinutes, ExecutionRules blocker reason length, blank blocker reason stored as NULL).
+ * ADR-22: execution record constraints (V1, V4, V5) and the code each means. ExecutionCommand checks the same rules
+ * first (DateBounds by Seoul date, ActualMinutes and its length limit, ExecutionRules blocker reason; blank blocker
+ * reason stored as NULL).
  */
 @Component
 public class ExecutionConstraintCodes implements ConstraintCodeSource {
@@ -25,6 +27,11 @@ public class ExecutionConstraintCodes implements ConstraintCodeSource {
                 new ConstraintCode("ck_execution_logs_blocker_reason", "blockerReason",
                         ConstraintViolationTranslator.VALUE_INVALID),
                 new ConstraintCode("ck_execution_logs_blocker_reason_max", "blockerReason",
-                        FieldCodes.BLOCKER_REASON_MAX));
+                        FieldCodes.BLOCKER_REASON_MAX),
+                new ConstraintCode("ck_execution_logs_started_at_range", "startedAt", FieldCodes.DATE_OUT_OF_RANGE,
+                        DateBounds.args()),
+                new ConstraintCode("ck_execution_logs_ended_at_range", "endedAt", FieldCodes.DATE_OUT_OF_RANGE,
+                        DateBounds.args()),
+                new ConstraintCode("ck_execution_logs_actual_minutes_max", "endedAt", ActualMinutes.TOO_LONG));
     }
 }

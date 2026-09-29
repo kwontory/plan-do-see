@@ -50,11 +50,10 @@
                     <dd><span class="pri" th:classappend="${'pri--' + #strings.toLowerCase(todo.priority)}"><th:block
                             th:replace="~{fragments/layout :: enumLabel('Priority', ${todo.priority})}">priority</th:block></span></dd>
                     <dt th:text="#{todos.field.estimatedPlanValue}">estimated</dt>
-                    <dd><span class="num" data-test="todo-estimated-minutes" th:data-value="${todo.estimatedMinutes}"
-                              th:text="#{common.minutes(${todo.estimatedMinutes})}">0</span>
+                    <dd><span class="num" data-test="todo-estimated-minutes" th:data-value="${todo.estimatedMinutes}"><th:block th:replace="~{fragments/layout :: duration(${todo.estimatedDuration})}">0</th:block></span>
                         <span class="dd-note" th:text="#{todos.detail.estimatedNote}">note</span></dd>
                     <dt th:text="#{todos.detail.info.actualTotal}">actual</dt>
-                    <dd class="num" th:text="#{common.minutes(${logsActualMinutes})}">0</dd>
+                    <dd class="num"><th:block th:replace="~{fragments/layout :: duration(${logsActualDuration})}">0</th:block></dd>
                     <dt th:text="#{todos.field.tags}">tags</dt>
                     <dd th:if="${todo.tags == null or todo.tags.isEmpty()}" th:text="#{common.none}">none</dd>
                     <dd th:unless="${todo.tags == null or todo.tags.isEmpty()}"><ul class="chips">
@@ -105,14 +104,12 @@
                 <div class="form-grid form-grid--2">
                     <div class="field" th:with="err=${#fields.hasErrors('startedAt')}">
                         <label for="startedAt" th:text="#{todos.detail.exec.startedAt}">start</label>
-                        <input type="datetime-local" step="1" th:field="*{startedAt}" required
-                               th:attr="aria-describedby=${err} ? 'startedAt-error' : null,aria-invalid=${err} ? 'true' : null">
+                        <input th:replace="~{fragments/layout :: dateInput('datetime-local', 'startedAt', true, (${err} ? 'startedAt-error' : ''))}">
                         <p th:replace="~{fragments/layout :: fieldMessage('startedAt')}"></p>
                     </div>
                     <div class="field" th:with="err=${#fields.hasErrors('endedAt')}">
                         <label for="endedAt" th:text="#{todos.detail.exec.endedAt}">end</label>
-                        <input type="datetime-local" step="1" th:field="*{endedAt}" required
-                               th:attr="aria-describedby=${(err ? 'endedAt-error ' : '') + 'endedAt-help'},aria-invalid=${err} ? 'true' : null">
+                        <input th:replace="~{fragments/layout :: dateInput('datetime-local', 'endedAt', true, ${(err ? 'endedAt-error ' : '') + 'endedAt-help'})}">
                         <p th:replace="~{fragments/layout :: fieldMessage('endedAt')}"></p>
                         <p class="field-help" id="endedAt-help" th:text="#{todos.detail.exec.endedAtHelp}">help</p>
                     </div>
@@ -139,7 +136,7 @@
     <section class="section" aria-labelledby="logs-heading">
         <h2 id="logs-heading" th:text="#{todos.detail.logs.heading}">logs</h2>
         <!--/* ADR-21: count and total cover every record of this todo (server values), not only this page. */-->
-        <p class="summary-line num" th:text="#{todos.detail.logs.summary(${logPage.totalCount}, ${logsActualMinutes})}">0</p>
+        <p class="summary-line num"><th:block th:text="#{todos.detail.logs.summaryLead(${logPage.totalCount})}">0</th:block> <th:block th:replace="~{fragments/layout :: duration(${logsActualDuration})}">0</th:block></p>
         <p class="sort-note" th:text="#{todos.detail.logs.sortNote}">sort</p>
         <p class="empty" th:if="${logs.isEmpty()}" th:text="#{todos.detail.logs.empty}">empty</p>
         <th:block th:unless="${logs.isEmpty()}">
@@ -158,17 +155,16 @@
                 </thead>
                 <tbody>
                 <tr th:each="log : ${logs}">
-                    <td><time th:replace="~{fragments/layout :: datetime(${log.startedAt})}"></time></td>
-                    <td><time th:replace="~{fragments/layout :: datetime(${log.endedAt})}"></time></td>
-                    <td class="num" data-test="execution-actual-minutes" th:data-value="${log.actualMinutes}"
-                        th:text="#{common.minutes(${log.actualMinutes})}">0</td>
+                    <td><time th:replace="~{fragments/layout :: datetimeOrUnknown(${log.startedAt})}"></time></td>
+                    <td><time th:replace="~{fragments/layout :: datetimeOrUnknown(${log.endedAt})}"></time></td>
+                    <td class="num" data-test="execution-actual-minutes" th:data-value="${log.actualMinutes}"><th:block th:replace="~{fragments/layout :: duration(${log.actualDuration})}">0</th:block></td>
                     <td class="pre-wrap" th:text="${log.blockerReason != null} ? ${log.blockerReason} : #{common.none}">none</td>
                 </tr>
                 </tbody>
                 <tfoot>
                 <tr>
                     <th scope="row" colspan="2" th:text="#{common.total}">total</th>
-                    <td class="num" th:text="#{common.minutes(${logsActualMinutes})}">0</td>
+                    <td class="num"><th:block th:replace="~{fragments/layout :: duration(${logsActualDuration})}">0</th:block></td>
                     <td></td>
                 </tr>
                 </tfoot>

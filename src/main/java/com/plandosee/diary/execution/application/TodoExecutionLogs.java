@@ -2,6 +2,7 @@ package com.plandosee.diary.execution.application;
 
 import java.util.List;
 
+import com.plandosee.diary.common.domain.DurationParts;
 import com.plandosee.diary.common.paging.PageInfo;
 import com.plandosee.diary.execution.domain.ExecutionLogRow;
 
@@ -13,6 +14,11 @@ public record TodoExecutionLogs(List<ExecutionLogRow> logs, long actualMinutes, 
 
     public TodoExecutionLogs {
         logs = List.copyOf(logs);
+    }
+
+    /** ADR-29: actualMinutes split into days, hours and minutes for display. */
+    public DurationParts actualDuration() {
+        return DurationParts.of(actualMinutes);
     }
 
     /** All records on one page (unpaged callers). */

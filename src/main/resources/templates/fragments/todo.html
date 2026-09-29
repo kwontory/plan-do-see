@@ -59,8 +59,7 @@
     <div class="composer__row">
         <div class="field" th:with="err=${#fields.hasErrors('dueDate')}">
             <label for="dueDate" th:text="#{form.todo.dueDate.label}">due</label>
-            <input type="date" th:field="*{dueDate}"
-                   th:attr="aria-describedby=${(err ? 'dueDate-error ' : '') + 'dueDate-help'},aria-invalid=${err} ? 'true' : null">
+            <input th:replace="~{fragments/layout :: dateInput('date', 'dueDate', false, ${(err ? 'dueDate-error ' : '') + 'dueDate-help'})}">
             <p th:replace="~{fragments/layout :: fieldMessage('dueDate')}"></p>
         </div>
         <div class="field" th:with="err=${#fields.hasErrors('priority')}">
@@ -73,15 +72,7 @@
             </select>
             <p th:replace="~{fragments/layout :: fieldMessage('priority')}"></p>
         </div>
-        <div class="field" th:with="err=${#fields.hasErrors('estimatedMinutes')}">
-            <label for="estimatedMinutes" th:text="#{form.estimatedMinutes.label}">minutes</label>
-            <span class="input-unit">
-                <input type="number" th:field="*{estimatedMinutes}" min="0" max="525600" step="1" inputmode="numeric" required
-                       th:attr="aria-describedby=${(err ? 'estimatedMinutes-error ' : '') + 'estimatedMinutes-help'},aria-invalid=${err} ? 'true' : null">
-                <span aria-hidden="true" th:text="#{form.unit.minutes}">min</span>
-            </span>
-            <p th:replace="~{fragments/layout :: fieldMessage('estimatedMinutes')}"></p>
-        </div>
+        <fieldset th:replace="~{fragments/layout :: durationInput(null, 'composer__duration')}"></fieldset>
         <div class="field" th:with="err=${#fields.hasErrors('tags')}">
             <label for="tags" th:text="#{form.todo.tags.label}">tags</label>
             <input type="text" th:field="*{tags}" th:placeholder="#{todos.add.tagsPlaceholder}"
@@ -109,7 +100,7 @@
     <dt><th:block th:text="#{todos.field.priority}">priority</th:block> <span th:replace="~{fragments/layout :: changedBadge('priority')}"></span></dt>
     <dd th:replace="~{fragments/layout :: latestContent('priority', ~{fragments/layout :: enumLabel('Priority', ${latest.priority})}, null)}"></dd>
     <dt><th:block th:text="#{todos.field.estimatedMinutes}">estimated</th:block> <span th:replace="~{fragments/layout :: changedBadge('estimatedMinutes')}"></span></dt>
-    <dd th:replace="~{fragments/layout :: latestValue('estimatedMinutes', #{common.minutes(${latest.estimatedMinutes})}, 'num')}"></dd>
+    <dd th:replace="~{fragments/layout :: latestContent('estimatedMinutes', ~{fragments/layout :: duration(${latest.estimatedDuration})}, 'num')}"></dd>
     <dt><th:block th:text="#{todos.field.tags}">tags</th:block> <span th:replace="~{fragments/layout :: changedBadge('tags')}"></span></dt>
     <dd th:replace="~{fragments/layout :: latestValue('tags', ${latest.tags != null and !latest.tags.isEmpty()} ? ${#strings.listJoin(latest.tags.![name], ', ')} : #{common.none}, null)}"></dd>
 </dl>
@@ -124,7 +115,7 @@
     <dt th:text="#{todos.field.priority}">priority</dt>
     <dd><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${rev.priority})}">priority</th:block></dd>
     <dt th:text="#{todos.field.estimatedMinutes}">estimated</dt>
-    <dd class="num" th:text="#{common.minutes(${rev.estimatedMinutes})}">0</dd>
+    <dd class="num"><th:block th:replace="~{fragments/layout :: duration(${rev.estimatedDuration})}">0</th:block></dd>
     <dt th:text="#{todos.field.tags}">tags</dt>
     <dd th:text="${rev.tagNames != null and !rev.tagNames.isEmpty()} ? ${#strings.listJoin(rev.tagNames, ', ')} : #{common.none}">tags</dd>
 </dl>
@@ -139,7 +130,7 @@
     <dd><th:block th:if="${form.priority != null}"><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${form.priority})}">priority</th:block></th:block><th:block
             th:if="${form.priority == null}" th:text="#{common.none}">none</th:block></dd>
     <dt th:text="#{todos.field.estimatedMinutes}">estimated</dt>
-    <dd class="num" th:text="${form.estimatedMinutes != null} ? #{common.minutes(${form.estimatedMinutes})} : #{common.none}">0</dd>
+    <dd class="num"><th:block th:replace="~{fragments/layout :: durationOrInput(${form})}">0</th:block></dd>
     <dt th:text="#{todos.field.tags}">tags</dt>
     <dd th:text="${#strings.isEmpty(form.tags)} ? #{common.none} : ${form.tags}">tags</dd>
 </dl>

@@ -1656,6 +1656,52 @@ fieldset.field-group {
     }
 }
 
+/* ADR-29 estimated time: three boxes (days, hours, minutes) in one fieldset (layout :: durationInput). The legend
+   looks like a field label so the boxes line up with the inputs beside them; each input is followed by its visible
+   unit label, and the labels share one width so the three inputs are equally wide. Three boxes fit one row down to a
+   256px form column (320px window); spinners are hidden (the arrow keys still step the value). */
+.duration > legend {
+    padding: 0 0 5px;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    line-height: 18px;
+}
+
+.duration__boxes {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-2) 10px;
+    max-width: 360px;
+}
+
+.duration__box {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 2em;
+    align-items: center;
+    gap: var(--space-1);
+    min-width: 0;
+}
+
+.duration__box input {
+    min-width: 0;
+    padding-inline: var(--space-2);
+    text-align: right;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.duration__box input::-webkit-inner-spin-button,
+.duration__box input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.duration__box label {
+    font-size: var(--font-size-sm);
+    line-height: 20px;
+    color: var(--color-text);
+}
+
 .form-actions {
     display: flex;
     flex-wrap: wrap;
@@ -1847,6 +1893,10 @@ fieldset.field-group {
     max-width: none;
 }
 
+.composer__row .duration__boxes {
+    max-width: none;
+}
+
 .composer__foot {
     display: flex;
     flex-direction: column;
@@ -1858,21 +1908,34 @@ fieldset.field-group {
     margin: 0;
 }
 
+/* Row fields: due date, priority, estimated time (three boxes, ADR-29), tags. Two columns from 300px with the
+   estimated time on its own row until 560px (the three boxes need the width); one row from 880px, where the
+   estimated time gets the widest column. */
 @container page (min-width: 300px) {
     .composer__row {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .composer__duration {
+        grid-column: 1 / -1;
+    }
 }
 
 @container page (min-width: 560px) {
-    .composer__row {
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+    .composer__duration {
+        grid-column: auto;
     }
 
     .composer__foot {
         flex-direction: row;
         align-items: flex-end;
         justify-content: space-between;
+    }
+}
+
+@container page (min-width: 880px) {
+    .composer__row {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.7fr) minmax(0, 1.2fr);
     }
 }
 
@@ -1887,11 +1950,13 @@ fieldset.field-group {
 }
 
 /* ---------- Search and filter toolbar ---------- */
+/* Boxes line up at the top (v2: same-row inputs share a top line even when the search box shows an error under it).
+   The apply button has no label, so on rows it shares it is pushed down by one label height (18px + 5px margin). */
 .toolbar {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
-    align-items: end;
+    align-items: start;
 }
 
 .toolbar__q,
@@ -1922,6 +1987,7 @@ fieldset.field-group {
 
     .toolbar__submit {
         grid-column: 3;
+        padding-top: 23px;
     }
 }
 

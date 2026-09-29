@@ -67,7 +67,7 @@ public class TodoService {
     }
 
     public UUID create(UUID planId, TodoCommand command) {
-        validate(command);
+        requireCommand(command);
         return writes.run(() -> {
             UUID userId = currentUserProvider.currentUserId();
             planService.requireOwned(planId);
@@ -82,7 +82,7 @@ public class TodoService {
             todo.setCreatedAt(now);
             todo.setUpdatedAt(now);
             todoMapper.insert(todo);
-            replaceTags(userId, todo.getId(), tagNames(command), now);
+            replaceTags(userId, todo.getId(), command.tagNames(), now);
             return todo.getId();
         });
     }
@@ -105,7 +105,7 @@ public class TodoService {
      * Completion and reopen never change the version (E7), so they never make an open edit form stale.
      */
     public EditOutcome update(UUID todoId, TodoCommand command, Integer expectedVersion) {
-        validate(command);
+        requireCommand(command);
         return writes.run(() -> {
             UUID userId = currentUserProvider.currentUserId();
             TodoRow todo = todoMapper.lockActiveOwned(userId, todoId);
@@ -114,7 +114,7 @@ public class TodoService {
             }
             List<TagRow> currentTagRows = tagMapper.listForTodos(userId, List.of(todoId));
             List<String> currentTags = currentTagRows.stream().map(TagRow::getName).toList();
-            List<String> newTags = tagNames(command);
+            List<String> newTags = command.tagNames();
             List<String> changed = changedFields(todo, currentTags, command, newTags);
             if (changed.isEmpty()) {
                 return EditOutcome.UNCHANGED;
@@ -156,7 +156,7 @@ public class TodoService {
      */
     static List<String> changedFields(TodoRow todo, List<String> currentTags, TodoCommand command, List<String> newTags) {
         List<String> changed = new ArrayList<>();
-        if (!todo.getTitle().equals(command.title().strip())) {
+        if (!todo.getTitle().equals(command.title())) {
             changed.add("title");
         }
         if (!java.util.Objects.equals(todo.getDueDate(), command.dueDate())) {
@@ -177,7 +177,7 @@ public class TodoService {
     static java.util.Set<String> normalizedSet(List<String> names) {
         java.util.Set<String> set = new java.util.TreeSet<>();
         for (String name : names) {
-            set.add(normalizedKey(name));
+            set.add(TodoRules.tagKey(name));
         }
         return set;
     }
@@ -306,7 +306,7 @@ public class TodoService {
     public EditSnapshot<TodoRow> latestForEdit(UUID todoId, TodoCommand input) {
         TodoRow latest = get(todoId);
         List<String> tags = latest.getTags().stream().map(TagRow::getName).toList();
-        return new EditSnapshot<>(latest, changedFields(latest, tags, input, tagNames(input)));
+        return new EditSnapshot<>(latest, changedFields(latest, tags, input, input.tagNames()));
     }
 
     /** ADR-16: the owned active todo's edit history, newest first. NotFoundException otherwise. */
@@ -352,17 +352,17 @@ public class TodoService {
     }
 
     /**
-     * ADR-22: the same rules and codes as TodoForm (TodoRules), checked at the entrance whatever the caller.
+     * ADR-22 / ADR-30: a TodoCommand checks itself when it is built (the same rules and codes as TodoForm), so only a
+     * missing command is left to reject here.
      */
-    private static void validate(TodoCommand command) {
+    private static void requireCommand(TodoCommand command) {
         if (command == null) {
             throw new IllegalArgumentException("todo command");
         }
-        TodoRules.check(command.title(), command.priority(), command.estimatedMinutes(), command.tagNames());
     }
 
     private void applyContent(TodoRow todo, TodoCommand command) {
-        todo.setTitle(command.title().strip());
+        todo.setTitle(command.title());
         todo.setDueDate(command.dueDate());
         todo.setPriority(command.priority());
         todo.setEstimatedMinutes(command.estimatedMinutes());
@@ -382,27 +382,15 @@ public class TodoService {
         }
     }
 
-    /** Parsed tag names without blanks (a direct call may pass null or blank entries). */
-    private static List<String> tagNames(TodoCommand command) {
-        if (command.tagNames() == null) {
-            return List.of();
-        }
-        return command.tagNames().stream().filter(name -> name != null && !name.isBlank()).map(String::strip).toList();
-    }
-
     /**
      * One spelling per normalized name (the first one given wins, as in TagNames.parse), ordered by normalized name.
      */
     static List<String> inLockOrder(List<String> tagNames) {
         Map<String, String> byKey = new TreeMap<>();
         for (String name : tagNames) {
-            byKey.putIfAbsent(normalizedKey(name), name);
+            byKey.putIfAbsent(TodoRules.tagKey(name), name);
         }
         return new ArrayList<>(byKey.values());
-    }
-
-    private static String normalizedKey(String name) {
-        return name.strip().toLowerCase(Locale.ROOT);
     }
 
     private void attachTags(UUID userId, List<TodoRow> todos) {

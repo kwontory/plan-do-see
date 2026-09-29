@@ -202,19 +202,19 @@ main > .section {
 
 /* Bars (decorative, aria-hidden): label | track | value. The fill width is an SVG width percentage from the server.
    Fixed label and value columns, so both tracks have the same length and the two fills compare truly. */
+/* The two bars share one grid (each .bar is display: contents), so the value column is as wide as the longer value
+   ("1일 2시간 30분", ADR-29) and both tracks keep the same length. */
 .bars {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.bar {
     display: grid;
-    grid-template-columns: 5rem minmax(0, 1fr) 5rem;
-    gap: var(--space-3);
+    grid-template-columns: 5rem minmax(0, 1fr) max-content;
+    gap: 14px var(--space-3);
     align-items: center;
     font-size: var(--font-size-sm);
     line-height: 20px;
+}
+
+.bar {
+    display: contents;
 }
 
 .bar__track {
@@ -241,9 +241,9 @@ main > .section {
 }
 
 @container page (max-width: 379px) {
-    .bar {
-        grid-template-columns: 3rem minmax(0, 1fr) 4.5rem;
-        gap: var(--space-2);
+    .bars {
+        grid-template-columns: 3rem minmax(0, 1fr) max-content;
+        column-gap: var(--space-2);
     }
 }
 
@@ -267,6 +267,11 @@ main > .section {
     align-items: center;
     gap: 10px 14px;
     font-size: var(--font-size-base);
+}
+
+/* Variance check sentence: one flex item that wraps as text; each value keeps its label and trailing dot on one line. */
+.evidence-check__part {
+    white-space: nowrap;
 }
 
 /* Verdict pill: text + decorative mark; color is secondary (D8). */

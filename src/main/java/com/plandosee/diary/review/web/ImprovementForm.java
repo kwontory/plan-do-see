@@ -2,6 +2,8 @@ package com.plandosee.diary.review.web;
 
 import jakarta.validation.constraints.Size;
 
+import com.plandosee.diary.common.domain.TextInput;
+import com.plandosee.diary.common.web.PlainText;
 import com.plandosee.diary.review.domain.ReviewRules;
 
 /**
@@ -11,6 +13,7 @@ import com.plandosee.diary.review.domain.ReviewRules;
 public class ImprovementForm {
 
     @Size(max = ReviewRules.IMPROVEMENT_MAX, message = "{validation.improvement.max}")
+    @PlainText(TextInput.Lines.MULTI)
     private String improvement;
 
     private Integer version;

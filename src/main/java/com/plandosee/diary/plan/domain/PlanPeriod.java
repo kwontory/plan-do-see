@@ -2,13 +2,13 @@ package com.plandosee.diary.plan.domain;
 
 import java.time.LocalDate;
 
-import com.plandosee.diary.common.error.DomainRuleException;
+import com.plandosee.diary.common.domain.InputCheck;
 
 /**
- * Plan period rule: the end date cannot be before the start date (a one-day plan is allowed). Missing dates are
- * reported by their own required-field rules, not by this one.
- * Shared by PlanService (defence for direct calls) and the form-level constraint {@code @ValidPlanPeriod} on
- * PlanForm, which reports it together with the other field errors in one response (QA-D5, ADR-14 C-3).
+ * Plan period rule: the end date cannot be before the start date (a one-day plan is allowed). Missing or
+ * out-of-range dates are reported by their own rules, not by this one.
+ * Shared by PlanCommand (every command, ADR-30) and the form-level constraint {@code @ValidPlanPeriod} on PlanForm,
+ * which reports it together with the other field errors in one response (QA-D5, ADR-14 C-3).
  */
 public final class PlanPeriod {
 
@@ -21,9 +21,10 @@ public final class PlanPeriod {
         return startDate == null || endDate == null || !endDate.isBefore(startDate);
     }
 
-    public static void check(LocalDate startDate, LocalDate endDate) {
-        if (!isValid(startDate, endDate)) {
-            throw new DomainRuleException("endDate", END_BEFORE_START);
+    /** Checked only when both dates passed their own rules; reported on endDate. */
+    public static void check(InputCheck check, LocalDate startDate, LocalDate endDate) {
+        if (check.ok("startDate") && check.ok("endDate")) {
+            check.rule(isValid(startDate, endDate), "endDate", END_BEFORE_START);
         }
     }
 }

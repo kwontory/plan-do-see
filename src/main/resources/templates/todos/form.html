@@ -75,8 +75,7 @@
                         <label for="dueDate"><th:block th:text="#{form.todo.dueDate.label}">due</th:block><span
                                 th:replace="~{fragments/layout :: changedMark('dueDate')}"></span></label>
                         <span th:replace="~{fragments/layout :: changedNote('dueDate')}"></span>
-                        <input type="date" th:field="*{dueDate}"
-                               th:attr="aria-describedby=${(err ? 'dueDate-error ' : '') + 'dueDate-help' + (chg ? ' dueDate-changed' : '')},aria-invalid=${err} ? 'true' : null">
+                        <input th:replace="~{fragments/layout :: dateInput('date', 'dueDate', false, ${(err ? 'dueDate-error ' : '') + 'dueDate-help' + (chg ? ' dueDate-changed' : '')})}">
                         <p th:replace="~{fragments/layout :: fieldMessage('dueDate')}"></p>
                         <p class="field-help" id="dueDate-help" th:text="#{form.todo.dueDate.help}">help</p>
                     </div>
@@ -94,20 +93,7 @@
                         <p th:replace="~{fragments/layout :: fieldMessage('priority')}"></p>
                     </div>
                 </div>
-                <div class="form-grid form-grid--2">
-                    <div class="field" th:with="err=${#fields.hasErrors('estimatedMinutes')}, chg=${changedFields != null and changedFields.contains('estimatedMinutes')}">
-                        <label for="estimatedMinutes"><th:block th:text="#{form.estimatedMinutes.label}">minutes</th:block><span
-                                th:replace="~{fragments/layout :: changedMark('estimatedMinutes')}"></span></label>
-                        <span th:replace="~{fragments/layout :: changedNote('estimatedMinutes')}"></span>
-                        <span class="input-unit">
-                            <input type="number" th:field="*{estimatedMinutes}" min="0" max="525600" step="1" inputmode="numeric" required
-                                   th:attr="aria-describedby=${(err ? 'estimatedMinutes-error ' : '') + 'estimatedMinutes-help' + (chg ? ' estimatedMinutes-changed' : '')},aria-invalid=${err} ? 'true' : null">
-                            <span aria-hidden="true" th:text="#{form.unit.minutes}">min</span>
-                        </span>
-                        <p th:replace="~{fragments/layout :: fieldMessage('estimatedMinutes')}"></p>
-                        <p class="field-help" id="estimatedMinutes-help" th:text="#{form.todo.estimatedMinutes.help}">help</p>
-                    </div>
-                </div>
+                <fieldset th:replace="~{fragments/layout :: durationInput('form.todo.estimatedMinutes.help', '')}"></fieldset>
                 <div class="field" th:with="err=${#fields.hasErrors('tags')}, chg=${changedFields != null and changedFields.contains('tags')}">
                     <label for="tags"><th:block th:text="#{form.todo.tags.label}">tags</th:block><span
                             th:replace="~{fragments/layout :: changedMark('tags')}"></span></label>

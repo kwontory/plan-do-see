@@ -20,7 +20,6 @@ import com.plandosee.diary.common.paging.PageInfo;
 import com.plandosee.diary.common.paging.PageSettings;
 import com.plandosee.diary.common.time.SeoulDates;
 import com.plandosee.diary.plan.application.port.PlanMapper;
-import com.plandosee.diary.plan.domain.PlanRules;
 import com.plandosee.diary.plan.domain.PlanRevisionRow;
 import com.plandosee.diary.plan.domain.PlanRow;
 
@@ -54,7 +53,7 @@ public class PlanService {
      * client.
      */
     public UUID createWithImprovement(PlanCommand command, String carriedImprovement) {
-        validate(command);
+        requireCommand(command);
         return writes.run(() -> insert(command, carriedImprovement));
     }
 
@@ -151,7 +150,7 @@ public class PlanService {
      * </ol>
      */
     public EditOutcome revise(UUID planId, PlanCommand command, Integer expectedVersion) {
-        validate(command);
+        requireCommand(command);
         return writes.run(() -> reviseLocked(planId, command, expectedVersion));
     }
 
@@ -198,7 +197,7 @@ public class PlanService {
      */
     static List<String> changedFields(PlanRow plan, PlanCommand command) {
         List<String> changed = new java.util.ArrayList<>();
-        if (!plan.getTitle().equals(command.title().strip())) {
+        if (!plan.getTitle().equals(command.title())) {
             changed.add("title");
         }
         boolean start = !plan.getStartDate().equals(command.startDate());
@@ -215,7 +214,7 @@ public class PlanService {
         if (plan.getPriority() != command.priority()) {
             changed.add("priority");
         }
-        if (!plan.getSuccessCriteria().equals(command.successCriteria().strip())) {
+        if (!plan.getSuccessCriteria().equals(command.successCriteria())) {
             changed.add("successCriteria");
         }
         if (plan.getEstimatedMinutes() != command.estimatedMinutes()) {
@@ -225,24 +224,22 @@ public class PlanService {
     }
 
     private void apply(PlanRow plan, PlanCommand command) {
-        plan.setTitle(command.title().strip());
+        plan.setTitle(command.title());
         plan.setStartDate(command.startDate());
         plan.setEndDate(command.endDate());
         plan.setPriority(command.priority());
-        plan.setSuccessCriteria(command.successCriteria().strip());
+        plan.setSuccessCriteria(command.successCriteria());
         plan.setEstimatedMinutes(command.estimatedMinutes());
     }
 
     /**
-     * ADR-22: the service does not trust the form. Every command is checked at the entrance with the same rules and
-     * codes as PlanForm (PlanRules), so a direct call never reaches the DB constraints with a known bad value.
+     * ADR-22 / ADR-30: the service does not trust the form. A PlanCommand checks itself when it is built (the same
+     * rules and codes as PlanForm), so only a missing command is left to reject here.
      */
-    private void validate(PlanCommand command) {
+    private static void requireCommand(PlanCommand command) {
         if (command == null) {
             throw new IllegalArgumentException("plan command");
         }
-        PlanRules.check(command.title(), command.startDate(), command.endDate(), command.priority(),
-                command.successCriteria(), command.estimatedMinutes());
     }
 
     private OffsetDateTime now() {

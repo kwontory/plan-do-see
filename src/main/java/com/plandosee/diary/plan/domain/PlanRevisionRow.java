@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import com.plandosee.diary.common.domain.DurationParts;
 import com.plandosee.diary.common.domain.Priority;
 
 public class PlanRevisionRow {
@@ -90,6 +91,11 @@ public class PlanRevisionRow {
 
     public void setEstimatedMinutes(int estimatedMinutes) {
         this.estimatedMinutes = estimatedMinutes;
+    }
+
+    /** ADR-29: estimatedMinutes split into days, hours and minutes for display (not stored, not exported). */
+    public DurationParts getEstimatedDuration() {
+        return DurationParts.of(estimatedMinutes);
     }
 
     public String getCarriedImprovement() {

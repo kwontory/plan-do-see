@@ -75,6 +75,22 @@ public class WriteTransactions {
     }
 
     /**
+     * Like {@link #run(Supplier)} but an integrity violation of type {@code kept} reaches the caller unchanged (ADR-05
+     * completion: a concurrent duplicate key means "already done"); every other one is translated like run does, so
+     * for example a V5 CHECK on an old row is a rule code, not an error page (ADR-30).
+     */
+    public <T> T runKeeping(Class<? extends DataIntegrityViolationException> kept, Supplier<T> work) {
+        try {
+            return runKeepingConstraintErrors(work);
+        } catch (DataIntegrityViolationException violation) {
+            if (kept.isInstance(violation)) {
+                throw violation;
+            }
+            throw constraints.translate(violation);
+        }
+    }
+
+    /**
      * Like {@link #run(Supplier)} but a DataIntegrityViolationException reaches the caller unchanged, for callers
      * that turn a specific violation into a result (ADR-05 completion: a concurrent duplicate key means "already
      * done"). The caller must not let it escape as a 500.

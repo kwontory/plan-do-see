@@ -3,6 +3,8 @@ package com.plandosee.diary.execution.domain;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import com.plandosee.diary.common.domain.DurationParts;
+
 /**
  * An immutable execution record. todoTitle is a joined display column for evidence lists and is never written.
  */
@@ -63,6 +65,11 @@ public class ExecutionLogRow {
 
     public void setActualMinutes(int actualMinutes) {
         this.actualMinutes = actualMinutes;
+    }
+
+    /** ADR-29: actualMinutes split into days, hours and minutes for display (not stored, not exported). */
+    public DurationParts getActualDuration() {
+        return DurationParts.of(actualMinutes);
     }
 
     public String getBlockerReason() {

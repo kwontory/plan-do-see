@@ -5,11 +5,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.plandosee.diary.common.domain.DurationParts;
 import com.plandosee.diary.common.domain.Priority;
 import com.plandosee.diary.todo.domain.TodoStatus;
 
 /**
- * One todo in a review evidence list. actualMinutes is that todo's execution total, computed before any join.
+ * One todo in a review evidence list. actualMinutes is that todo's execution total, computed before any join; long
+ * because the number of records has no limit (ADR-30, IV-02: an int overflowed and broke the evidence page).
  */
 public class EvidenceTodo {
 
@@ -19,7 +21,7 @@ public class EvidenceTodo {
     private LocalDate dueDate;
     private Priority priority;
     private int estimatedMinutes;
-    private int actualMinutes;
+    private long actualMinutes;
     private boolean blocked;
     private List<String> blockerReasons = new ArrayList<>();
     private boolean overdue;
@@ -73,12 +75,22 @@ public class EvidenceTodo {
         this.estimatedMinutes = estimatedMinutes;
     }
 
-    public int getActualMinutes() {
+    /** ADR-29: estimatedMinutes split into days, hours and minutes for display (not stored, not exported). */
+    public DurationParts getEstimatedDuration() {
+        return DurationParts.of(estimatedMinutes);
+    }
+
+    public long getActualMinutes() {
         return actualMinutes;
     }
 
-    public void setActualMinutes(int actualMinutes) {
+    public void setActualMinutes(long actualMinutes) {
         this.actualMinutes = actualMinutes;
+    }
+
+    /** ADR-29: actualMinutes split into days, hours and minutes for display (not stored, not exported). */
+    public DurationParts getActualDuration() {
+        return DurationParts.of(actualMinutes);
     }
 
     public boolean isBlocked() {

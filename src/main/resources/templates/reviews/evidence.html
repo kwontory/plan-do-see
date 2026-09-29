@@ -67,18 +67,18 @@
                         th:replace="~{fragments/layout :: verdict(${ok})}"></strong>
                 </th:block>
                 <th:block th:case="'estimated'" th:with="ok=${evidenceEstimatedMinutes == summary.estimatedMinutes}">
-                    <span th:text="#{evidence.check.estimated(${evidenceCount}, ${evidenceEstimatedMinutes}, ${summary.estimatedMinutes})}"></span><span class="verdict-sep"> · </span><strong
+                    <span><th:block th:text="#{evidence.check.estimatedLead(${evidenceCount})}"></th:block> <th:block th:replace="~{fragments/layout :: duration(${evidenceEstimatedDuration})}">0</th:block> · <th:block th:text="#{evidence.check.metric}"></th:block> <th:block th:replace="~{fragments/layout :: duration(${summary.estimatedDuration})}">0</th:block></span><span class="verdict-sep"> · </span><strong
                         th:replace="~{fragments/layout :: verdict(${ok})}"></strong>
                 </th:block>
                 <th:block th:case="'actual'" th:with="ok=${evidenceActualMinutes == summary.actualMinutes}">
-                    <span th:text="#{evidence.check.actual(${evidenceCount}, ${evidenceActualMinutes}, ${summary.actualMinutes})}"></span><span class="verdict-sep"> · </span><strong
+                    <span><th:block th:text="#{evidence.check.actualLead(${evidenceCount})}"></th:block> <th:block th:replace="~{fragments/layout :: duration(${evidenceActualDuration})}">0</th:block> · <th:block th:text="#{evidence.check.metric}"></th:block> <th:block th:replace="~{fragments/layout :: duration(${summary.actualDuration})}">0</th:block></span><span class="verdict-sep"> · </span><strong
                         th:replace="~{fragments/layout :: verdict(${ok})}"></strong>
                 </th:block>
                 <th:block th:case="'variance'" th:with="ok=${evidenceVarianceMinutes == summary.varianceMinutes}">
-                    <span th:text="#{evidence.check.variance(${evidenceActualMinutes}, ${evidenceEstimatedMinutes})}"></span> <th:block
-                        th:replace="~{fragments/layout :: signedMinutes(${evidenceVarianceMinutes})}"></th:block><span> · </span><span
-                        th:text="#{evidence.check.metric}"></span> <th:block
-                        th:replace="~{fragments/layout :: signedMinutes(${summary.varianceMinutes})}"></th:block><span class="verdict-sep"> · </span><strong
+                    <span><th:block th:text="#{evidence.check.varianceActual}"></th:block> <th:block th:replace="~{fragments/layout :: duration(${evidenceActualDuration})}">0</th:block> <th:block th:text="#{evidence.check.varianceEstimated}"></th:block> <th:block th:replace="~{fragments/layout :: duration(${evidenceEstimatedDuration})}">0</th:block> <th:block th:text="#{evidence.check.varianceEquals}"></th:block>&nbsp;<span
+                        class="evidence-check__part"><th:block th:replace="~{fragments/layout :: signedDuration(${evidenceVarianceDuration})}"></th:block>&nbsp;·</span> <span
+                        class="evidence-check__part"><th:block th:text="#{evidence.check.metric}"></th:block> <th:block
+                        th:replace="~{fragments/layout :: signedDuration(${summary.varianceDuration})}"></th:block></span></span><span class="verdict-sep"> · </span><strong
                         th:replace="~{fragments/layout :: verdict(${ok})}"></strong>
                 </th:block>
             </p>
@@ -112,8 +112,8 @@
                     <td class="status-cell"><span class="status-row"><th:block th:replace="~{fragments/todo :: statusBadges(${t})}"></th:block></span></td>
                     <td th:text="${t.dueDate != null} ? ${t.dueDate} : #{common.none}">none</td>
                     <td><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${t.priority})}">priority</th:block></td>
-                    <td class="num" th:text="#{common.minutes(${t.estimatedMinutes})}">0</td>
-                    <td class="num" th:text="#{common.minutes(${t.actualMinutes})}">0</td>
+                    <td class="num"><th:block th:replace="~{fragments/layout :: duration(${t.estimatedDuration})}">0</th:block></td>
+                    <td class="num"><th:block th:replace="~{fragments/layout :: duration(${t.actualDuration})}">0</th:block></td>
                     <td th:if="${mk == 'blocked'}">
                         <ul class="plain-list">
                             <li class="pre-wrap" th:each="reason : ${t.blockerReasons}" th:text="${reason}">reason</li>
@@ -124,8 +124,8 @@
                 <tfoot>
                 <tr>
                     <th scope="row" colspan="4" th:text="#{evidence.total(${page.totalCount})}">total</th>
-                    <td class="num" th:text="#{common.minutes(${evidenceEstimatedMinutes})}">0</td>
-                    <td class="num" th:text="#{common.minutes(${evidenceActualMinutes})}">0</td>
+                    <td class="num"><th:block th:replace="~{fragments/layout :: duration(${evidenceEstimatedDuration})}">0</th:block></td>
+                    <td class="num"><th:block th:replace="~{fragments/layout :: duration(${evidenceActualDuration})}">0</th:block></td>
                     <td th:if="${mk == 'blocked'}"></td>
                 </tr>
                 </tfoot>
@@ -159,16 +159,16 @@
                 <tbody>
                 <tr th:each="log : ${logs}">
                     <td><a th:href="@{/todos/{id}(id=${log.todoId})}" href="#" th:text="${log.todoTitle}">todo</a></td>
-                    <td><time th:replace="~{fragments/layout :: datetime(${log.startedAt})}"></time></td>
-                    <td><time th:replace="~{fragments/layout :: datetime(${log.endedAt})}"></time></td>
-                    <td class="num" th:text="#{common.minutes(${log.actualMinutes})}">0</td>
+                    <td><time th:replace="~{fragments/layout :: datetimeOrUnknown(${log.startedAt})}"></time></td>
+                    <td><time th:replace="~{fragments/layout :: datetimeOrUnknown(${log.endedAt})}"></time></td>
+                    <td class="num"><th:block th:replace="~{fragments/layout :: duration(${log.actualDuration})}">0</th:block></td>
                     <td class="pre-wrap" th:text="${log.blockerReason != null} ? ${log.blockerReason} : #{common.none}">none</td>
                 </tr>
                 </tbody>
                 <tfoot>
                 <tr>
                     <th scope="row" colspan="3" th:text="#{evidence.total(${logPage.totalCount})}">total</th>
-                    <td class="num" th:text="#{common.minutes(${evidenceActualMinutes})}">0</td>
+                    <td class="num"><th:block th:replace="~{fragments/layout :: duration(${evidenceActualDuration})}">0</th:block></td>
                     <td></td>
                 </tr>
                 </tfoot>

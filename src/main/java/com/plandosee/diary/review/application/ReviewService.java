@@ -296,17 +296,12 @@ public class ReviewService {
         }
     }
 
+    /**
+     * ADR-22 / ADR-30: the same rule and code as ImprovementForm (ReviewRules.IMPROVEMENT with the common text tools):
+     * normalized, null when nothing visible is left.
+     */
     static String normalizeImprovement(String improvement) {
-        if (improvement == null) {
-            return null;
-        }
-        String trimmed = improvement.strip();
-        if (trimmed.isEmpty()) {
-            return null;
-        }
-        // ADR-22: same rule and code as ImprovementForm (validation.improvement.max; was review.improvement.tooLong).
-        ReviewRules.checkImprovement(trimmed);
-        return trimmed;
+        return ReviewRules.IMPROVEMENT.apply("improvement", improvement);
     }
 
     private OffsetDateTime now() {

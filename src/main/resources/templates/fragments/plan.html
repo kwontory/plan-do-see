@@ -26,8 +26,9 @@
                             th:text="#{common.period(${p.startDate}, ${p.endDate})}">period</span></span>
                     <span class="pri" th:classappend="${'pri--' + #strings.toLowerCase(p.priority)}"><th:block
                             th:replace="~{fragments/layout :: enumLabelIn('plans.item.priority', 'Priority', ${p.priority})}">priority</th:block></span>
-                    <span class="chip"><svg th:replace="~{fragments/layout :: icon('clock')}"></svg><span class="num"
-                            th:text="#{plans.item.estimated(${p.estimatedMinutes})}">estimated</span></span>
+                    <span class="chip"><svg th:replace="~{fragments/layout :: icon('clock')}"></svg><span class="num"><th:block
+                            th:text="#{plans.item.estimatedLabel}">estimated</th:block> <th:block
+                            th:replace="~{fragments/layout :: duration(${p.estimatedDuration})}">0</th:block></span></span>
                     <span class="chip status-carried" th:if="${p.carriedImprovement != null and !#strings.isEmpty(p.carriedImprovement)}"><span
                             aria-hidden="true">↳ </span><th:block th:text="#{badge.carried}">carried</th:block></span>
                 </p>
@@ -67,16 +68,14 @@
             <label for="startDate"><th:block th:text="#{form.plan.startDate.label}">start</th:block><span
                     th:replace="~{fragments/layout :: changedMark('startDate')}"></span></label>
             <span th:replace="~{fragments/layout :: changedNote('startDate')}"></span>
-            <input type="date" th:field="*{startDate}" required
-                   th:attr="aria-describedby=${#strings.isEmpty(desc)} ? null : ${desc},aria-invalid=${err} ? 'true' : null">
+            <input th:replace="~{fragments/layout :: dateInput('date', 'startDate', true, ${desc})}">
             <p th:replace="~{fragments/layout :: fieldMessage('startDate')}"></p>
         </div>
         <div class="field" th:with="err=${#fields.hasErrors('endDate')}, chg=${changedFields != null and changedFields.contains('endDate')}">
             <label for="endDate"><th:block th:text="#{form.plan.endDate.label}">end</th:block><span
                     th:replace="~{fragments/layout :: changedMark('endDate')}"></span></label>
             <span th:replace="~{fragments/layout :: changedNote('endDate')}"></span>
-            <input type="date" th:field="*{endDate}" required
-                   th:attr="aria-describedby=${(err ? 'endDate-error ' : '') + 'endDate-help' + (chg ? ' endDate-changed' : '')},aria-invalid=${err} ? 'true' : null">
+            <input th:replace="~{fragments/layout :: dateInput('date', 'endDate', true, ${(err ? 'endDate-error ' : '') + 'endDate-help' + (chg ? ' endDate-changed' : '')})}">
             <p th:replace="~{fragments/layout :: fieldMessage('endDate')}"></p>
             <p class="field-help" id="endDate-help" th:text="#{form.plan.endDate.help}">help</p>
         </div>
@@ -106,18 +105,7 @@
         <p class="field-help" id="successCriteria-help" th:text="#{form.plan.successCriteria.help}">help</p>
     </div>
 
-    <div class="field field--span2" th:with="err=${#fields.hasErrors('estimatedMinutes')}, chg=${changedFields != null and changedFields.contains('estimatedMinutes')}">
-        <label for="estimatedMinutes"><th:block th:text="#{form.estimatedMinutes.label}">minutes</th:block><span
-                th:replace="~{fragments/layout :: changedMark('estimatedMinutes')}"></span></label>
-        <span th:replace="~{fragments/layout :: changedNote('estimatedMinutes')}"></span>
-        <span class="input-unit">
-            <input type="number" th:field="*{estimatedMinutes}" min="0" max="525600" step="1" inputmode="numeric" required
-                   th:attr="aria-describedby=${(err ? 'estimatedMinutes-error ' : '') + 'estimatedMinutes-help' + (chg ? ' estimatedMinutes-changed' : '')},aria-invalid=${err} ? 'true' : null">
-            <span aria-hidden="true" th:text="#{form.unit.minutes}">min</span>
-        </span>
-        <p th:replace="~{fragments/layout :: fieldMessage('estimatedMinutes')}"></p>
-        <p class="field-help" id="estimatedMinutes-help" th:text="#{form.plan.estimatedMinutes.help}">help</p>
-    </div>
+    <fieldset th:replace="~{fragments/layout :: durationInput('form.plan.estimatedMinutes.help', 'field--span2')}"></fieldset>
     </div>
 </th:block>
 
@@ -132,7 +120,7 @@
     <dt><th:block th:text="#{plans.field.successCriteria}">criteria</th:block> <span th:replace="~{fragments/layout :: changedBadge('successCriteria')}"></span></dt>
     <dd th:replace="~{fragments/layout :: latestValue('successCriteria', ${latest.successCriteria}, 'pre-wrap')}"></dd>
     <dt><th:block th:text="#{plans.field.estimatedMinutes}">estimated</th:block> <span th:replace="~{fragments/layout :: changedBadge('estimatedMinutes')}"></span></dt>
-    <dd th:replace="~{fragments/layout :: latestValue('estimatedMinutes', #{common.minutes(${latest.estimatedMinutes})}, 'num')}"></dd>
+    <dd th:replace="~{fragments/layout :: latestContent('estimatedMinutes', ~{fragments/layout :: duration(${latest.estimatedDuration})}, 'num')}"></dd>
 </dl>
 
 <!--/* Submitted PlanForm shown read-only for copying (no inputs, no save). form: PlanForm; any value may be empty. */-->
@@ -147,7 +135,7 @@
     <dt th:text="#{plans.field.successCriteria}">criteria</dt>
     <dd class="pre-wrap" th:text="${#strings.isEmpty(form.successCriteria)} ? #{common.none} : ${form.successCriteria}">criteria</dd>
     <dt th:text="#{plans.field.estimatedMinutes}">estimated</dt>
-    <dd class="num" th:text="${form.estimatedMinutes != null} ? #{common.minutes(${form.estimatedMinutes})} : #{common.none}">0</dd>
+    <dd class="num"><th:block th:replace="~{fragments/layout :: durationOrInput(${form})}">0</th:block></dd>
 </dl>
 
 </body>

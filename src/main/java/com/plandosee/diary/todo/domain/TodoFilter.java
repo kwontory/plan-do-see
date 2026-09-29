@@ -6,7 +6,10 @@ import java.util.UUID;
 import com.plandosee.diary.common.domain.Priority;
 
 /**
- * Server-built query object. userId always comes from CurrentUserProvider, never from the request.
+ * Server-built query object. userId always comes from CurrentUserProvider, never from the request. The search text
+ * is normalized and checked with TodoRules.SEARCH_QUERY (ADR-30): a filter with a rejected text (longer than
+ * SEARCH_QUERY_MAX, line break, control character) cannot be built; the constructor throws
+ * DomainRuleException(TodoRules.SEARCH_FIELD, code) before anything is read.
  */
 public class TodoFilter {
 
@@ -33,7 +36,7 @@ public class TodoFilter {
         this.offset = offset;
         this.userId = userId;
         this.planId = planId;
-        this.query = query == null || query.isBlank() ? null : query.strip();
+        this.query = TodoRules.searchQuery(query);
         this.status = status;
         this.priority = priority;
         this.tagId = tagId;

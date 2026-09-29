@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.plandosee.diary.common.domain.DurationParts;
 import com.plandosee.diary.common.domain.EditOutcome;
 import com.plandosee.diary.common.domain.Priority;
 import com.plandosee.diary.common.error.RetryLaterException;
@@ -147,6 +148,9 @@ public class ReviewController {
         model.addAttribute("evidenceEstimatedMinutes", evidence.evidenceEstimatedMinutes());
         model.addAttribute("evidenceActualMinutes", evidence.evidenceActualMinutes());
         model.addAttribute("evidenceVarianceMinutes", evidence.evidenceVarianceMinutes());
+        model.addAttribute("evidenceEstimatedDuration", evidence.evidenceEstimatedDuration());
+        model.addAttribute("evidenceActualDuration", evidence.evidenceActualDuration());
+        model.addAttribute("evidenceVarianceDuration", evidence.evidenceVarianceDuration());
         model.addAttribute("evidenceEmpty", evidence.empty());
         PageNavigation.addTo(model, "page", evidence.todoPage());
         PageNavigation.addTo(model, "logPage", evidence.logPage());
@@ -263,6 +267,7 @@ public class ReviewController {
         model.addAttribute("summary", detail.summary());
         model.addAttribute("improvementForm", form);
         model.addAttribute("metricValues", metricValues(detail.summary()));
+        model.addAttribute("metricDurations", metricDurations(detail.summary()));
         return "reviews/detail";
     }
 
@@ -276,6 +281,18 @@ public class ReviewController {
             values.put(metric.key(), metric.valueOf(summary));
         }
         return values;
+    }
+
+    /**
+     * ADR-29: the time metrics (estimated, actual, variance; same keys as metricValues) as days, hours and minutes.
+     * Count metrics are not in this map.
+     */
+    static Map<String, DurationParts> metricDurations(ReviewSummary summary) {
+        Map<String, DurationParts> durations = new LinkedHashMap<>();
+        durations.put(ReviewMetric.ESTIMATED.key(), summary.estimatedDuration());
+        durations.put(ReviewMetric.ACTUAL.key(), summary.actualDuration());
+        durations.put(ReviewMetric.VARIANCE.key(), summary.varianceDuration());
+        return durations;
     }
 
     private String nextPlanView(Model model, ReviewDetail detail) {

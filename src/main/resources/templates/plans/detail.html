@@ -20,8 +20,8 @@
         <div class="section-head">
             <div class="section-head__text">
                 <h1 th:text="${plan.title}">plan</h1>
-                <p class="subtitle subtitle--parts num"><span th:text="#{common.period(${plan.startDate}, ${plan.endDate})}">period</span><span
-                        th:text="#{plans.item.estimated(${plan.estimatedMinutes})}">estimated</span></p>
+                <p class="subtitle subtitle--parts num"><span th:text="#{common.period(${plan.startDate}, ${plan.endDate})}">period</span><span><th:block
+                        th:text="#{plans.item.estimatedLabel}">estimated</th:block> <th:block th:replace="~{fragments/layout :: duration(${plan.estimatedDuration})}">0</th:block></span></p>
             </div>
             <a class="btn btn--line" th:href="@{/plans/{id}/edit(id=${plan.id})}" href="#"><svg
                     th:replace="~{fragments/layout :: icon('edit')}"></svg><span th:text="#{plans.detail.edit}">edit</span></a>
@@ -60,8 +60,7 @@
                 <dt th:text="#{plans.field.successCriteria}">criteria</dt>
                 <dd class="pre-wrap" th:text="${plan.successCriteria}">criteria</dd>
                 <dt th:text="#{plans.field.estimatedMinutes}">estimated</dt>
-                <dd class="num" data-test="plan-estimated-minutes" th:data-value="${plan.estimatedMinutes}"
-                    th:text="#{common.minutes(${plan.estimatedMinutes})}">0</dd>
+                <dd class="num" data-test="plan-estimated-minutes" th:data-value="${plan.estimatedMinutes}"><th:block th:replace="~{fragments/layout :: duration(${plan.estimatedDuration})}">0</th:block></dd>
                 <dt th:text="#{plans.field.createdAt}">created</dt>
                 <dd class="num"><time th:replace="~{fragments/layout :: datetime(${plan.createdAt})}"></time></dd>
                 <dt th:text="#{plans.field.updatedAt}">updated</dt>
@@ -130,7 +129,7 @@
                         <dt th:text="#{plans.field.successCriteria}">criteria</dt>
                         <dd class="pre-wrap" th:text="${rev.successCriteria}">criteria</dd>
                         <dt th:text="#{plans.field.estimatedMinutes}">estimated</dt>
-                        <dd class="num" th:text="#{common.minutes(${rev.estimatedMinutes})}">0</dd>
+                        <dd class="num"><th:block th:replace="~{fragments/layout :: duration(${rev.estimatedDuration})}">0</th:block></dd>
                         <th:block th:if="${rev.carriedImprovement != null and !#strings.isEmpty(rev.carriedImprovement)}">
                             <dt th:text="#{plans.field.carriedImprovement}">carried</dt>
                             <dd class="pre-wrap" th:text="${rev.carriedImprovement}">improvement</dd>

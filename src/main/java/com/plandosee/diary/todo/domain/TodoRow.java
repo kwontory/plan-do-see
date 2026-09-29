@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.plandosee.diary.common.domain.DurationParts;
 import com.plandosee.diary.common.domain.Priority;
 
 public class TodoRow {
@@ -72,6 +73,11 @@ public class TodoRow {
 
     public void setEstimatedMinutes(int estimatedMinutes) {
         this.estimatedMinutes = estimatedMinutes;
+    }
+
+    /** ADR-29: estimatedMinutes split into days, hours and minutes for display (not stored, not exported). */
+    public DurationParts getEstimatedDuration() {
+        return DurationParts.of(estimatedMinutes);
     }
 
     public TodoStatus getStatus() {
