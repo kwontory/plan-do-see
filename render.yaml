@@ -4,6 +4,8 @@ services:
     name: plandosee-diary
     runtime: docker
     plan: free
+    # Same region as the Supabase project (Southeast Asia / Singapore).
+    region: singapore
     dockerfilePath: ./Dockerfile
     healthCheckPath: /
     autoDeploy: false
