@@ -1,7 +1,8 @@
 # Render Blueprint for PlanDoSee Note. DB_* values are entered in the Render dashboard.
 services:
   - type: web
-    name: plandosee-diary
+    # Public address: https://plandosee-note.onrender.com (Render may add a suffix if taken).
+    name: plandosee-note
     runtime: docker
     plan: free
     # Same region as the Supabase project (Southeast Asia / Singapore).
