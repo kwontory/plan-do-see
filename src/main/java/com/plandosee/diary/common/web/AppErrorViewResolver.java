@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
- * ADR-30 (IV-12): errors that reach the container error page (for example 413 when a form body is larger than
+ * Errors that reach the container error page (for example 413 when a form body is larger than
  * {@code server.tomcat.max-http-form-post-size}) always get an app error page. A template for the exact status
  * ({@code error/413}) or series ({@code error/4xx}) is used first, as Spring Boot does; otherwise any 4xx shows
  * {@code error/400} and any 5xx {@code error/500}, keeping the real status code. No framework fallback page.

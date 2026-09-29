@@ -1,8 +1,8 @@
-/* PlanDoSee Note - screen styles (v2 design, docs/design/mockups/canvas-v2) for plans, todo detail/edit, reviews,
+/* PlanDoSee Note - screen styles for plans, todo detail/edit, reviews,
    evidence, next plan, export and error pages. Tokens, the app shell and shared parts (cards, column layouts, form
    cards, tables, metric tiles, hints) live in app.css.
-   Classes are for looks only (ADR-17): behaviour uses data-js, tests use data-test.
-   User rules (canvas comments): cards 16px apart, sections 48px apart (38 narrow), heading 16px above its content,
+   Classes are for looks only: behaviour uses data-js, tests use data-test.
+   Spacing: cards 16px apart, sections 48px apart (38 narrow), heading 16px above its content,
    cards in one row share the row height with their last line on one baseline, stacked columns keep the 16px gap.
    Column layouts follow the page column width (container "page" on main), not the window width. */
 
@@ -203,7 +203,7 @@ main > .section {
 /* Bars (decorative, aria-hidden): label | track | value. The fill width is an SVG width percentage from the server.
    Fixed label and value columns, so both tracks have the same length and the two fills compare truly. */
 /* The two bars share one grid (each .bar is display: contents), so the value column is as wide as the longer value
-   ("1일 2시간 30분", ADR-29) and both tracks keep the same length. */
+   ("1일 2시간 30분") and both tracks keep the same length. */
 .bars {
     display: grid;
     grid-template-columns: 5rem minmax(0, 1fr) max-content;
@@ -274,7 +274,7 @@ main > .section {
     white-space: nowrap;
 }
 
-/* Verdict pill: text + decorative mark; color is secondary (D8). */
+/* Verdict pill: text + decorative mark; color is secondary. */
 .verdict-line {
     display: inline-flex;
     align-items: center;
@@ -306,7 +306,7 @@ main > .section {
     margin-top: var(--space-3);
 }
 
-/* ---------- Conflict screens (ADR-18): latest (left, read-only) | my input (right) ---------- */
+/* ---------- Conflict screens: latest (left, read-only) | my input (right) ---------- */
 /* Each column is a head (heading, intro, notes) and a card. Narrow: the columns stack, each head above its card
    (DOM and reading order: latest heading, latest card, my heading, my form). Wide: the two columns share one head row
    and one card row (subgrid), so both cards start on one line whatever the heads' lengths, and end on one line. */

@@ -104,8 +104,8 @@
         ORDER BY r.id ASC
     </select>
 
-    <!-- A transferred improvement is the source of a next plan and stays read-only (ADR-08). -->
-    <!-- ADR-18: an improvement edit moves the version on by one; #{version} was read under the review row lock. -->
+    <!-- A transferred improvement is the source of a next plan and stays read-only. -->
+    <!-- An improvement edit moves the version on by one; #{version} was read under the review row lock. -->
     <update id="updateImprovementOwned">
         UPDATE reviews
         SET improvement = #{improvement},
@@ -137,7 +137,7 @@
     </update>
 
     <!--
-      Review scope (DEC-01, ADR-03), shared by summary and every evidence list:
+      Review scope, shared by summary and every evidence list:
       scope_todos narrows to active owned todos of the plan and evaluates the shared predicates once per todo;
       scope_logs collapses execution logs to one row per todo before any other join, so tags or multiple logs
       can never multiply sums or counts. Parameters: userId, planId, today.
@@ -189,8 +189,8 @@
     </resultMap>
 
     <!--
-      ADR-21: one metric's evidence todos. The list, each page of it, and its totals (evidenceCount and minute sums,
-      always over the whole scope, T06-C83) share this filter. Alias t = scope_todos, l = scope_logs.
+      One metric's evidence todos. The list, each page of it, and its totals (evidenceCount and minute sums,
+      always over the whole scope) share this filter. Alias t = scope_todos, l = scope_logs.
     -->
     <sql id="evidenceTodoFilter">
         <choose>

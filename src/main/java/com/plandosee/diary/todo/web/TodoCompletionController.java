@@ -23,9 +23,9 @@ import com.plandosee.diary.todo.application.TransitionOutcome;
 import com.plandosee.diary.todo.domain.TodoStatus;
 
 /**
- * Completion and reopen (DEC-05, ADR-05). Server idempotency does not rely on the browser disabling buttons.
+ * Completion and reopen. Server idempotency does not rely on the browser disabling buttons.
  * The notice and the redirect come from the service's {@link TransitionOutcome}, taken in the same transaction as
- * the change (ADR-14 C-1). A todo deleted by a concurrent request sends the user to its list (ADR-15); a request
+ * the change. A todo deleted by a concurrent request sends the user to its list; a request
  * that kept colliding with others returns to the same screen with a retry notice.
  */
 @Controller
@@ -75,7 +75,7 @@ public class TodoCompletionController {
         } catch (TodoDeletedException ex) {
             return deleted(ex, redirect, filter);
         } catch (DomainRuleException ex) {
-            // ADR-30: a stored value an old row still breaks (V5 NOT VALID CHECK), shown as its rule code.
+            // A stored value an old row still breaks (V5 NOT VALID CHECK), shown as its rule code.
             FlashMessages.add(redirect, ex.code(), ex.args());
         } catch (RetryLaterException ex) {
             FlashMessages.add(redirect, ConflictResponses.flashKey(ex, ConflictKeys.FLASH_RETRY));
@@ -84,7 +84,7 @@ public class TodoCompletionController {
     }
 
     /**
-     * ADR-12 Q-E2: a replayed key adds nothing; the message follows the todo's status at that moment so a request
+     * A replayed key adds nothing; the message follows the todo's status at that moment so a request
      * replayed after a reopen is not mistaken for a completion. Returns a message key.
      */
     static String messageKey(TransitionOutcome outcome) {

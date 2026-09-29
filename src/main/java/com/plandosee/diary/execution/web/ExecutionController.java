@@ -25,10 +25,10 @@ import com.plandosee.diary.todo.application.TodoDeletedException;
 import com.plandosee.diary.todo.web.TodoPageModels;
 
 /**
- * S03 execution record. A rejected range (end before start) re-renders the detail page with a field error.
- * A todo deleted by a concurrent request shows todos/deleted with the input read-only (409, ADR-18 E8); a save that
- * kept colliding with other requests re-renders the form with the input kept and HTTP 409 (ADR-15); a save that ran out
- * of its time budget or pool wait re-renders it with HTTP 503 without reading the database (ADR-19,
+ * Execution record on the todo detail page. A rejected range (end before start) re-renders the detail page with a field error.
+ * A todo deleted by a concurrent request shows todos/deleted with the input read-only (409); a save that
+ * kept colliding with other requests re-renders the form with the input kept and HTTP 409; a save that ran out
+ * of its time budget or pool wait re-renders it with HTTP 503 without reading the database (
  * snapshotUnavailable).
  */
 @Controller
@@ -54,13 +54,13 @@ public class ExecutionController {
         try {
             executionService.record(todoId, form.startedAtInSeoul(), form.endedAtInSeoul(), form.getBlockerReason());
         } catch (TodoDeletedException ex) {
-            // ADR-18 E8: the input is shown read-only on todos/deleted (409) instead of being dropped by a redirect.
+            // The input is shown read-only on todos/deleted (409) instead of being dropped by a redirect.
             return pages.deleted(model, response, todoId, ex.planId(), TodoPageModels.DELETED_FROM_EXECUTION);
         } catch (DomainRuleException ex) {
             FormErrors.reject(result, ex);
             return detailAgain(model, todoId, form);
         } catch (ServiceBusyException ex) {
-            // ADR-19: out of time or connections. Shown again without reading the database, input kept (503).
+            // Out of time or connections. Shown again without reading the database, input kept (503).
             ConflictResponses.rejectForm(result, response, ex);
             return pages.detailUnavailable(model, todoId, form);
         } catch (RetryLaterException ex) {

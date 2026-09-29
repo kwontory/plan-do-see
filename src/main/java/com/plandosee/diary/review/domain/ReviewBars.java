@@ -3,7 +3,7 @@ package com.plandosee.diary.review.domain;
 import java.math.BigInteger;
 
 /**
- * ADR-27: widths of the review page's estimated/actual bars, as whole percent 0..100 of the larger of the two
+ * Widths of the review page's estimated/actual bars, as whole percent 0..100 of the larger of the two
  * minute sums. Derived only from a ReviewSummary, so the bars always describe the same numbers as the metric cards
  * and their evidence lists. Values only: labels, units, markup, and how a width is drawn belong to the template.
  *

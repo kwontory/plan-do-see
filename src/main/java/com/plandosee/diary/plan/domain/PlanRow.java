@@ -86,7 +86,7 @@ public class PlanRow {
         this.estimatedMinutes = estimatedMinutes;
     }
 
-    /** ADR-29: estimatedMinutes split into days, hours and minutes for display (not stored, not exported). */
+    /** estimatedMinutes split into days, hours and minutes for display (not stored, not exported). */
     public DurationParts getEstimatedDuration() {
         return DurationParts.of(estimatedMinutes);
     }
@@ -115,7 +115,7 @@ public class PlanRow {
         this.updatedAt = updatedAt;
     }
 
-    /** ADR-18 edit version: +1 only when an edit form changes the content (E5, E7). */
+    /** Edit version: +1 only when an edit form changes the content. */
     public int getVersion() {
         return version;
     }

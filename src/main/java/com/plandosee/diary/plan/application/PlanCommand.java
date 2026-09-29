@@ -9,8 +9,8 @@ import com.plandosee.diary.plan.domain.PlanPeriod;
 import com.plandosee.diary.plan.domain.PlanRules;
 
 /**
- * Plan content for create, revise and the improvement transfer. ADR-30: a self-validating command. The constructor
- * checks every field with the common tools and PlanRules (the same codes the form shows, ADR-22) and throws one
+ * Plan content for create, revise and the improvement transfer. A self-validating command. The constructor
+ * checks every field with the common tools and PlanRules (the same codes the form shows) and throws one
  * DomainRuleException listing every broken rule, so an invalid command cannot exist and no service has to remember a
  * check. Text is stored normalized (LF line breaks, stripped).
  */

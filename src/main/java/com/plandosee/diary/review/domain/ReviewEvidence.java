@@ -7,8 +7,8 @@ import com.plandosee.diary.common.paging.PageInfo;
 import com.plandosee.diary.execution.domain.ExecutionLogRow;
 
 /**
- * Drill-down result that reconciles with the summary on the same page (T06-C83, web-contract revision 1 Q2).
- * todos and logs are the rows of the requested page (ADR-21); every number below covers the whole scope, never
+ * Drill-down result that reconciles with the summary on the same page.
+ * todos and logs are the rows of the requested page; every number below covers the whole scope, never
  * just the page, so it keeps matching the review metric.
  * <ul>
  *   <li>evidenceCount: number of logs for actual, otherwise number of todos (= the count metric for planned,
@@ -37,7 +37,7 @@ public record ReviewEvidence(
         return evidenceActualMinutes - evidenceEstimatedMinutes;
     }
 
-    /** ADR-29: the evidence sums split into days, hours and minutes for display. */
+    /** The evidence sums split into days, hours and minutes for display. */
     public DurationParts evidenceEstimatedDuration() {
         return DurationParts.of(evidenceEstimatedMinutes);
     }
@@ -51,7 +51,7 @@ public record ReviewEvidence(
     }
 
     /**
-     * True when the metric has no evidence row at all (ADR-17 F-2), over the whole scope rather than the page:
+     * True when the metric has no evidence row at all, over the whole scope rather than the page:
      * actual shows only logs, variance shows todos and logs, every other metric shows only todos (blocked logs are
      * shown inside the todo rows).
      */

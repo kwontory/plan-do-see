@@ -3,7 +3,7 @@ package com.plandosee.diary.common.web;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
- * PRG result notice (web-contract revision 3). Only a message key and optional arguments cross the redirect;
+ * PRG result notice. Only a message key and optional arguments cross the redirect;
  * the template resolves the text from messages.properties.
  */
 public final class FlashMessages {

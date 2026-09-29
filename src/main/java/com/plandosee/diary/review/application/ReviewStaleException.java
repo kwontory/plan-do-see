@@ -6,7 +6,7 @@ import com.plandosee.diary.common.error.StaleVersionException;
 import com.plandosee.diary.review.domain.ReviewRow;
 
 /**
- * ADR-18: the improvement form was out of date. latest is the review as stored now; changedFields is
+ * The improvement form was out of date. latest is the review as stored now; changedFields is
  * ["improvement"].
  */
 public class ReviewStaleException extends StaleVersionException {

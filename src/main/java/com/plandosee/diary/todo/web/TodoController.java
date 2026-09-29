@@ -37,14 +37,14 @@ import com.plandosee.diary.todo.application.TodoStaleException;
 import com.plandosee.diary.todo.domain.TodoRow;
 
 /**
- * S02 list/create/edit/delete and S03 detail.
+ * Todo list/create/edit/delete and todo detail.
  */
 @Controller
 public class TodoController {
 
     public static final String FLASH_CREATED = "flash.todo.created";
     public static final String FLASH_UPDATED = "flash.todo.updated";
-    /** ADR-18 E5: the saved content equals the stored todo; nothing changed and no revision was added. */
+    /** The saved content equals the stored todo; nothing changed and no revision was added. */
     public static final String FLASH_UNCHANGED = "flash.todo.unchanged";
     public static final String FLASH_DELETED = "flash.todo.deleted";
 
@@ -62,7 +62,7 @@ public class TodoController {
     }
 
     /**
-     * The add form carries the current list state as hidden fields (revision 1 Q10). Because TodoForm owns the
+     * The add form carries the current list state as hidden fields. Because TodoForm owns the
      * "priority" parameter, the list's priority filter arrives as hidden "listPriority" on this form only.
      */
     @PostMapping("/plans/{id}/todos")
@@ -81,7 +81,7 @@ public class TodoController {
             FormErrors.reject(result, ex);
             return listAgain(model, planId, filter, form);
         } catch (ServiceBusyException ex) {
-            // ADR-19: out of time or connections. Shown again without reading the database, input kept (503).
+            // Out of time or connections. Shown again without reading the database, input kept (503).
             ConflictResponses.rejectForm(result, response, ex);
             return pages.listUnavailable(model, planId, filter, form);
         } catch (RetryLaterException ex) {
@@ -124,7 +124,7 @@ public class TodoController {
         try {
             outcome = todoService.update(todoId, form.toCommand(), form.getVersion());
         } catch (TodoStaleException ex) {
-            // ADR-18: 409, input kept, latest todo (with tags and status) and what differs; hidden version = latest.
+            // 409, input kept, latest todo (with tags and status) and what differs; hidden version = latest.
             form.setVersion(ex.latestVersion());
             EditConflicts.rejectStale(result, response, model, ex, ex.latest());
             return editView(model, ex.latest());
@@ -152,7 +152,7 @@ public class TodoController {
         try {
             planId = todoService.delete(todoId);
         } catch (TodoDeletedException ex) {
-            // ADR-18 E4: already deleted (another tab): the result the user wanted; back to the list with a notice.
+            // Already deleted (another tab): the result the user wanted; back to the list with a notice.
             FlashMessages.add(redirect, ConflictKeys.FLASH_TODO_ALREADY_DELETED);
             return "redirect:" + filter.listUrl(ex.planId());
         } catch (RetryLaterException ex) {
@@ -164,7 +164,7 @@ public class TodoController {
         return "redirect:" + filter.listUrl(planId);
     }
 
-    /** After a collision (ADR-15): the latest todo and what differs, or the stand-in if even the read fails. */
+    /** After a collision: the latest todo and what differs, or the stand-in if even the read fails. */
     private String editViewWithLatest(Model model, UUID todoId, TodoForm form) {
         Optional<EditSnapshot<TodoRow>> read =
                 EditConflicts.readForForm(() -> todoService.latestForEdit(todoId, form.toCommand()));

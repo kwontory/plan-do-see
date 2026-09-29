@@ -1,9 +1,9 @@
 package com.plandosee.diary.common.domain;
 
 /**
- * ADR-30: whole numbers typed as text. Only ASCII digits 0-9 with an optional single leading minus are numbers; hex
+ * Whole numbers typed as text. Only ASCII digits 0-9 with an optional single leading minus are numbers; hex
  * ({@code 0x10}), {@code #10}, a plus sign, decimals, exponents, full-width or Arabic-Indic digits and surrounding
- * spaces are not (IV-07). Used by the estimated-time boxes (DurationInput) and by every Integer form field
+ * spaces are not. Used by the estimated-time boxes (DurationInput) and by every Integer form field
  * (FormBindingAdvice).
  */
 public final class NumberText {

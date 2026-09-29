@@ -29,12 +29,12 @@ public record ReviewSummary(
                 today);
     }
 
-    /** ADR-27: estimated/actual bar widths derived from this summary's minute sums (not a record component). */
+    /** Estimated/actual bar widths derived from this summary's minute sums (not a record component). */
     public ReviewBars bars() {
         return ReviewBars.of(estimatedMinutes, actualMinutes);
     }
 
-    /** ADR-29: the minute sums split into days, hours and minutes for display (not record components). */
+    /** The minute sums split into days, hours and minutes for display (not record components). */
     public DurationParts estimatedDuration() {
         return DurationParts.of(estimatedMinutes);
     }

@@ -9,7 +9,7 @@ import com.plandosee.diary.common.error.ConstraintCode;
 import com.plandosee.diary.common.error.ConstraintCodeSource;
 
 /**
- * ADR-22 / ADR-30: review table constraints (V5) and the code each means. ReviewService checks the same rule first
+ * Review table constraints (V5) and the code each means. ReviewService checks the same rule first
  * (ReviewRules.IMPROVEMENT).
  */
 @Component

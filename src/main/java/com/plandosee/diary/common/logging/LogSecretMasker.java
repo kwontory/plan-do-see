@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 /**
  * Removes database connection details (JDBC URL, host, port, user name, password) from every rendered log line,
- * including exception messages and cause chains (T06-C58, ADR-25). Two layers:
+ * including exception messages and cause chains. Two layers:
  * <ol>
  * <li>exact values the application was configured with ({@link #registerDatasource}), and</li>
  * <li>generic shapes that drivers and pools write (JDBC URLs, {@code Connection to host:port refused},

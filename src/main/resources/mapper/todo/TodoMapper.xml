@@ -75,7 +75,7 @@
         t.version
     </sql>
 
-    <!-- Display flags judged against #{today} (Seoul) with the shared predicates (ADR-17 F-2). -->
+    <!-- Display flags judged against #{today} (Seoul) with the shared predicates. -->
     <sql id="dueFlagColumns">
         (<include refid="com.plandosee.diary.common.sql.TodoPredicates.overdue"/>) AS is_overdue,
         (<include refid="com.plandosee.diary.common.sql.TodoPredicates.dueToday"/>) AS is_due_today
@@ -107,7 +107,7 @@
     </select>
 
     <!--
-      ADR-21: the todo list, its pages, and its count share this FROM/WHERE (search, filters; ADR-06) and the
+      The todo list, its pages, and its count share this FROM/WHERE (search, filters) and the
       ORDER BY below, so the count always describes the rows that can appear on the pages.
     -->
     <sql id="searchFromWhere">
@@ -151,7 +151,7 @@
         </choose>
     </sql>
 
-    <!-- Stable order ending in the unique id (DEC-06, ADR-06), so pages never overlap or skip a row. -->
+    <!-- Stable order ending in the unique id, so pages never overlap or skip a row. -->
     <sql id="searchOrder">
         ORDER BY
         <choose>
@@ -201,7 +201,7 @@
           AND p.user_id = #{userId}
     </select>
 
-    <!-- ADR-18: a content edit moves the version on by one; #{todo.version} was read under the row lock. -->
+    <!-- A content edit moves the version on by one; #{todo.version} was read under the row lock. -->
     <update id="updateContentOwned">
         UPDATE todos t
         SET title = #{todo.title},
@@ -279,7 +279,7 @@
         ORDER BY c.cycle_no ASC, c.id ASC
     </select>
 
-    <!-- ADR-16: todo edit history. Called under the todo row lock, so numbers never repeat or skip. -->
+    <!-- Todo edit history. Called under the todo row lock, so numbers never repeat or skip. -->
     <select id="nextRevisionNo" resultType="int">
         SELECT COALESCE(MAX(r.revision_no), 0) + 1 AS next_revision_no
         FROM todo_revisions r
@@ -293,7 +293,7 @@
                 #{tagNames,typeHandler=com.plandosee.diary.common.db.TextArrayTypeHandler}, #{revisedAt})
     </insert>
 
-    <!-- Newest first, like the plan history (T06-C08). Hidden with the todo once it is deleted (ADR-04). -->
+    <!-- Newest first, like the plan history. Hidden with the todo once it is deleted. -->
     <select id="listRevisionsOwned" resultMap="todoRevisionRow">
         SELECT r.id,
                r.todo_id,
@@ -312,14 +312,14 @@
         ORDER BY r.revision_no DESC, r.id ASC
     </select>
 
-    <!-- ADR-16: called after markInProgress under the todo row lock; one reopen per completion cycle. -->
+    <!-- Called after markInProgress under the todo row lock; one reopen per completion cycle. -->
     <insert id="insertReopenEvent" parameterType="com.plandosee.diary.todo.domain.ReopenEventRow">
         INSERT INTO reopen_events (id, todo_id, cycle_no, reopened_at, created_at)
         VALUES (#{id}, #{todoId}, #{cycleNo}, #{reopenedAt}, #{createdAt})
     </insert>
 
     <!--
-      ADR-16 completion history: completion and reopen events of one owned active todo merged into one list. The
+      Completion history: completion and reopen events of one owned active todo merged into one list. The
       list, its pages, and its counts share these rows. Order: time, then cycle and kind (a cycle's completion
       before its reopen, even with equal timestamps), then id.
     -->

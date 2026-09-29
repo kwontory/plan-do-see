@@ -4,7 +4,7 @@ import java.util.UUID;
 
 /**
  * Resolves the owner of every owned read and mutation on the server side.
- * T06 returns the configured demo user; T07 replaces it with the authenticated principal.
+ * Returns the configured demo user; once login exists, the authenticated principal replaces it.
  */
 public interface CurrentUserProvider {
 

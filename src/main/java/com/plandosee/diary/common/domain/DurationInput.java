@@ -4,8 +4,8 @@ import java.util.EnumSet;
 import java.util.Set;
 
 /**
- * ADR-29: the one place for the day/hour/minute input rule of an estimated time. The form has three boxes; the
- * server combines them as {@code days * 1440 + hours * 60 + minutes} and stores whole minutes (DEC-02 is unchanged).
+ * The one place for the day/hour/minute input rule of an estimated time. The form has three boxes; the
+ * server combines them as {@code days * 1440 + hours * 60 + minutes} and stores whole minutes.
  * <ul>
  *   <li>An empty box is 0. All three empty is "required" ({@link FieldCodes#ESTIMATED_MINUTES_REQUIRED}).</li>
  *   <li>Each box is a whole number without sign: days 0..{@value #DAYS_MAX}, hours 0..{@value #HOURS_MAX}, minutes

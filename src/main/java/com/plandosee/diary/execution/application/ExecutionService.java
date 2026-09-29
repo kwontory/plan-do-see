@@ -50,7 +50,7 @@ public class ExecutionService {
      * Takes the owned todo's row lock (TodoService.lockOwned) so a concurrent delete cannot leave a log under a
      * just-deleted todo: either the log commits first and the delete follows, or the delete wins and this throws
      * {@link com.plandosee.diary.todo.application.TodoDeletedException} with nothing stored. The input is checked by
-     * building the command first (ADR-22 / ADR-30, the form's codes): Seoul-date range, period and its length limit,
+     * building the command first (the form's codes): Seoul-date range, period and its length limit,
      * blocker reason.
      */
     public UUID record(UUID todoId, OffsetDateTime startedAt, OffsetDateTime endedAt, String blockerReason) {
@@ -83,14 +83,14 @@ public class ExecutionService {
         return executionLogMapper.listForTodoOwned(currentUserProvider.currentUserId(), todoId);
     }
 
-    /** The todo's records with their total, read together (S03). */
+    /** The todo's records with their total, read together (todo detail page). */
     @Transactional(readOnly = true)
     public TodoExecutionLogs logsForTodo(UUID todoId) {
         return TodoExecutionLogs.of(listForTodo(todoId));
     }
 
     /**
-     * ADR-21: one page of the todo's records, with the count and minute total of all of them, in one
+     * One page of the todo's records, with the count and minute total of all of them, in one
      * repeatable-read snapshot. A page past the end shows the last page.
      */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)

@@ -4,7 +4,7 @@
  * completion is prevented on the server (idempotency key, row lock, unique constraint).
  * Never write user strings through innerHTML; this file only moves existing DOM nodes
  * and sets fixed textContent.
- * Elements are found by behaviour attributes only (ADR-17 F-5): data-js="flash",
+ * Elements are found by behaviour attributes only: data-js="flash",
  * data-js="error-summary", data-js="focus-first-invalid", data-js="busy-label", data-js="delete-confirm", data-no-lock,
  * data-submitting. data-js may hold several space-separated names (matched with ~=).
  * State written here for CSS: aria-busy on a busy button, data-focus-origin="script" on an element focused by this file.
@@ -13,7 +13,7 @@
 (function () {
     'use strict';
 
-    // Busy label comes from messages.properties (common.busy) through <meta name="pds-busy-text"> (ADR-13).
+    // Busy label comes from messages.properties (common.busy) through <meta name="pds-busy-text">.
     var busyMeta = document.querySelector('meta[name="pds-busy-text"]');
     var BUSY_TEXT = busyMeta ? busyMeta.getAttribute('content') : '...';
     var originals = new WeakMap();
@@ -105,7 +105,7 @@
         }, 150);
     }
 
-    // Save failed (canvas note dev-error-focus): focus the first invalid field in screen order inside a form marked
+    // Save failed: focus the first invalid field in screen order inside a form marked
     // data-js="focus-first-invalid". The field carries aria-invalid="true" and its aria-describedby starts with the
     // error text id, so the field, the error and the help are read together. With no focusable invalid field (only
     // global errors, a conflict, a read-only copy) the alert itself gets focus as before.

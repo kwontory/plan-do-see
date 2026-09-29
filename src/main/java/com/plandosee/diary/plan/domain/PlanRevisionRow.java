@@ -93,7 +93,7 @@ public class PlanRevisionRow {
         this.estimatedMinutes = estimatedMinutes;
     }
 
-    /** ADR-29: estimatedMinutes split into days, hours and minutes for display (not stored, not exported). */
+    /** estimatedMinutes split into days, hours and minutes for display (not stored, not exported). */
     public DurationParts getEstimatedDuration() {
         return DurationParts.of(estimatedMinutes);
     }

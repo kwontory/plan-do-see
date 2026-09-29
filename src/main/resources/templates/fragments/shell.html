@@ -2,12 +2,12 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <body>
 
-<!--/* App shell (v2). Wide screens (>=1024px): a left sidebar (brand, main menu, the open plan with its
+<!--/* App shell. Wide screens (>=1024px): a left sidebar (brand, main menu, the open plan with its
        Plan/Do/See links, today in Seoul) next to the page; the public banner sits above the page column.
        Narrow screens: banner, brand and the main menu as tabs on one top bar; the plan links and today move out
        (the page's step indicator and the footer carry them).
        activeNav: 'home' | 'plans' | 'export' | 'none'.
-       openPlan: the plan this page belongs to (id, title, priority; title may be null on the ADR-19 stand-in) or null.
+       openPlan: the plan this page belongs to (id, title, priority; title may be null on the stand-in page) or null.
        planStep: 'plan' | 'do' | 'see' (the current plan link) or null. The only place that builds these URLs. */-->
 <th:block th:fragment="shell(activeNav, openPlan, planStep)">
 <a class="skip-link" href="#main" th:text="#{layout.skipLink}">skip</a>

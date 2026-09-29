@@ -8,8 +8,8 @@ import org.springframework.ui.Model;
 import com.plandosee.diary.common.paging.PageInfo;
 
 /**
- * ADR-21 (보강): the page navigation of one paged list, computed on the server so the template only prints it
- * (ADR-17 F-2). A web presentation model: {@link PageInfo} stays the page arithmetic the services return, and the
+ * The page navigation of one paged list, computed on the server so the template only prints it.
+ * A web presentation model: {@link PageInfo} stays the page arithmetic the services return, and the
  * choice of which page numbers to offer lives here, in the web layer only.
  * <ul>
  *   <li>number, totalPages, totalCount, firstItem, lastItem: as in PageInfo ("firstItem–lastItem / totalCount").</li>

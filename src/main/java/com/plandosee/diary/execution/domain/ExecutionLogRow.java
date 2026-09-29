@@ -67,7 +67,7 @@ public class ExecutionLogRow {
         this.actualMinutes = actualMinutes;
     }
 
-    /** ADR-29: actualMinutes split into days, hours and minutes for display (not stored, not exported). */
+    /** actualMinutes split into days, hours and minutes for display (not stored, not exported). */
     public DurationParts getActualDuration() {
         return DurationParts.of(actualMinutes);
     }

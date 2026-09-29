@@ -21,10 +21,10 @@ import com.plandosee.diary.todo.domain.TodoRow;
 import com.plandosee.diary.todo.domain.TodoRules;
 
 /**
- * Todo create/edit form. Only the ADR-07 editable fields exist here; status, plan, and id cannot be submitted.
+ * Todo create/edit form. Only the editable fields exist here; status, plan, and id cannot be submitted.
  * tags is a comma-separated list parsed by TagNames (each 1..TodoRules.TAG_NAME_MAX chars, case-insensitive
- * duplicates merged, at most TodoRules.TAGS_MAX tags). Limits come from TodoRules (ADR-22).
- * The estimated time is three boxes combined into whole minutes (ADR-29, {@link EstimatedDurationForm}); every error
+ * duplicates merged, at most TodoRules.TAGS_MAX tags). Limits come from TodoRules.
+ * The estimated time is three boxes combined into whole minutes ({@link EstimatedDurationForm}); every error
  * of the group is on the field {@code estimatedMinutes}. A due date outside DateBounds is rejected while binding
  * (FormBindingAdvice, code validation.date.outOfRange).
  */
@@ -172,7 +172,7 @@ public class TodoForm implements EstimatedDurationForm {
     }
 
     /**
-     * ADR-18 hidden field: the version the edit form was opened with (after a stale-version conflict, the latest
+     * Hidden field: the version the edit form was opened with (after a stale-version conflict, the latest
      * version). Only compared to detect an out-of-date save; never an authorization value. Absent: no check.
      */
     public Integer getVersion() {

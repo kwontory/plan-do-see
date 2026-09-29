@@ -32,15 +32,15 @@ import com.plandosee.diary.todo.domain.TodoRow;
 import com.plandosee.diary.user.domain.UserRow;
 
 /**
- * DEC-08 / T06-C35, T06-C36, T06-C58: one UTF-8 JSON document of every active owned record.
- * All reads share one read-only repeatable-read snapshot under the aggregate statement timeout (ADR-19). Field order follows exportContract.topLevelFields.
+ * One UTF-8 JSON document of every active owned record.
+ * All reads share one read-only repeatable-read snapshot under the aggregate statement timeout. Field order follows exportContract.topLevelFields.
  * Dates are YYYY-MM-DD; timestamps are ISO-8601 with the Asia/Seoul offset (same instant as stored).
  * The owner carries id and nickname only; email and credential data are never read.
  */
 @Service
 public class ExportService {
 
-    /** 2.1.0 (ADR-16): todoRevisions and reopenEvents added; every 2.0.0 field is unchanged. */
+    /** 2.1.0: todoRevisions and reopenEvents added; every 2.0.0 field is unchanged. */
     public static final String SCHEMA_VERSION = "2.1.0";
 
     private final ExportMapper exportMapper;

@@ -4,7 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
- * ADR-16: one row of a todo's completion history, merging completion_events and reopen_events. cycleNo is the
+ * One row of a todo's completion history, merging completion_events and reopen_events. cycleNo is the
  * completion cycle; for REOPENED it is the cycle that was undone. id is the event's own id (tie-breaker).
  */
 public class CompletionHistoryEntry {

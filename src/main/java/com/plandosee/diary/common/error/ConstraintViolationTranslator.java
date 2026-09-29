@@ -15,12 +15,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 /**
- * ADR-22 last line of defence: a CHECK, UNIQUE, NOT NULL, or foreign-key violation that got past the service
+ * Last line of defence: a CHECK, UNIQUE, NOT NULL, or foreign-key violation that got past the service
  * checks is never a 500. A known constraint becomes the error code its feature registered (ConstraintCodeSource),
  * marked on the matching form field; any other becomes the global code {@link #SAVE_REJECTED}. Forms show it with
  * the input kept, other requests get the 400 page.
  * <p>
- * The log line carries the constraint name only: never the SQL, the values, or the driver message (CLAUDE.md 5장).
+ * The log line carries the constraint name only: never the SQL, the values, or the driver message.
  */
 @Component
 public class ConstraintViolationTranslator {

@@ -17,19 +17,19 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * T06 CSRF mitigation (ADR-09, amended by ADR-26): a state-changing request is let through only when its browser
+ * CSRF mitigation: a state-changing request is let through only when its browser
  * origin is exactly this server's origin (scheme, host, and port).
  * <ul>
  * <li>{@code Origin} present: it must be a same-origin {@code http(s)://host[:port]}. {@code Origin: null} (opaque
  * origin: a page with {@code Referrer-Policy: no-referrer}, a sandboxed frame, a {@code data:} or file page), a blank
  * value, or anything unparsable is rejected.</li>
  * <li>{@code Origin} absent: the {@code Referer} decides the same way.</li>
- * <li>Both absent: allowed (non-browser clients; public T06 only).</li>
+ * <li>Both absent: allowed (non-browser clients; only while the app has no login).</li>
  * </ul>
  * The server's origin is {@code request.getScheme()/getServerName()/getServerPort()} only. This filter never reads
  * {@code X-Forwarded-*} itself; behind a proxy those values come from the container's standard forwarded-header
  * handling ({@code server.forward-headers-strategy=native}, Tomcat RemoteIpValve), which applies them only when the
- * connection comes from a trusted internal proxy. T07 replaces this with Spring Security CSRF tokens.
+ * connection comes from a trusted internal proxy. Spring Security CSRF tokens replace this once login exists.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)

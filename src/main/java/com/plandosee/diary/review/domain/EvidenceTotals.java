@@ -1,8 +1,8 @@
 package com.plandosee.diary.review.domain;
 
 /**
- * Row count and minute sums of one metric's whole evidence list (not a page), read with the list's own filter
- * (ADR-21, T06-C83). estimatedMinutes is 0 for log lists.
+ * Row count and minute sums of one metric's whole evidence list (not a page), read with the list's own filter.
+ * estimatedMinutes is 0 for log lists.
  */
 public class EvidenceTotals {
 

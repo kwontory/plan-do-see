@@ -12,7 +12,7 @@ import com.plandosee.diary.common.domain.FieldCodes;
 import com.plandosee.diary.execution.domain.ActualMinutes;
 
 /**
- * ADR-22: execution record constraints (V1, V4, V5) and the code each means. ExecutionCommand checks the same rules
+ * Execution record constraints (V1, V4, V5) and the code each means. ExecutionCommand checks the same rules
  * first (DateBounds by Seoul date, ActualMinutes and its length limit, ExecutionRules blocker reason; blank blocker
  * reason stored as NULL).
  */

@@ -43,7 +43,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * ADR-22: an integrity violation outside the write boundary (the boundary already turns them into rule
+     * An integrity violation outside the write boundary (the boundary already turns them into rule
      * violations). A 400 notice, never a 500; the log has the constraint name only.
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -55,7 +55,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * ADR-30 (IV-05): request parameters Tomcat cannot decode (a bad percent escape such as {@code %ZZ}, bytes that
+     * Request parameters Tomcat cannot decode (a bad percent escape such as {@code %ZZ}, bytes that
      * are not UTF-8) are the client's fault: 400, not 500. Found anywhere in the cause chain; the log has the type only.
      */
     @ExceptionHandler(InvalidParameterException.class)
@@ -72,7 +72,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * ADR-15/ADR-19: a request that is not a form or a button (those handle conflicts themselves) and collided with
+     * A request that is not a form or a button (those handle conflicts themselves) and collided with
      * another request. A raw lock failure reaches here only from a path without the write boundary.
      */
     @ExceptionHandler({ConcurrencyConflictException.class, PessimisticLockingFailureException.class})
@@ -88,7 +88,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * ADR-19: the request did not fit in its time budget (statement or transaction timeout, no pooled connection
+     * The request did not fit in its time budget (statement or transaction timeout, no pooled connection
      * within the pool wait limit). Not a server fault: HTTP 503 and the error/503 view ("open it again shortly").
      */
     @ExceptionHandler(ServiceBusyException.class)

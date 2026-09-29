@@ -1,8 +1,8 @@
 package com.plandosee.diary.todo.domain;
 
 /**
- * ADR-06 sort allowlist. The ORDER BY for each value is in TodoMapper.xml. The on-screen description is the
- * message key sort.&lt;NAME&gt;.description (ADR-13) and must be changed together with that SQL (T06-C20).
+ * Sort allowlist. The ORDER BY for each value is in TodoMapper.xml. The on-screen description is the
+ * message key sort.&lt;NAME&gt;.description and must be changed together with that SQL.
  */
 public enum TodoSort {
     DUE,

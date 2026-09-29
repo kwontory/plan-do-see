@@ -3,7 +3,7 @@ package com.plandosee.diary.common.domain;
 import com.plandosee.diary.common.domain.TextInput.Lines;
 
 /**
- * ADR-30: the rule of one text field, declared once in the feature's rules class (for example
+ * The rule of one text field, declared once in the feature's rules class (for example
  * {@code PlanRules.TITLE}) and applied by {@link InputCheck#text} to a command, or by {@link #apply} to a single
  * input. The form uses the same values ({@code @Size(max = …)}, {@code @PlainText(lines)}; checked by
  * ValidationRulesConsistencyTest).

@@ -1,7 +1,7 @@
 package com.plandosee.diary.common.web;
 
 /**
- * T06-C01 public warning. The text must stay exactly as written in CLAUDE.md.
+ * Public warning. The text must stay exactly as written in the requirements.
  */
 public final class PublicNotice {
 

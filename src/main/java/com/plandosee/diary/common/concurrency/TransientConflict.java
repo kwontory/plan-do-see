@@ -7,15 +7,14 @@ import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.dao.PessimisticLockingFailureException;
 
 /**
- * ADR-15: a failure that disappears when the whole transaction is run again. Classified by PostgreSQL SQLSTATE
+ * A failure that disappears when the whole transaction is run again. Classified by PostgreSQL SQLSTATE
  * anywhere in the cause chain (so commit-time failures wrapped by the transaction manager are recognised too),
  * then by the Spring exception hierarchy.
  * <ul>
  *   <li>DEADLOCK: 40P01 ({@code DeadlockLoserDataAccessException}, a {@link PessimisticLockingFailureException})</li>
  *   <li>SERIALIZATION: 40001 ({@code CannotSerializeTransactionException}, a {@link PessimisticLockingFailureException})</li>
  *   <li>LOCK_TIMEOUT: 55P03 ({@link CannotAcquireLockException}), raised at once by {@code FOR UPDATE NOWAIT}
- *       when another request holds the row, or when {@code lock_timeout} expires on an implicit lock wait
- *       (ADR-19)</li>
+ *       when another request holds the row, or when {@code lock_timeout} expires on an implicit lock wait</li>
  * </ul>
  * statement_timeout (57014) is deliberately not transient: a slow statement is not fixed by repeating it.
  */

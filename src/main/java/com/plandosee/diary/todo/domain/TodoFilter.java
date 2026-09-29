@@ -7,7 +7,7 @@ import com.plandosee.diary.common.domain.Priority;
 
 /**
  * Server-built query object. userId always comes from CurrentUserProvider, never from the request. The search text
- * is normalized and checked with TodoRules.SEARCH_QUERY (ADR-30): a filter with a rejected text (longer than
+ * is normalized and checked with TodoRules.SEARCH_QUERY: a filter with a rejected text (longer than
  * SEARCH_QUERY_MAX, line break, control character) cannot be built; the constructor throws
  * DomainRuleException(TodoRules.SEARCH_FIELD, code) before anything is read.
  */
@@ -97,7 +97,7 @@ public class TodoFilter {
         return today;
     }
 
-    /** The same conditions and order, narrowed to one page (ADR-21). */
+    /** The same conditions and order, narrowed to one page. */
     public TodoFilter page(int limit, long offset) {
         return new TodoFilter(userId, planId, query, status, priority, tagId, due, sort, today, limit, offset);
     }

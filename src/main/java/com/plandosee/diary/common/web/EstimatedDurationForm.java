@@ -4,7 +4,7 @@ import com.plandosee.diary.common.domain.DurationInput;
 import com.plandosee.diary.common.domain.DurationParts;
 
 /**
- * ADR-29: a form with the estimated time entered as three boxes (web-contract revision 10): request parameters
+ * A form with the estimated time entered as three boxes: request parameters
  * {@code estimatedDays}, {@code estimatedHours}, {@code estimatedMinutesPart} (text, blank = 0). The combined value
  * and every error of the group use the one field name {@value #FIELD}, the same name the service, the DB constraint
  * mapping and the conflict {@code changedFields} use, so the template shows one error for the three boxes.

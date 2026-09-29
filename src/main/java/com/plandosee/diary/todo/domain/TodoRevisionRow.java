@@ -9,7 +9,7 @@ import com.plandosee.diary.common.domain.DurationParts;
 import com.plandosee.diary.common.domain.Priority;
 
 /**
- * ADR-16: the values of a todo just before one successful edit. Immutable once stored. tagNames is the snapshot of
+ * The values of a todo just before one successful edit. Immutable once stored. tagNames is the snapshot of
  * the tag display names at that moment, ordered by normalized name.
  */
 public class TodoRevisionRow {
@@ -80,7 +80,7 @@ public class TodoRevisionRow {
         this.estimatedMinutes = estimatedMinutes;
     }
 
-    /** ADR-29: estimatedMinutes split into days, hours and minutes for display (not stored, not exported). */
+    /** estimatedMinutes split into days, hours and minutes for display (not stored, not exported). */
     public DurationParts getEstimatedDuration() {
         return DurationParts.of(estimatedMinutes);
     }

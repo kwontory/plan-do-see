@@ -13,7 +13,7 @@ import org.apache.ibatis.type.BaseTypeHandler;
 import org.apache.ibatis.type.JdbcType;
 
 /**
- * PostgreSQL {@code TEXT[]} to and from {@code List<String>} (todo_revisions.tag_names, ADR-16). Not registered for
+ * PostgreSQL {@code TEXT[]} to and from {@code List<String>} (todo_revisions.tag_names). Not registered for
  * all lists: mapper XML names it explicitly with typeHandler=... on the one column that needs it. This class lives
  * outside mybatis.type-handlers-package on purpose.
  */

@@ -1,7 +1,7 @@
 package com.plandosee.diary.todo.domain;
 
 /**
- * ADR-16: numbers of completion and reopen events of one todo (all of them, not a page).
+ * Numbers of completion and reopen events of one todo (all of them, not a page).
  */
 public class CompletionHistoryCounts {
 

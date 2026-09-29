@@ -17,7 +17,7 @@
         <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
             <ol>
                 <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
-                <!--/* ADR-19 stand-in (snapshotUnavailable): the plan is unknown; its step is left out. */-->
+                <!--/* Stand-in page (snapshotUnavailable): the plan is unknown; its step is left out. */-->
                 <li th:unless="${unavailable}"><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">plan</a></li>
                 <li><a th:href="@{/reviews/{id}(id=${review.id})}" href="#" th:text="#{breadcrumb.review}">review</a></li>
                 <li aria-current="page" th:text="#{reviews.nextPlan.title}">next plan</li>
@@ -29,7 +29,7 @@
     </div>
     <p class="note" th:if="${unavailable}" data-test="snapshot-unavailable" th:text="#{conflict.latest.unavailable}">unavailable</p>
 
-    <!--/* Same text as the server rule error (D1): review.improvement.missing. On the ADR-19 stand-in the improvement is
+    <!--/* Same text as the server rule error: review.improvement.missing. On the stand-in page the improvement is
            unknown (null), not missing, so the form is still shown. */-->
     <section class="section empty-state" th:unless="${showForm}" th:attr="aria-label=#{reviews.nextPlan.carry.heading}">
         <span class="empty-state__icon" aria-hidden="true"><svg th:replace="~{fragments/layout :: icon('flag')}"></svg></span>
@@ -43,7 +43,7 @@
             <div th:replace="~{fragments/layout :: errorAlert}"></div>
         </th:block>
 
-        <!--/* ADR-18 E10 (screens.md 11.5.5): the improvement was already carried (model nextPlan). Nothing was created;
+        <!--/* The improvement was already carried (model nextPlan). Nothing was created;
                the carried improvement and the next plan come first, then the input read-only for copying. */-->
         <th:block th:if="${conflict}">
             <div class="section conflict-layout">

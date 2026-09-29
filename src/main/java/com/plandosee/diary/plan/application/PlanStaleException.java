@@ -6,7 +6,7 @@ import com.plandosee.diary.common.error.StaleVersionException;
 import com.plandosee.diary.plan.domain.PlanRow;
 
 /**
- * ADR-18: the plan edit form was out of date. latest is the plan as stored now (read under the row lock).
+ * The plan edit form was out of date. latest is the plan as stored now (read under the row lock).
  * changedFields uses PlanForm field names (title, startDate, endDate, priority, successCriteria, estimatedMinutes)
  * plus "period" when either date differs.
  */

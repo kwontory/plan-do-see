@@ -30,7 +30,7 @@
         <nav th:replace="~{fragments/layout :: flowSteps('plan', ${isEdit ? plan.id : null})}"></nav>
     </div>
 
-    <!--/* ADR-18 (screens.md 11.5.2): "not saved" alert -> latest (read-only, left) | my input (kept, can be saved
+    <!--/* Conflict: "not saved" alert -> latest (read-only, left) | my input (kept, can be saved
            again, right). Without a conflict only the alert (when there are errors) and the form are shown. */-->
     <th:block th:object="${planForm}" th:with="showJumps=${latest != null}">
         <div th:replace="~{fragments/layout :: errorAlert}"></div>

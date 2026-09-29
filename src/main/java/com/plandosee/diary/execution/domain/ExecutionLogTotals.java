@@ -1,7 +1,7 @@
 package com.plandosee.diary.execution.domain;
 
 /**
- * Count and actual-minute total of a set of execution records, read with the same conditions as the list (ADR-21).
+ * Count and actual-minute total of a set of execution records, read with the same conditions as the list.
  */
 public class ExecutionLogTotals {
 

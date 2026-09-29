@@ -19,10 +19,10 @@ import com.plandosee.diary.todo.domain.TodoRow;
 import com.plandosee.diary.todo.domain.TodoStatus;
 
 /**
- * DEC-05 / ADR-05: completion is idempotent on the server. The todo row lock (FOR UPDATE NOWAIT, ADR-19) lets one
+ * Completion is idempotent on the server. The todo row lock (FOR UPDATE NOWAIT) lets one
  * request at a time change the todo; a request that finds the row held is told at once to press again. The
  * idempotency key and unique constraints guarantee a single event. Each request is one write transaction
- * (ADR-15; retries are off by default): a retried attempt starts over from the lock.
+ * (retries are off by default): a retried attempt starts over from the lock.
  */
 @Service
 public class TodoCompletionService {
@@ -55,7 +55,7 @@ public class TodoCompletionService {
     }
 
     /**
-     * Completion with the status and plan observed in the same transaction (ADR-14 C-1).
+     * Completion with the status and plan observed in the same transaction.
      *
      * @throws DomainRuleException {@link #KEY_MISSING} when the key is absent
      * @throws TodoDeletedException when the todo was deleted before the lock was taken
@@ -79,7 +79,7 @@ public class TodoCompletionService {
     }
 
     /**
-     * Reopen with the status and plan observed in the same transaction (ADR-14 C-1).
+     * Reopen with the status and plan observed in the same transaction.
      *
      * @throws TodoDeletedException when the todo was deleted before the lock was taken
      */
@@ -91,7 +91,7 @@ public class TodoCompletionService {
             }
             OffsetDateTime now = now();
             todoMapper.markInProgress(todoId, now);
-            // ADR-16: the reopen is an immutable event of the undone cycle, stored in the same transaction.
+            // The reopen is an immutable event of the undone cycle, stored in the same transaction.
             ReopenEventRow event = new ReopenEventRow();
             event.setId(idGenerator.newId());
             event.setTodoId(todoId);

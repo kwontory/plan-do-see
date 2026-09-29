@@ -24,7 +24,7 @@
         <result property="actualMinutes" column="actual_minutes"/>
     </resultMap>
 
-    <!-- ADR-21: a todo's records, their page, and their count and total share this FROM/WHERE. -->
+    <!-- A todo's records, their page, and their count and total share this FROM/WHERE. -->
     <sql id="todoLogsFromWhere">
         FROM execution_logs e
         JOIN todos t ON t.id = e.todo_id

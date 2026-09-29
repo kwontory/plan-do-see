@@ -22,7 +22,7 @@
         <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
             <ol>
                 <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
-                <!--/* ADR-19 stand-in (snapshotUnavailable): only the plan id is known, not its title. */-->
+                <!--/* Stand-in page (snapshotUnavailable): only the plan id is known, not its title. */-->
                 <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#"
                        th:text="${unavailable} ? #{breadcrumb.thisPlan} : ${plan.title}">plan</a></li>
                 <li aria-current="page" th:text="#{breadcrumb.todos}">todos</li>
@@ -36,7 +36,7 @@
     </div>
     <p class="note" th:if="${unavailable}" data-test="snapshot-unavailable" th:text="#{conflict.latest.unavailable}">unavailable</p>
 
-    <!--/* 1. Add (v2 composer). The error box sits above the form box; th:object on the section serves both. */-->
+    <!--/* 1. Add (composer). The error box sits above the form box; th:object on the section serves both. */-->
     <section class="section" aria-labelledby="add-heading" th:object="${todoForm}">
         <h2 id="add-heading" th:text="#{todos.add.heading}">add</h2>
         <div th:replace="~{fragments/layout :: errorAlert}"></div>
@@ -125,15 +125,15 @@
         </div>
     </section>
 
-    <!--/* 3. List. Rejected search (searchRejected, ADR-30 rev. 1, user decision 2026-09-29): the whole section is left
+    <!--/* 3. List. Rejected search (searchRejected): the whole section is left
            out, heading included; only the search box error explains why nothing is listed. */-->
     <section class="section" aria-labelledby="list-heading" th:unless="${rejected}">
-        <!--/* ADR-21: the whole list's count (server), not the rows of this page. */-->
+        <!--/* The whole list's count (server), not the rows of this page. */-->
         <h2 id="list-heading"><th:block th:text="#{todos.list.listHeading}">list</th:block><th:block th:unless="${unavailable}"> <span
                 class="badge badge--count num" th:text="#{common.count(${page.totalCount})}">0</span></th:block></h2>
         <p class="note" th:if="${unavailable}" data-test="section-unavailable" th:text="#{conflict.section.unavailable}">unavailable</p>
 
-        <!--/* ADR-19 stand-in: todos, page, pageNav, tags and completionKeys are absent, so the list part is left out. */-->
+        <!--/* Stand-in page: todos, page, pageNav, tags and completionKeys are absent, so the list part is left out. */-->
         <th:block th:unless="${unavailable}">
         <div class="filter-bar" th:if="${filterActive}">
             <strong class="filter-bar__label" th:text="#{todos.filter.active}">active</strong>

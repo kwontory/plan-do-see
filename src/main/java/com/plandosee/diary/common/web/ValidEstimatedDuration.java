@@ -10,7 +10,7 @@ import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 
 /**
- * ADR-29 form-level rule for the three estimated-time boxes (like {@code @ValidPlanPeriod}, ADR-14 C-3). Reports one
+ * Form-level rule for the three estimated-time boxes (like {@code @ValidPlanPeriod}). Reports one
  * violation on the field {@value EstimatedDurationForm#FIELD} whose message template is the broken rule's code
  * ({@code {validation.estimatedMinutes.*}}), in the same validation pass as the other fields.
  */

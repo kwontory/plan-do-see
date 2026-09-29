@@ -24,30 +24,30 @@ import com.plandosee.diary.common.domain.TextInput;
 import com.plandosee.diary.common.domain.UuidText;
 
 /**
- * ADR-30: the one place where submitted text becomes typed values, for every form, query and path variable.
+ * The one place where submitted text becomes typed values, for every form, query and path variable.
  * <ul>
  *   <li>Strings: {@link TextInput#normalize} (CRLF and CR to LF, stripped, null when nothing visible is left), the
  *       same normalization every command applies, so @NotBlank reports a value of only NBSP or zero-width spaces as
- *       required and the form, the command and the DB count the same characters (ADR-22, QA3-D1, IV-11).</li>
+ *       required and the form, the command and the DB count the same characters.</li>
  *   <li>Dates (LocalDate, {@code yyyy-MM-dd}) and date-times (LocalDateTime, {@code yyyy-MM-ddTHH:mm[:ss[.fraction]]},
  *       Seoul local): ISO local forms only, so a value with an offset or {@code Z} is a format error rather than an
- *       offset silently dropped (IV-06). They must lie within {@link DateBounds} (ADR-29): outside the range,
+ *       offset silently dropped. They must lie within {@link DateBounds}: outside the range,
  *       including a year with five or more digits that the parser cannot read (a browser date box accepts up to six),
  *       is the field error {@link FieldCodes#DATE_OUT_OF_RANGE} with arguments {0} = min, {1} = max and the code as
  *       default message; the rejected text stays in the form.</li>
- *   <li>Integers: {@link NumberText#parseInt} (ASCII digits only, IV-07). UUIDs (also path variables):
- *       {@link UuidText#parse} (canonical form only, IV-14); a bad path id is a 404 like an unknown one.</li>
+ *   <li>Integers: {@link NumberText#parseInt} (ASCII digits only). UUIDs (also path variables):
+ *       {@link UuidText#parse} (canonical form only); a bad path id is a 404 like an unknown one.</li>
  *   <li>Other conversion failures become a field error with the message key {@link #TYPE_MISMATCH_CODE} and no
  *       default message, instead of the framework message that would expose Java type names. The hidden edit
  *       version ({@value #VERSION_FIELD}) has no visible box, so its failure is the global error
- *       {@link FieldCodes#VERSION_INVALID} (IV-13).</li>
+ *       {@link FieldCodes#VERSION_INVALID}.</li>
  * </ul>
  */
 @ControllerAdvice
 public class FormBindingAdvice {
 
     public static final String TYPE_MISMATCH_CODE = "validation.typeMismatch";
-    /** ADR-18 hidden field of every edit form. */
+    /** Hidden field of every edit form. */
     public static final String VERSION_FIELD = "version";
 
     @InitBinder
@@ -81,7 +81,7 @@ public class FormBindingAdvice {
 
     /**
      * A local date or date-time whose year has five or more digits: out of range rather than a format error. A value
-     * with an offset is not local and stays a format error (IV-06).
+     * with an offset is not local and stays a format error.
      */
     private static final Pattern LONG_YEAR =
             Pattern.compile("^[+-]?\\d{5,}-\\d{1,2}-\\d{1,2}([T ]\\d{1,2}:\\d{2}(:\\d{2}(\\.\\d{1,9})?)?)?$");

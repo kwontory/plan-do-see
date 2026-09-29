@@ -88,9 +88,9 @@ public class TodoService {
     }
 
     /**
-     * Only title, due date, priority, estimate, and tags change (ADR-07). Status, plan, and id are untouched.
-     * ADR-16: under the todo row lock, the values just before the edit are stored as the next todo_revisions row in
-     * the same transaction as the update. ADR-18 E5: when the submitted content equals the stored content (tags
+     * Only title, due date, priority, estimate, and tags change. Status, plan, and id are untouched.
+     * Under the todo row lock, the values just before the edit are stored as the next todo_revisions row in
+     * the same transaction as the update. When the submitted content equals the stored content (tags
      * compared by normalized name), nothing is written and the result is UNCHANGED.
      */
     public EditOutcome update(UUID todoId, TodoCommand command) {
@@ -98,11 +98,11 @@ public class TodoService {
     }
 
     /**
-     * ADR-18: expectedVersion is the version the edit form was opened with (null: no check). Under the todo row lock:
-     * unchanged content is UNCHANGED (E5); a different version is {@link TodoStaleException} with the latest todo
+     * expectedVersion is the version the edit form was opened with (null: no check). Under the todo row lock:
+     * unchanged content is UNCHANGED; a different version is {@link TodoStaleException} with the latest todo
      * (tags and status included) and the differing fields, and nothing is written (no revision). A todo deleted
-     * before the save (E8) is {@link TodoDeletedException}; one that never existed or is not owned is 404.
-     * Completion and reopen never change the version (E7), so they never make an open edit form stale.
+     * before the save is {@link TodoDeletedException}; one that never existed or is not owned is 404.
+     * Completion and reopen never change the version, so they never make an open edit form stale.
      */
     public EditOutcome update(UUID todoId, TodoCommand command, Integer expectedVersion) {
         requireCommand(command);
@@ -125,7 +125,7 @@ public class TodoService {
             }
             OffsetDateTime now = now();
             todoMapper.insertRevision(revisionOf(todo, currentTags, now));
-            // updateContentOwned guards on the version read under the lock and moves it on by one (ADR-18).
+            // updateContentOwned guards on the version read under the lock and moves it on by one.
             applyContent(todo, command);
             todo.setUpdatedAt(now);
             if (todoMapper.updateContentOwned(userId, todo) != 1) {
@@ -151,8 +151,8 @@ public class TodoService {
     }
 
     /**
-     * TodoForm field names whose submitted value differs from the stored todo, in form order (ADR-18 11.5.3); tags
-     * compared as sets of normalized names. Empty means the same content (E5).
+     * TodoForm field names whose submitted value differs from the stored todo, in form order; tags
+     * compared as sets of normalized names. Empty means the same content.
      */
     static List<String> changedFields(TodoRow todo, List<String> currentTags, TodoCommand command, List<String> newTags) {
         List<String> changed = new ArrayList<>();
@@ -183,7 +183,7 @@ public class TodoService {
     }
 
     /**
-     * Soft delete. ADR-18 E4: deleting a todo that is already deleted (another tab) is {@link TodoDeletedException},
+     * Soft delete. Deleting a todo that is already deleted (another tab) is {@link TodoDeletedException},
      * so the user is sent to the list with the "already deleted" notice instead of a 404; a todo that never existed
      * or is not owned stays 404.
      */
@@ -200,13 +200,13 @@ public class TodoService {
     }
 
     /**
-     * Locks the owned active todo in the caller's transaction (ADR-14): completion and execution records take this
+     * Locks the owned active todo in the caller's transaction: completion and execution records take this
      * lock so they serialize with each other and with a concurrent delete.
      * <ul>
      *   <li>Not active when the request started (already deleted, never existed, not owned): NotFoundException
-     *       (404, T06-C13).</li>
+     *       (404).</li>
      *   <li>Active when the request started but deleted by a concurrent request before the lock was granted:
-     *       {@link TodoDeletedException} (ADR-15), so the caller can send the user to the list.</li>
+     *       {@link TodoDeletedException}, so the caller can send the user to the list.</li>
      * </ul>
      * The first read is a plain read; under READ COMMITTED the lock statement takes a newer snapshot and re-checks
      * the row after any lock wait, which is where a concurrent delete becomes visible.
@@ -273,7 +273,7 @@ public class TodoService {
     }
 
     /**
-     * ADR-21: one page of the filtered list (S02). Count and rows use the same conditions and are read in one
+     * One page of the filtered todo list. Count and rows use the same conditions and are read in one
      * repeatable-read snapshot; a page past the end shows the last page. Tags are attached to the page rows only.
      */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
@@ -299,7 +299,7 @@ public class TodoService {
     }
 
     /**
-     * ADR-18: the latest stored todo (tags and status included) and the TodoForm fields where the given input differs
+     * The latest stored todo (tags and status included) and the TodoForm fields where the given input differs
      * from it, for an edit form shown again after a failed save.
      */
     @Transactional(readOnly = true)
@@ -309,7 +309,7 @@ public class TodoService {
         return new EditSnapshot<>(latest, changedFields(latest, tags, input, input.tagNames()));
     }
 
-    /** ADR-16: the owned active todo's edit history, newest first. NotFoundException otherwise. */
+    /** The owned active todo's edit history, newest first. NotFoundException otherwise. */
     @Transactional(readOnly = true)
     public List<TodoRevisionRow> revisions(UUID todoId) {
         UUID userId = currentUserProvider.currentUserId();
@@ -320,7 +320,7 @@ public class TodoService {
     }
 
     /**
-     * ADR-16 / ADR-21: one page of the merged completion and reopen history in time order, with the counts of all
+     * One page of the merged completion and reopen history in time order, with the counts of all
      * events, in one repeatable-read snapshot. NotFoundException when the todo is not an owned active todo.
      */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
@@ -352,7 +352,7 @@ public class TodoService {
     }
 
     /**
-     * ADR-22 / ADR-30: a TodoCommand checks itself when it is built (the same rules and codes as TodoForm), so only a
+     * A TodoCommand checks itself when it is built (the same rules and codes as TodoForm), so only a
      * missing command is left to reject here.
      */
     private static void requireCommand(TodoCommand command) {
@@ -370,7 +370,7 @@ public class TodoService {
 
     /**
      * New tag rows hold the unique-index entry of their normalized name until commit. Inserting in the input order
-     * let two saves with the same new tags in opposite order deadlock (ADR-15 CC-1); every transaction now inserts
+     * let two saves with the same new tags in opposite order deadlock; every transaction now inserts
      * in normalized-name order, so they queue instead.
      */
     private void replaceTags(UUID userId, UUID todoId, List<String> tagNames, OffsetDateTime now) {

@@ -12,9 +12,9 @@ import com.plandosee.diary.common.web.PlainText;
 import com.plandosee.diary.execution.domain.ExecutionRules;
 
 /**
- * S03 execution record form. datetime-local values (with or without seconds, never with an offset: FormBindingAdvice)
+ * Execution record form. datetime-local values (with or without seconds, never with an offset: FormBindingAdvice)
  * are interpreted in Asia/Seoul.
- * blockerReason is optional (at most ExecutionRules.BLOCKER_REASON_MAX characters, LF line breaks, ADR-22); blank is
+ * blockerReason is optional (at most ExecutionRules.BLOCKER_REASON_MAX characters, LF line breaks); blank is
  * stored as NULL by ExecutionService.
  */
 public class ExecutionForm {

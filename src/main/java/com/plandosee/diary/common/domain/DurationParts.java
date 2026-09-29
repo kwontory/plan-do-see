@@ -1,8 +1,8 @@
 package com.plandosee.diary.common.domain;
 
 /**
- * ADR-29: a minute value split into days, hours and minutes for display (a day is 24 hours). The one place where
- * minutes are divided; templates only print these parts with message keys (ADR-13, ADR-17 F-2). Values are stored,
+ * A minute value split into days, hours and minutes for display (a day is 24 hours). The one place where
+ * minutes are divided; templates only print these parts with message keys. Values are stored,
  * summed and exported as whole minutes; this is a view of one such value, never stored.
  * <ul>
  *   <li>totalMinutes: the original value, sign included (for {@code data-value})</li>

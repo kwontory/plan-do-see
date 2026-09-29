@@ -12,7 +12,7 @@ import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.error.FieldViolation;
 
 /**
- * ADR-30: checks every field of one command with the common rules and collects every broken rule, then
+ * Checks every field of one command with the common rules and collects every broken rule, then
  * {@link #done()} throws one DomainRuleException listing them all (the first one is its field/code). Each field keeps
  * only its first violation, in the order the fields are checked. Used by the self-validating command records
  * (PlanCommand, TodoCommand, ExecutionCommand) and by {@link TextRule#apply}; the web layer shows the same codes.
@@ -84,7 +84,7 @@ public final class InputCheck {
         return value;
     }
 
-    /** A point in time whose local date in {@code zone} (Asia/Seoul for inputs, DEC-02) is within DateBounds. */
+    /** A point in time whose local date in {@code zone} (Asia/Seoul for inputs) is within DateBounds. */
     public OffsetDateTime dateTime(String field, OffsetDateTime value, ZoneId zone, String requiredCode) {
         if (value == null) {
             reject(field, requiredCode);

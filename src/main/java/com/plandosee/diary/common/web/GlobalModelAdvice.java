@@ -12,9 +12,9 @@ import com.plandosee.diary.common.time.SeoulDates;
 import com.plandosee.diary.common.time.TimeConfig;
 
 /**
- * Common model attributes for every page (web-contract.md): the public warning, today in Asia/Seoul, and the
- * display zone so templates convert instants without calling Java classes directly (ADR-13).
- * ADR-29: the accepted date range for the {@code min}/{@code max} attributes of every date and datetime-local box
+ * Common model attributes for every page: the public warning, today in Asia/Seoul, and the
+ * display zone so templates convert instants without calling Java classes directly.
+ * The accepted date range for the {@code min}/{@code max} attributes of every date and datetime-local box
  * ({@code dateInputMin}, {@code dateInputMax}: yyyy-MM-dd, four-digit years; the template adds the time part), and
  * the box limits of the estimated-time input ({@code durationInputLimits}). Browser attributes are a convenience;
  * the server checks the same constants.

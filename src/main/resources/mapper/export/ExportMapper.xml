@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <!--
-  Export (T06-C35, T06-C36, ADR-04): owned by #{userId}, soft-deleted rows and children of soft-deleted parents
+  Export: owned by #{userId}, soft-deleted rows and children of soft-deleted parents
   excluded, every collection ordered by its unique key. Credential and email columns are never selected.
 -->
 <mapper namespace="com.plandosee.diary.export.application.port.ExportMapper">
@@ -21,7 +21,7 @@
         <result property="createdAt" column="created_at"/>
     </resultMap>
 
-    <!-- Owner card: id and nickname only (T06-C58); email and credential columns are never selected. -->
+    <!-- Owner card: id and nickname only; email and credential columns are never selected. -->
     <select id="owner" resultMap="com.plandosee.diary.user.application.port.UserMapper.userRow">
         SELECT u.id,
                u.nickname
@@ -142,7 +142,7 @@
         ORDER BY c.id ASC
     </select>
 
-    <!-- ADR-16: edit history of active owned todos (history of deleted todos is excluded, ADR-04). -->
+    <!-- Edit history of active owned todos (history of deleted todos is excluded). -->
     <select id="todoRevisions" resultMap="com.plandosee.diary.todo.application.port.TodoMapper.todoRevisionRow">
         SELECT r.id,
                r.todo_id,

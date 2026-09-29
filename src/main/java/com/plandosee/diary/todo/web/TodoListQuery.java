@@ -18,10 +18,10 @@ import com.plandosee.diary.todo.domain.TodoSort;
 import com.plandosee.diary.todo.domain.TodoStatus;
 
 /**
- * S02 search/filter/sort state (ADR-06) and page (ADR-21). Bound from the query string on GET and from hidden fields
- * on list POSTs (web-contract revision 1 Q10). Unknown values are dropped (sort falls back to DUE, page to 1), so
- * only allowlisted values ever reach SQL or a redirect URL. The search text is checked with TodoRules.SEARCH_QUERY
- * (ADR-30 revised, IV-04): a rejected text is kept as typed so the list can show it with a field error, and it is
+ * Todo list search/filter/sort state and page. Bound from the query string on GET and from hidden fields
+ * on list POSTs. Unknown values are dropped (sort falls back to DUE, page to 1), so
+ * only allowlisted values ever reach SQL or a redirect URL. The search text is checked with TodoRules.SEARCH_QUERY:
+ * a rejected text is kept as typed so the list can show it with a field error, and it is
  * never searched ({@link #searchViolations()}; the service's TodoFilter applies the same rule). The tag id must be a
  * canonical UUID (UuidText).
  */
@@ -32,7 +32,7 @@ public class TodoListQuery {
      * rejected one of up to this length are carried as they are, so the next list shows the same search or the same
      * rejection; a longer text (only from a hand-made request, the search box has maxlength) is cut to this length
      * and is still over the limit. 100 Hangul characters are 900 bytes percent-encoded, far below the 8 KB header
-     * buffer (IV-04).
+     * buffer.
      */
     static final int CARRIED_QUERY_MAX = TodoRules.SEARCH_QUERY_MAX * 2;
 
@@ -59,14 +59,14 @@ public class TodoListQuery {
 
     /**
      * /plans/{planId}/todos with only the allowlisted list state and the current page (omitted when 1); every value
-     * is percent-encoded. Used for redirects after add, complete, reopen, and delete (ADR-21: the page is kept; a
+     * is percent-encoded. Used for redirects after add, complete, reopen, and delete (the page is kept; a
      * page that no longer exists is shown as the last page by the list itself).
      */
     public String listUrl(UUID planId) {
         return listUrl(planId, pageValue());
     }
 
-    /** The same list state on another page (page links, ADR-21). */
+    /** The same list state on another page (page links). */
     public String listUrl(UUID planId, int page) {
         TodoListQuery n = normalized();
         Map<String, Object> vars = new LinkedHashMap<>();

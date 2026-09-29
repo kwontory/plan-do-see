@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.plandosee.diary.common.db.port.SessionSettingsMapper;
 
 /**
- * ADR-19 query time limits. Every pooled session starts with the general statement_timeout (1s by default).
+ * Query time limits. Every pooled session starts with the general statement_timeout (1s by default).
  * Aggregate and statistics reads (review summary and detail, evidence, export) widen it for their own read
  * transaction only, to app.db.aggregate-statement-timeout (2s by default); the pool default returns at commit.
  */

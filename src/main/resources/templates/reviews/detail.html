@@ -16,7 +16,7 @@
         <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
             <ol>
                 <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
-                <!--/* ADR-19 stand-in (snapshotUnavailable): the plan is unknown; its step is left out. */-->
+                <!--/* Stand-in page (snapshotUnavailable): the plan is unknown; its step is left out. */-->
                 <li th:unless="${unavailable}"><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">plan</a></li>
                 <li aria-current="page" th:text="#{breadcrumb.review}">review</li>
             </ol>
@@ -29,7 +29,7 @@
     </div>
     <p class="note" th:if="${unavailable}" data-test="snapshot-unavailable" th:text="#{conflict.latest.unavailable}">unavailable</p>
 
-    <!--/* ADR-19 stand-in: plan, summary, metricValues and nextPlan are absent, so only the improvement form
+    <!--/* Stand-in page: plan, summary, metricValues and nextPlan are absent, so only the improvement form
            (section 3) is drawn. */-->
     <th:block th:unless="${unavailable}">
     <!--/* 1. Basis */-->
@@ -49,7 +49,7 @@
     </section>
 
     <!--/* 2. Metrics. The server sends metricValues (key -> value); card order, groups, labels, units, sign and links are
-           decided here (ADR-13, web-contract revision 3). Two groups: counts, then time. Cards in one row have the
+           decided here. Two groups: counts, then time. Cards in one row have the
            same height and their "evidence" line sits at the bottom. */-->
     <section class="section" aria-labelledby="metrics-heading"
              th:with="countOrder=${#strings.arraySplit('planned,completed,overdue,blocked', ',')}">
@@ -64,8 +64,8 @@
     </section>
 
     <!--/* Time group: estimated and actual cards (left, stacked on wide page columns), and one card with the bars and the
-           variance card (right). The bar widths are server values (summary.bars, ADR-27: the larger sum is 100); they
-           are drawn with SVG presentation attributes because the CSP blocks inline styles (ADR-26). The bars are
+           variance card (right). The bar widths are server values (summary.bars: the larger sum is 100); they
+           are drawn with SVG presentation attributes because the CSP blocks inline styles. The bars are
            decoration (aria-hidden): the cards next to them carry the same numbers. */-->
     <section class="section" aria-labelledby="time-heading"
              th:with="timeOrder=${#strings.arraySplit('estimated,actual', ',')}">
@@ -82,7 +82,7 @@
     </section>
     </th:block>
 
-    <!--/* 3. Improvement (left) and 4. next plan (right). ADR-18 (screens.md 11.5.2, 11.5.5): on a conflict (model
+    <!--/* 3. Improvement (left) and 4. next plan (right). On a conflict (model
            latest) the improvement card holds alert -> latest (read-only) -> my input. Not yet carried: my input stays
            in the form and can be saved again. Already carried: my input is shown read-only for copying, with no form.
            Headings are h3 inside the h2 card. */-->
@@ -145,7 +145,7 @@
         </div>
     </section>
 
-    <!--/* 4. Next plan (left out on the ADR-19 stand-in: whether the review was carried is unknown) */-->
+    <!--/* 4. Next plan (left out on the stand-in page: whether the review was carried is unknown) */-->
     <section class="card card--soft" aria-labelledby="next-heading" th:unless="${unavailable}">
         <p th:replace="~{fragments/layout :: stepTag(4, 'next')}"></p>
         <h2 id="next-heading" th:text="#{reviews.detail.next.heading}">next</h2>

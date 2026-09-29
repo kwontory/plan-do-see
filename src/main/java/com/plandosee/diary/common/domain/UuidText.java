@@ -3,9 +3,9 @@ package com.plandosee.diary.common.domain;
 import java.util.UUID;
 
 /**
- * ADR-30: a UUID written in the canonical 8-4-4-4-12 hexadecimal form (36 characters, either case). Java's
- * UUID.fromString also accepts shortened groups such as {@code 1-1-1-1-1}; those are not identifiers this app issued
- * (IV-14). Used for path ids, the completion idempotency key and the tag filter.
+ * A UUID written in the canonical 8-4-4-4-12 hexadecimal form (36 characters, either case). Java's
+ * UUID.fromString also accepts shortened groups such as {@code 1-1-1-1-1}; those are not identifiers this app issued.
+ * Used for path ids, the completion idempotency key and the tag filter.
  */
 public final class UuidText {
 

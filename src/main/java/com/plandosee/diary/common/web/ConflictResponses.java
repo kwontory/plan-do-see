@@ -8,7 +8,7 @@ import com.plandosee.diary.common.error.RetryLaterException;
 import com.plandosee.diary.common.error.ServiceBusyException;
 
 /**
- * ADR-15 / ADR-19: a request that failed for a temporary reason changed nothing.
+ * A request that failed for a temporary reason changed nothing.
  * <ul>
  *   <li>Form: shown again with the submitted input and a global error code; HTTP 409 for a collision with another
  *       request, HTTP 503 when the time budget ran out.</li>

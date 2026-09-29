@@ -22,7 +22,7 @@
 <th:block th:fragment="shell(activeNav, openPlan, planStep)"><th:block
         th:replace="~{fragments/shell :: shell(${activeNav}, ${openPlan}, ${planStep})}"></th:block></th:block>
 
-<!--/* Inline stroke icon (v2 design). Decorative: the text next to it or a visually hidden label names the control.
+<!--/* Inline stroke icon. Decorative: the text next to it or a visually hidden label names the control.
        name: home | list | download | plus | check | calendar | clock | tag | edit | trash | info | search |
        chevron-left | chevron-right | doc | flag | triangle. Size comes from CSS (.icon, 18px; .icon--sm, 15px). */-->
 <svg th:fragment="icon(name)" class="icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"
@@ -44,7 +44,7 @@
         th:case="'flag'"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></th:block><th:block
         th:case="'triangle'"><path d="M12 4.5 21 19.5H3z"/></th:block></svg>
 
-<!--/* PRG result notice. flashKey: message key, flashArgs: optional Object[] (web-contract revision 3) */-->
+<!--/* PRG result notice. flashKey: message key, flashArgs: optional Object[] */-->
 <div th:fragment="flash" class="flash" role="status" aria-live="polite" data-js="flash"
      th:with="hasFlash=${flashKey != null and !#strings.isEmpty(flashKey)}"
      th:classappend="${!hasFlash} ? 'flash--empty'"><th:block
@@ -102,14 +102,14 @@
       th:attr="datetime=${value}"
       th:text="${#temporals.format(value.atZoneSameInstant(displayZone), 'yyyy-MM-dd HH:mm:ss')}">2026-01-01 00:00:00</time>
 
-<!--/* Same display for a time that should always exist (execution record start/end). ADR-30: a value stored before V5
+<!--/* Same display for a time that should always exist (execution record start/end). A value stored before V5
        as ±infinity arrives as null, so a short muted note keeps the table cell from looking empty. Use plain datetime
        where null is normal (completedAt before completion, transferredAt before transfer). */-->
 <th:block th:fragment="datetimeOrUnknown(value)"><time th:replace="~{fragments/layout :: datetime(${value})}"></time><span
         th:if="${value == null}" class="muted" data-test="datetime-unknown"
         th:text="#{common.datetime.unknown}">unknown</span></th:block>
 
-<!--/* ADR-29 time display, the one place that prints a minute value (user decision 2026-09-29): "1일 2시간 30분".
+<!--/* Time display, the one place that prints a minute value: "1일 2시간 30분".
        parts: DurationParts (server computed; the template does no arithmetic). Parts of zero are left out and a zero
        total prints "0분" (showDays / showHours / showMinutes). One space between the printed parts. Text only, so it
        can sit inside any element that tests read (no nested tags). */-->
@@ -144,9 +144,9 @@
         th:text="${#strings.isEmpty(d) and #strings.isEmpty(h) and #strings.isEmpty(m)} ? #{common.none}
             : #{common.duration.typed(${#strings.isEmpty(d) ? blank : d}, ${#strings.isEmpty(h) ? blank : h}, ${#strings.isEmpty(m) ? blank : m})}">typed</th:block></th:block>
 
-<!--/* ADR-29 estimated time input: three boxes (days, hours, minutes; a day is 24 hours) in one fieldset. The server
+<!--/* Estimated time input: three boxes (days, hours, minutes; a day is 24 hours) in one fieldset. The server
        combines them into whole minutes; every error of the group is on the one field estimatedMinutes, shown once
-       under the boxes (v2 order: legend -> boxes -> error -> help). Each box is labelled by its visible unit; its
+       under the boxes (order: legend -> boxes -> error -> help). Each box is labelled by its visible unit; its
        aria-invalid comes from the form flags estimatedDaysInvalid / estimatedHoursInvalid / estimatedMinutesPartInvalid
        (only while the group has an error; if no flag is set, e.g. a service or DB rule, all three are marked so the
        first box gets focus). aria-describedby: error id -> help id -> (conflict) -changed id.
@@ -183,12 +183,12 @@
 </fieldset>
 
 <!--/* Evidence reconciliation verdict. ok: boolean. Text is the cue; color and the decorative mark are secondary
-       (D8: no underline). The mark sits outside the data-test element so its text stays the verdict word only. */-->
+       (no underline). The mark sits outside the data-test element so its text stays the verdict word only. */-->
 <span th:fragment="verdict(ok)" class="verdict-line" th:classappend="${ok} ? 'verdict--ok' : 'verdict--bad'"><span
         aria-hidden="true" th:text="${ok} ? '✓ ' : '✕ '">✓ </span><strong class="verdict" data-test="evidence-verdict" th:data-value="${ok}"
         th:text="${ok} ? #{common.verdict.ok} : #{common.verdict.bad}">ok</strong></span>
 
-<!--/* Enum label (ADR-17 F-4). The only place that builds enum.<Type>.<NAME> keys.
+<!--/* Enum label. The only place that builds enum.<Type>.<NAME> keys.
        type: enum simple name (Priority, TodoStatus, DueFilter, TodoSort), value: enum constant or its name. */-->
 <th:block th:fragment="enumLabel(type, value)"
           th:text="${#messages.msg('enum.' + type + '.' + value)}">label</th:block>
@@ -197,15 +197,15 @@
 <th:block th:fragment="enumLabelIn(key, type, value)"
           th:text="${#messages.msg(key, #messages.msg('enum.' + type + '.' + value))}">label</th:block>
 
-<!--/* Form error pattern (canvas note dev-error-focus). Field order: label -> input -> fieldMessage -> help;
+<!--/* Form error pattern. Field order: label -> input -> fieldMessage -> help;
        the input's aria-describedby lists the error id before the help id. Only the message text is red.
-       errorAlert: one "not saved" heading (role=alert, ADR-18 E3: validation errors, rule errors and the 409 conflict
+       errorAlert: one "not saved" heading (role=alert: validation errors, rule errors and the 409 conflict
        re-render all mean "not saved") and only the errors that have no field (global errors); field errors are shown
        under their inputs, and focus goes to the first invalid field (static/js/app.js, hook
        data-js="focus-first-invalid" on the form). Inputs keep the submitted values (th:field).
        Must be included where th:object is set (it may sit just above the form). Optional th:with variables:
          nestedSummary=true  the alert sits inside an h2 section, so its heading is h3 (reviews/detail)
-         showJumps=true      a conflict page: links to the latest panel (#latest) and my input (#my-input) (11.5.2) */-->
+         showJumps=true      a conflict page: links to the latest panel (#latest) and my input (#my-input) */-->
 <div th:fragment="errorAlert" th:if="${#fields.hasErrors('*')}"
      class="error-alert" role="alert" tabindex="-1" id="error-summary" data-js="error-summary">
     <h3 th:if="${nestedSummary == true}" th:text="#{form.errorSummary.heading}">errors</h3>
@@ -217,7 +217,7 @@
         <a href="#my-input" th:text="#{conflict.jump.mine}">mine</a></p>
 </div>
 
-<!--/* v2 field error under the input. name: field name (also input id); id name-error, data-test field-error-name.
+<!--/* Field error under the input. name: field name (also input id); id name-error, data-test field-error-name.
        The "error:" prefix stays for screen readers; the icon is the visual cue next to the red text. */-->
 <p th:fragment="fieldMessage(name)" th:if="${#fields.hasErrors(name)}"
    class="error-text" th:id="${name + '-error'}" th:data-test="${'field-error-' + name}"><svg
@@ -238,12 +238,11 @@
        th:step="${dt} ? '1' : null" th:required="${required}"
        th:attr="aria-describedby=${#strings.isEmpty(describedBy)} ? null : ${describedBy},aria-invalid=${#fields.hasErrors(field)} ? 'true' : null">
 
-<!--/* ADR-18 conflict screens (screens.md 11.5). The server decides what differs (model changedFields, a List of
-       form field names); these fragments only print it. What differs is shown with a highlighter and a triangle (user
-       decision 2026-09-29): the value is painted yellow (mark.hl on the latest value; the input itself on my side via
+<!--/* Conflict screens. The server decides what differs (model changedFields, a List of
+       form field names); these fragments only print it. What differs is shown with a highlighter and a triangle: the value is painted yellow (mark.hl on the latest value; the input itself on my side via
        its aria-describedby "-changed" id), and a small triangle sits right after the item's name (dt on the left,
        label on the right). Color is not the only cue: the triangle is a shape, and a visually hidden word names the
-       difference for screen readers (no explaining line on the page: user decision 2026-09-29). */-->
+       difference for screen readers (no explaining line on the page). */-->
 
 <!--/* Decorative triangle after the name of a changed item (inside a label or dt). field: form field name. */-->
 <span th:fragment="changedMark(field)" th:if="${changedFields != null and changedFields.contains(field)}"
@@ -311,7 +310,7 @@
     <p><span class="badge badge--readonly" th:text="#{badge.readonly}">before</span></p>
 </th:block>
 
-<!--/* ADR-21 page navigation. nav: PageNavigation (server computed, web-contract revision 7: the page window, gaps,
+<!--/* Page navigation. nav: PageNavigation (server computed: the page window, gaps,
        neighbours; the template only prints them and builds the links). Nothing renders for an empty list or a list
        that is not on this page (null).
        pageParam: query parameter of this list (page, logPage, historyPage). base: context URL of page 1 of this list with
@@ -346,7 +345,7 @@
    th:href="${href}" href="#" th:attr="aria-current=${current} ? 'page' : null"><span aria-hidden="true"
         th:text="#{pager.number(${n})}">1</span><span class="visually-hidden" th:text="#{pager.page.sr(${n})}">1</span></a>
 
-<!--/* Note under a paged table whose footer totals cover every page (ADR-21 3). */-->
+<!--/* Note under a paged table whose footer totals cover every page. */-->
 <p th:fragment="allPagesNote(nav)" th:if="${nav != null and nav.navigable}" class="muted"
    th:text="#{pager.allPagesNote}">totals cover all pages</p>
 

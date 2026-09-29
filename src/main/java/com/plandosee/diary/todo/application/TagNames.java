@@ -6,7 +6,7 @@ import com.plandosee.diary.common.domain.InputCheck;
 import com.plandosee.diary.todo.domain.TodoRules;
 
 /**
- * Parses the comma-separated tag input of the form (ADR-07) with the one tag-list rule (TodoRules.tagNames, ADR-30):
+ * Parses the comma-separated tag input of the form with the one tag-list rule (TodoRules.tagNames):
  * duplicates that differ only by case or spaces collapse to one; an over-long or broken name, or more than
  * {@link #MAX_COUNT} distinct names, is DomainRuleException on the field {@code tags}.
  */

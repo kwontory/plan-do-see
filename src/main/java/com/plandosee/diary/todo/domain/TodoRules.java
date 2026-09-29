@@ -14,7 +14,7 @@ import com.plandosee.diary.common.domain.TextRule;
 import com.plandosee.diary.common.error.FieldViolation;
 
 /**
- * ADR-22 / ADR-30: the one place for the todo field rules (DEC-07, ADR-07). Declarations of which common tool applies
+ * The one place for the todo field rules. Declarations of which common tool applies
  * to which field with which constant, plus the tag-list rule (merge, count) used by both the form (TagNames.parse)
  * and TodoCommand. TodoForm's annotations use the same constants, and they equal the CHECK constraints (V1
  * ck_todos_title, ck_todos_estimated_minutes, ck_tags_name; V5 ck_todos_due_date_range);
@@ -37,8 +37,7 @@ public final class TodoRules {
     /** Message argument {0}: TAGS_MAX as a plain string. */
     public static final String TAGS_TOO_MANY = "todo.tags.tooMany";
     /**
-     * ADR-30 (IV-04, revised by the user's decision 2026-09-29): longest search text in UTF-16 units (ADR-22 length
-     * unit). Longer text is rejected, not cut: the list is not searched and the search box shows
+     * Longest search text in UTF-16 units (the length unit of every text rule). Longer text is rejected, not cut: the list is not searched and the search box shows
      * {@link #SEARCH_TOO_LONG}.
      */
     public static final int SEARCH_QUERY_MAX = 50;

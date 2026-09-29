@@ -7,8 +7,8 @@ import com.plandosee.diary.common.domain.InputCheck;
 /**
  * Plan period rule: the end date cannot be before the start date (a one-day plan is allowed). Missing or
  * out-of-range dates are reported by their own rules, not by this one.
- * Shared by PlanCommand (every command, ADR-30) and the form-level constraint {@code @ValidPlanPeriod} on PlanForm,
- * which reports it together with the other field errors in one response (QA-D5, ADR-14 C-3).
+ * Shared by PlanCommand (every command) and the form-level constraint {@code @ValidPlanPeriod} on PlanForm,
+ * which reports it together with the other field errors in one response.
  */
 public final class PlanPeriod {
 

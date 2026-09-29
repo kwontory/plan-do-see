@@ -11,7 +11,7 @@ import org.apache.ibatis.type.JdbcType;
 import org.apache.ibatis.type.MappedTypes;
 
 /**
- * ADR-30 (IV-01): every TIMESTAMPTZ read. PostgreSQL's {@code -infinity} / {@code infinity} arrive from the driver as
+ * Every TIMESTAMPTZ read. PostgreSQL's {@code -infinity} / {@code infinity} arrive from the driver as
  * OffsetDateTime.MIN / MAX, which Java cannot move to another zone, so one such execution record used to break the
  * todo page, the evidence lists and the whole export. They are read as null here, in one place: "a time that cannot
  * be shown". Null is shown as nothing by the date-time fragment and exported as null; no value is made up. Since V5

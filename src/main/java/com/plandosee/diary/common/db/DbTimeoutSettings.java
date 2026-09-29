@@ -9,7 +9,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 /**
- * ADR-19 time limits. The PostgreSQL values end up inside connection-init-sql and set_config, so every one must be
+ * Time limits. The PostgreSQL values end up inside connection-init-sql and set_config, so every one must be
  * a plain duration (digits and an optional ms/s/min unit) before any bean, and thus any pooled connection, is
  * created. A malformed value stops the start-up with the property name only (never the value, which may have been
  * set by mistake to something sensitive).

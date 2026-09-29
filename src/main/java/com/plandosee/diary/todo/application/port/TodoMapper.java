@@ -30,10 +30,10 @@ public interface TodoMapper {
     /** Row lock for writes; the display flags are not computed (always false). */
     TodoRow lockActiveOwned(@Param("userId") UUID userId, @Param("todoId") UUID todoId);
 
-    /** The whole filtered list, or one page of it when the filter carries a limit (ADR-21). */
+    /** The whole filtered list, or one page of it when the filter carries a limit. */
     List<TodoRow> search(TodoFilter filter);
 
-    /** Rows of the filtered list, with the same conditions as search (ADR-21). */
+    /** Rows of the filtered list, with the same conditions as search. */
     long countSearch(TodoFilter filter);
 
     int updateContentOwned(@Param("userId") UUID userId, @Param("todo") TodoRow todo);

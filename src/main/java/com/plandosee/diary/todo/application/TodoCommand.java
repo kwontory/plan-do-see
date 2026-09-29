@@ -9,8 +9,8 @@ import com.plandosee.diary.common.domain.Priority;
 import com.plandosee.diary.todo.domain.TodoRules;
 
 /**
- * Todo content for create and update (ADR-07 fields). ADR-30: a self-validating command. The constructor checks every
- * field with the common tools and TodoRules (the same codes the form shows, ADR-22) and throws one
+ * Todo content for create and update (the editable fields). A self-validating command. The constructor checks every
+ * field with the common tools and TodoRules (the same codes the form shows) and throws one
  * DomainRuleException listing every broken rule. The title is stored normalized; tagNames becomes the list to store
  * (checked, blank and invisible names dropped, case duplicates merged, never null).
  */

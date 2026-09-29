@@ -20,9 +20,9 @@ import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.error.ServiceBusyException;
 
 /**
- * ADR-15/ADR-19 write-service boundary. Runs the work in one transaction and, when it fails with a
+ * Write-service boundary. Runs the work in one transaction and, when it fails with a
  * {@link TransientConflict}, rolls back and runs the whole transaction again after a short jittered delay
- * (at most {@code app.retry.max-retries} more times; ADR-19 sets the default to 0 because retrying means waiting,
+ * (at most {@code app.retry.max-retries} more times; the default is 0 because retrying means waiting,
  * so a conflict goes straight to the "press again" notice). Retrying is safe because every write transaction re-reads
  * and re-decides from scratch after a rollback, completion is guarded by the idempotency key and unique
  * constraints, and the transfer by the review row lock and the unique next_plan_id.
@@ -34,11 +34,11 @@ import com.plandosee.diary.common.error.ServiceBusyException;
  * retried and becomes {@link ServiceBusyException}.
  * <p>
  * A DB integrity violation (CHECK, UNIQUE, NOT NULL, foreign key) becomes a {@link DomainRuleException} with the
- * code registered for that constraint (ADR-22), so it is shown like any other rule violation instead of a 500.
+ * code registered for that constraint, so it is shown like any other rule violation instead of a 500.
  * A caller that turns a particular violation into a result itself (completion's duplicate key) uses
  * {@link #runKeepingConstraintErrors}.
  * <p>
- * Logs carry the conflict kind and attempt numbers, or the constraint name, only (CLAUDE.md 5장).
+ * Logs carry the conflict kind and attempt numbers, or the constraint name, only.
  */
 @Component
 public class WriteTransactions {
@@ -75,9 +75,9 @@ public class WriteTransactions {
     }
 
     /**
-     * Like {@link #run(Supplier)} but an integrity violation of type {@code kept} reaches the caller unchanged (ADR-05
-     * completion: a concurrent duplicate key means "already done"); every other one is translated like run does, so
-     * for example a V5 CHECK on an old row is a rule code, not an error page (ADR-30).
+     * Like {@link #run(Supplier)} but an integrity violation of type {@code kept} reaches the caller unchanged (for
+     * completion, a concurrent duplicate key means "already done"); every other one is translated like run does, so
+     * for example a V5 CHECK on an old row is a rule code, not an error page.
      */
     public <T> T runKeeping(Class<? extends DataIntegrityViolationException> kept, Supplier<T> work) {
         try {
@@ -92,7 +92,7 @@ public class WriteTransactions {
 
     /**
      * Like {@link #run(Supplier)} but a DataIntegrityViolationException reaches the caller unchanged, for callers
-     * that turn a specific violation into a result (ADR-05 completion: a concurrent duplicate key means "already
+     * that turn a specific violation into a result (for completion, a concurrent duplicate key means "already
      * done"). The caller must not let it escape as a 500.
      */
     public <T> T runKeepingConstraintErrors(Supplier<T> work) {
@@ -144,7 +144,7 @@ public class WriteTransactions {
         return exhausted.get();
     }
 
-    /** Total deadlocks seen at this boundary, retried or not (ADR-15 CC-1 regression check). */
+    /** Total deadlocks seen at this boundary, retried or not (a regression check for lock-order deadlocks). */
     public long deadlockCount() {
         return deadlocks.get();
     }

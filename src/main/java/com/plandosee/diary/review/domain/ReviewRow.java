@@ -18,7 +18,7 @@ public class ReviewRow {
     private OffsetDateTime updatedAt;
     private int version;
 
-    /** True once the improvement was carried to a next plan; the improvement is then read-only (ADR-08). */
+    /** True once the improvement was carried to a next plan; the improvement is then read-only. */
     public boolean isTransferred() {
         return nextPlanId != null;
     }
@@ -103,7 +103,7 @@ public class ReviewRow {
         this.updatedAt = updatedAt;
     }
 
-    /** ADR-18 edit version: +1 only when an edit form changes the content (E5, E7). */
+    /** Edit version: +1 only when an edit form changes the content. */
     public int getVersion() {
         return version;
     }

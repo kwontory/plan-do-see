@@ -29,7 +29,7 @@
         <nav th:replace="~{fragments/layout :: flowSteps('plan', ${plan.id})}"></nav>
     </div>
 
-    <!--/* D5: the h2 names the content, so no badge repeats the same words here. */-->
+    <!--/* The h2 names the content, so no badge repeats the same words here. */-->
     <section class="section" aria-labelledby="carried-heading"
              th:if="${plan.carriedImprovement != null and !#strings.isEmpty(plan.carriedImprovement)}">
         <h2 id="carried-heading" th:text="#{plans.detail.carried.heading}">carried</h2>

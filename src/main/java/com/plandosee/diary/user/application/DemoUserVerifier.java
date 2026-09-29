@@ -8,7 +8,7 @@ import com.plandosee.diary.common.config.CurrentUserProvider;
 import com.plandosee.diary.user.application.port.UserMapper;
 
 /**
- * ADR-10: the configured demo user must exist, otherwise every owned query would silently return nothing.
+ * The configured demo user must exist, otherwise every owned query would silently return nothing.
  */
 @Component
 public class DemoUserVerifier {

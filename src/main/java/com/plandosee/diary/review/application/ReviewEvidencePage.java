@@ -5,7 +5,7 @@ import com.plandosee.diary.review.domain.ReviewEvidence;
 import com.plandosee.diary.review.domain.ReviewRow;
 
 /**
- * Everything the evidence page shows, read in one repeatable-read snapshot (ADR-14, T06-C83).
+ * Everything the evidence page shows, read in one repeatable-read snapshot.
  */
 public record ReviewEvidencePage(ReviewRow review, PlanRow plan, ReviewEvidence evidence) {
 }

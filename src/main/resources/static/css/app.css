@@ -1,5 +1,5 @@
-/* PlanDoSee Note - T06 styles (v2 design, docs/design/mockups/canvas-v2). Tokens: docs/design/design-system.md.
-   Classes are for looks only (ADR-17): behaviour uses data-js, tests use data-test.
+/* PlanDoSee Note - styles.
+   Classes are for looks only: behaviour uses data-js, tests use data-test.
    This file holds the app shell, tokens and shared parts (buttons, chips, badges, cards, column layouts, form cards,
    form fields, errors, tables, metric tiles, section spacing) plus the home and todo list screens. Other screens' own
    rules live in pages.css.
@@ -7,7 +7,7 @@
    Components that depend on the page column width use container queries on main (container: page). */
 
 :root {
-    /* Colors (v2). Old names are kept so every screen picks up the new values. */
+    /* Colors. Old names are kept so every screen picks up the new values. */
     --color-text: #1a2233;
     --color-text-muted: #4f5b6e;
     --color-subtle: #6b7a90;
@@ -35,7 +35,7 @@
     --color-danger-line: #f4b4b4;
     --color-notice-bg: #fff8e1;
     --color-notice-line: #f0d58a;
-    /* ADR-18 conflict highlighter (user decision 2026-09-29): values that differ from the latest. Body text on it 13.7:1,
+    /* Conflict highlighter: values that differ from the latest. Body text on it 13.7:1,
        muted text 5.9:1. */
     --color-highlight: #fff08a;
     /* Triangle after the name of a changed item (with the highlighter): 5.43:1 on white, 5.11:1 on canvas. */
@@ -45,7 +45,7 @@
     --color-pri-low: #6b7a90;
     --color-layer: #f5f8fe;
     --color-layer-line: #c7d3ea;
-    /* Review bars (ADR-27): estimated fill; the actual fill is --color-primary. Decorative (numbers sit beside). */
+    /* Review bars: estimated fill; the actual fill is --color-primary. Decorative (numbers sit beside). */
     --color-bar-estimated: #9db4ec;
     --shadow-card: 0 1px 2px rgb(26 34 51 / 0.06), 0 4px 12px rgb(26 34 51 / 0.05);
     --shadow-raised: 0 8px 24px rgb(26 34 51 / 0.07);
@@ -59,7 +59,7 @@
     --space-6: 32px;
     --space-7: 48px;
     --space-8: 64px;
-    /* User rules (canvas comments): cards 16 apart, sections 48 (narrow 38), heading -> content 16. */
+    /* Spacing: cards 16 apart, sections 48 (narrow 38), heading -> content 16. */
     --gap-card: 16px;
     --gap-section: 38px;
     --gap-head: 22px;
@@ -250,7 +250,7 @@ a:hover {
     top: var(--space-2);
 }
 
-/* Public banner (T06-C82): the full sentence on every page, never shortened. */
+/* Public banner: the full sentence on every page, never shortened. */
 .public-banner {
     background: var(--color-surface);
     padding-top: var(--space-3);
@@ -810,7 +810,7 @@ a.flow__item:hover {
     }
 }
 
-/* Decorative step tag above a card heading (plan detail, review): a pill "2 · DO" (v2). */
+/* Decorative step tag above a card heading (plan detail, review): a pill "2 · DO". */
 .step-tag {
     display: inline-flex;
     align-items: center;
@@ -862,7 +862,7 @@ a.flow__item:hover {
     box-shadow: inset 0 2px 0 rgb(0 0 0 / 0.15);
 }
 
-/* Line button (v2 btn--line). The border is --color-control-line (3:1 or more on
+/* Line button (btn--line). The border is --color-control-line (3:1 or more on
    white, canvas and the hover face) instead of the design's lighter line, so the button edge meets non-text contrast. */
 .btn--line {
     color: var(--color-primary);
@@ -934,7 +934,7 @@ a.flow__item:hover {
     border-color: var(--color-danger);
 }
 
-/* Text action (v2 lnk): a row's secondary actions. No underline; hover shows a light face. */
+/* Text action (lnk): a row's secondary actions. No underline; hover shows a light face. */
 .lnk {
     display: inline-flex;
     align-items: center;
@@ -1164,7 +1164,7 @@ a.flow__item:hover {
     color: var(--color-primary);
 }
 
-/* Blue information box above a form (v2 hint). Text, not an alert. */
+/* Blue information box above a form (hint). Text, not an alert. */
 .hint {
     margin: 0 0 var(--space-4);
     padding: 14px 20px;
@@ -1201,7 +1201,7 @@ a.flow__item:hover {
     margin-bottom: 0;
 }
 
-/* Short "nothing here yet" line (v2: a soft card: canvas face, light line). */
+/* Short "nothing here yet" line (a soft card: canvas face, light line). */
 .empty {
     margin: 0 0 var(--space-4);
     padding: var(--space-4) 20px;
@@ -1370,7 +1370,7 @@ a.flow__item:hover {
     container-type: inline-size;
 }
 
-/* Empty state (v2): dashed box, round icon, one line, optional action. */
+/* Empty state: dashed box, round icon, one line, optional action. */
 .empty-state {
     display: flex;
     flex-direction: column;
@@ -1441,7 +1441,7 @@ a.flow__item:hover {
     color: var(--color-text-muted);
 }
 
-/* v2 form card: white face, fields 18px apart. */
+/* Form card: white face, fields 18px apart. */
 .form-card {
     display: flex;
     flex-direction: column;
@@ -1527,7 +1527,7 @@ a.flow__item:hover {
     color: var(--color-text-muted);
 }
 
-/* v2 field error (fragments/layout :: fieldMessage): under the input, icon + red text; the input keeps its look. */
+/* Field error (fragments/layout :: fieldMessage): under the input, icon + red text; the input keeps its look. */
 .error-text {
     display: flex;
     align-items: flex-start;
@@ -1597,9 +1597,9 @@ input::placeholder {
     opacity: 1;
 }
 
-/* An invalid field keeps its border: only the message text under it is red (canvas note dev-error-focus). */
+/* An invalid field keeps its border: only the message text under it is red. */
 
-/* ADR-18 conflict: a field whose value differs from the latest is painted like a highlighter. Its aria-describedby
+/* Conflict: a field whose value differs from the latest is painted like a highlighter. Its aria-describedby
    holds the hidden "differs from the latest" note (id ending in -changed), so the same attribute gives the look. */
 input[aria-describedby*="-changed"],
 select[aria-describedby*="-changed"],
@@ -1656,7 +1656,7 @@ fieldset.field-group {
     }
 }
 
-/* ADR-29 estimated time: three boxes (days, hours, minutes) in one fieldset (layout :: durationInput). The legend
+/* Estimated time: three boxes (days, hours, minutes) in one fieldset (layout :: durationInput). The legend
    looks like a field label so the boxes line up with the inputs beside them; each input is followed by its visible
    unit label, and the labels share one width so the three inputs are equally wide. Three boxes fit one row down to a
    256px form column (320px window); spinners are hidden (the arrow keys still step the value). */
@@ -1727,7 +1727,7 @@ fieldset.field-group {
     color: var(--color-text-muted);
 }
 
-/* v2 "not saved" box (fragments/layout :: errorAlert): centred heading, only errors that have no field. */
+/* "Not saved" box (fragments/layout :: errorAlert): centred heading, only errors that have no field. */
 .error-alert {
     display: flex;
     flex-direction: column;
@@ -1810,7 +1810,7 @@ fieldset.field-group {
     padding: 0 2px;
 }
 
-/* ---------- Todo add form (v2 composer) ---------- */
+/* ---------- Todo add form (composer) ---------- */
 .composer {
     display: flex;
     flex-direction: column;
@@ -1908,7 +1908,7 @@ fieldset.field-group {
     margin: 0;
 }
 
-/* Row fields: due date, priority, estimated time (three boxes, ADR-29), tags. Two columns from 300px with the
+/* Row fields: due date, priority, estimated time (three boxes), tags. Two columns from 300px with the
    estimated time on its own row until 560px (the three boxes need the width); one row from 880px, where the
    estimated time gets the widest column. */
 @container page (min-width: 300px) {
@@ -1950,7 +1950,7 @@ fieldset.field-group {
 }
 
 /* ---------- Search and filter toolbar ---------- */
-/* Boxes line up at the top (v2: same-row inputs share a top line even when the search box shows an error under it).
+/* Boxes line up at the top (same-row inputs share a top line even when the search box shows an error under it).
    The apply button has no label, so on rows it shares it is pushed down by one label height (18px + 5px margin). */
 .toolbar {
     display: grid;
@@ -2122,7 +2122,7 @@ fieldset.field-group {
 }
 
 
-/* ---------- Todo rows (v2): complete circle | title and facts | actions | delete ---------- */
+/* ---------- Todo rows: complete circle | title and facts | actions | delete ---------- */
 .tasks {
     margin: 0;
     padding: 0;
@@ -2315,7 +2315,7 @@ button.check:hover .icon {
     border-style: dashed;
 }
 
-/* ---------- Plan rows as cards (v2 plan-row; markup: fragments/plan.html) ---------- */
+/* ---------- Plan rows as cards (plan-row; markup: fragments/plan.html) ---------- */
 .plan-rows {
     display: flex;
     flex-direction: column;
@@ -2554,7 +2554,7 @@ button.check:hover .icon {
     }
 }
 
-/* Table area: a bordered box (v2) that scrolls sideways inside when the table is wider. It can take keyboard focus
+/* Table area: a bordered box that scrolls sideways inside when the table is wider. It can take keyboard focus
    (tabindex=0, so it can be scrolled with the arrow keys): the focus ring is the usual 3px blue outline outside the
    box, which neither the sticky first column nor the head row can cover. */
 .table-wrap {
@@ -2705,7 +2705,7 @@ tfoot td {
     }
 }
 
-/* ---------- Review metric tiles (v2 stat) ---------- */
+/* ---------- Review metric tiles (stat) ---------- */
 .stat-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2822,7 +2822,7 @@ tfoot td {
     }
 }
 
-/* ---------- Page navigation (ADR-21) ---------- */
+/* ---------- Page navigation ---------- */
 .pager {
     display: flex;
     flex-wrap: wrap;

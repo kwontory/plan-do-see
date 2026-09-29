@@ -2,8 +2,8 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <body>
 
-<!--/* ADR-18 latest panel values of a review's improvement (reviews/detail improvement conflict and the next-plan
-       form sent after the improvement was already carried, 11.5.5). review: ReviewRow as stored now,
+<!--/* Latest panel values of a review's improvement (reviews/detail improvement conflict and the next-plan
+       form sent after the improvement was already carried). review: ReviewRow as stored now,
        nextPlan: PlanRow or null. The "changed" badge only appears when the model changedFields lists improvement. */-->
 <dl th:fragment="improvementLatest(review, nextPlan)" class="dl-grid">
     <dt><th:block th:text="#{reviews.detail.improvement.heading}">improvement</th:block> <span
@@ -20,10 +20,10 @@
     </th:block>
 </dl>
 
-<!--/* One metric card of the review screen (S04). key: metric key, v: server value, reviewId: review id.
-       Labels, units and the sign of the variance are chosen here (ADR-13); the card links to the evidence (T06-C83).
+<!--/* One metric card of the review screen. key: metric key, v: server value, reviewId: review id.
+       Labels, units and the sign of the variance are chosen here; the card links to the evidence.
        Time metrics (model metricDurations: estimated, actual, variance) print as days, hours and minutes with each number
-       large and each unit small (layout :: durationStat, ADR-29); counts print the number and metric.<key>.unit.
+       large and each unit small (layout :: durationStat); counts print the number and metric.<key>.unit.
        The variance shows its sign only ("+30분", "-1시간 5분", "0분"); the description says which way is more or less. */-->
 <a th:fragment="metricCard(key, v, reviewId)" class="stat" th:classappend="${key == 'variance'} ? 'stat--variance'"
    th:href="@{/reviews/{id}/evidence(id=${reviewId},metric=${key})}" href="#"
@@ -41,9 +41,9 @@
             th:text="#{reviews.detail.metrics.cta}">evidence</th:block><span aria-hidden="true"> →</span></span>
 </a>
 
-<!--/* Estimated vs actual bars (S04, ADR-27). summary: ReviewSummary or null (nothing is drawn without it). The widths
+<!--/* Estimated vs actual bars. summary: ReviewSummary or null (nothing is drawn without it). The widths
        come from the server (summary.bars.estimatedPercent / actualPercent, 0-100, the larger sum is 100); the template
-       only prints them as SVG width percentages (no inline style: CSP, ADR-26). Decorative: aria-hidden, because the
+       only prints them as SVG width percentages (no inline style: CSP). Decorative: aria-hidden, because the
        estimated / actual cards beside the bars carry the same numbers. */-->
 <div th:fragment="timeBars(summary)" th:if="${summary != null and summary.bars != null}" class="bars" aria-hidden="true">
     <div class="bar">

@@ -70,7 +70,7 @@
         FOR UPDATE NOWAIT
     </select>
 
-    <!-- ADR-21: the plan list, its page, and its count share this FROM/WHERE. -->
+    <!-- The plan list, its page, and its count share this FROM/WHERE. -->
     <sql id="activeOwnedPlans">
         FROM plans p
         WHERE p.user_id = #{userId}
@@ -96,7 +96,7 @@
     </select>
 
     <!--
-      ADR-18: a content edit moves the version on by one. #{version} is the version read under the plan row lock in
+      A content edit moves the version on by one. #{version} is the version read under the plan row lock in
       the same transaction; the service has already compared it with the form's version, so 0 rows here means the
       row changed or disappeared underneath the lock (never expected).
     -->

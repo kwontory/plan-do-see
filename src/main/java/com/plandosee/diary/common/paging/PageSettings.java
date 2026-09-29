@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 /**
- * ADR-21 page size: app.page-size (APP_PAGE_SIZE), 50 by default, 1 to 200. A value outside that range stops the
+ * Page size: app.page-size (APP_PAGE_SIZE), 50 by default, 1 to 200. A value outside that range stops the
  * start-up with the property name only.
  */
 @Component

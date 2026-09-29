@@ -8,11 +8,11 @@ import java.time.ZoneId;
 import com.plandosee.diary.common.error.DomainRuleException;
 
 /**
- * ADR-29: the one place for the accepted date range of every date and date-time input (plan period, todo due date,
+ * The one place for the accepted date range of every date and date-time input (plan period, todo due date,
  * execution start and end, read as Seoul local dates). {@value #MIN_TEXT} .. {@value #MAX_TEXT}: four-digit years
  * only, so the browser date input, ISO text without a sign, Java LocalDate and PostgreSQL DATE all write the value
  * the same way, no BC / year 0 values, and an execution period stays far below the int minute limit.
- * The form binding (FormBindingAdvice), the command checks (InputCheck) and the V5 CHECK constraints (ADR-30) use the
+ * The form binding (FormBindingAdvice), the command checks (InputCheck) and the V5 CHECK constraints use the
  * same bounds with the code {@link FieldCodes#DATE_OUT_OF_RANGE} and arguments {0} = {@value #MIN_TEXT},
  * {1} = {@value #MAX_TEXT}.
  */
@@ -52,7 +52,7 @@ public final class DateBounds {
         }
     }
 
-    /** A point in time is checked by its local date in {@code zone} (Asia/Seoul for inputs, DEC-02). */
+    /** A point in time is checked by its local date in {@code zone} (Asia/Seoul for inputs). */
     public static void check(String field, OffsetDateTime time, ZoneId zone) {
         if (time != null && !contains(time, zone)) {
             throw outOfRange(field);

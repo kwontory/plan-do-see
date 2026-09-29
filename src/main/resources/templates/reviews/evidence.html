@@ -86,7 +86,7 @@
         </section>
     </div>
 
-    <!--/* 3. Todo evidence (default todo order, same as S02 DUE) */-->
+    <!--/* 3. Todo evidence (default todo order, same as the todo list DUE sort) */-->
     <section class="section" aria-labelledby="ev-todo-heading" th:if="${showTodos}">
         <h2 id="ev-todo-heading" th:text="#{evidence.todos.heading}">todos</h2>
         <p class="sort-description"><strong th:text="#{common.sortLabel}">sort:</strong> <span th:text="#{sort.DUE.description}">sort</span></p>
@@ -131,7 +131,7 @@
                 </tfoot>
             </table>
         </div>
-        <!--/* ADR-21: the footer totals and the check above cover the whole scope; this page shows a part of it. */-->
+        <!--/* The footer totals and the check above cover the whole scope; this page shows a part of it. */-->
         <p th:replace="~{fragments/layout :: allPagesNote(${pageNav})}"></p>
         <th:block th:with="todoBase=${logPage != null} ? @{/reviews/{id}/evidence(id=${review.id},metric=${mk},logPage=${logPage.number})} : @{/reviews/{id}/evidence(id=${review.id},metric=${mk})}">
             <div th:replace="~{fragments/layout :: pager(${pageNav}, 'page', ${todoBase}, '#ev-todo-heading', ${#messages.msg('pager.nav', #messages.msg('evidence.todos.region'))})}"></div>

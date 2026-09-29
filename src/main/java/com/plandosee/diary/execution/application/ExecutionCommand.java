@@ -8,7 +8,7 @@ import com.plandosee.diary.execution.domain.ActualMinutes;
 import com.plandosee.diary.execution.domain.ExecutionRules;
 
 /**
- * One execution record to store. ADR-30: a self-validating command. The constructor checks both times (required,
+ * One execution record to store. A self-validating command. The constructor checks both times (required,
  * Seoul local date within DateBounds), the period (ActualMinutes: not reversed, at most
  * ExecutionRules.PERIOD_MAX_MINUTES) and the blocker reason (ExecutionRules.BLOCKER_REASON) and throws one
  * DomainRuleException listing every broken rule. blockerReason is stored normalized, null when blank.
@@ -26,7 +26,7 @@ public record ExecutionCommand(OffsetDateTime startedAt, OffsetDateTime endedAt,
         check.done();
     }
 
-    /** DEC-03 whole minutes, rounded up (valid by construction). */
+    /** Whole minutes, rounded up (valid by construction). */
     public int actualMinutes() {
         return ActualMinutes.between(startedAt, endedAt);
     }

@@ -1,8 +1,8 @@
 package com.plandosee.diary.common.error;
 
 /**
- * One broken input rule (ADR-22, ADR-30): the field it belongs to (null for the whole form), the error code (also the
- * message key, ADR-13) and optional message arguments. Never carries text.
+ * One broken input rule: the field it belongs to (null for the whole form), the error code (also the
+ * message key) and optional message arguments. Never carries text.
  */
 public record FieldViolation(String field, String code, Object... args) {
 

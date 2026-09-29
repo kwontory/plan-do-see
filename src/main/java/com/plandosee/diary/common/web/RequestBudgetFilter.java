@@ -22,9 +22,9 @@ import org.springframework.web.servlet.HandlerMapping;
 import com.plandosee.diary.common.db.DbTimeoutSettings;
 
 /**
- * ADR-19 page budget: a request that took longer than app.request-budget-ms (3000 by default) is logged at WARN
+ * Page budget: a request that took longer than app.request-budget-ms (3000 by default) is logged at WARN
  * with the route template (for example {@code /todos/{id}}) and the elapsed milliseconds only. Never the actual
- * path, query string, parameters, user values, or SQL (CLAUDE.md 5장).
+ * path, query string, parameters, user values, or SQL.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)

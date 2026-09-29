@@ -19,14 +19,14 @@ import com.plandosee.diary.plan.domain.PlanRow;
 import com.plandosee.diary.plan.domain.PlanRules;
 
 /**
- * Plan create/edit/next-plan form (web-contract.md). Strings arrive trimmed; blank becomes null (FormBindingAdvice).
- * Limits come from PlanRules (ADR-22), the same values PlanService checks and the DB CHECK constraints hold.
+ * Plan create/edit/next-plan form. Strings arrive trimmed; blank becomes null (FormBindingAdvice).
+ * Limits come from PlanRules, the same values PlanService checks and the DB CHECK constraints hold.
  * endDate >= startDate is the PlanPeriod rule, checked here as a form-level constraint and shown on the endDate
- * field together with the other field errors (QA-D5); PlanService checks it again for direct calls.
- * The estimated time is three boxes combined into whole minutes (ADR-29, {@link EstimatedDurationForm}); every error
+ * field together with the other field errors; PlanService checks it again for direct calls.
+ * The estimated time is three boxes combined into whole minutes ({@link EstimatedDurationForm}); every error
  * of the group is on the field {@code estimatedMinutes}. Dates are parsed and range-checked while binding
  * (FormBindingAdvice, code validation.date.outOfRange). Text content (line breaks, control characters) is
- * {@code @PlainText}; PlanCommand checks everything again (ADR-30).
+ * {@code @PlainText}; PlanCommand checks everything again.
  */
 @ValidPlanPeriod
 @ValidEstimatedDuration
@@ -189,7 +189,7 @@ public class PlanForm implements EstimatedDurationForm {
     }
 
     /**
-     * ADR-18 hidden field: the version the edit form was opened with (after a stale-version conflict, the latest
+     * Hidden field: the version the edit form was opened with (after a stale-version conflict, the latest
      * version). Only compared to detect an out-of-date save; never an authorization value. Absent: no check.
      */
     public Integer getVersion() {

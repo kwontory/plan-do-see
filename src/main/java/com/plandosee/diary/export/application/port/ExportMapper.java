@@ -20,7 +20,7 @@ import com.plandosee.diary.user.domain.UserRow;
 
 /**
  * Export reads. Every query is owned by the server-resolved user, excludes soft-deleted rows and the children
- * of soft-deleted parents (ADR-04), and is ordered by id (todoTags by todo_id, tag_id).
+ * of soft-deleted parents, and is ordered by id (todoTags by todo_id, tag_id).
  */
 @Mapper
 public interface ExportMapper {

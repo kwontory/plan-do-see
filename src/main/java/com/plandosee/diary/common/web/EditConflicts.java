@@ -14,13 +14,13 @@ import com.plandosee.diary.common.error.RetryLaterException;
 import com.plandosee.diary.common.error.StaleVersionException;
 
 /**
- * ADR-18 re-shown edit forms (web-contract revision 6). Model attributes:
+ * Re-shown edit forms. Model attributes:
  * <ul>
  *   <li>{@value #LATEST}: the latest stored record (read-only "latest content" panel)</li>
  *   <li>{@value #CHANGED_FIELDS}: List of form field names whose submitted value differs from the latest record
  *       (server computed; the template only prints "changed" badges)</li>
  *   <li>{@value #SNAPSHOT_UNAVAILABLE}: true when the form is shown again without reading the database (the save
- *       ran out of its time budget or pool wait, ADR-19). Only the submitted form and the ids are reliable then;
+ *       ran out of its time budget or pool wait). Only the submitted form and the ids are reliable then;
  *       the record object in the model is a stand-in built from the path and the input.</li>
  * </ul>
  * The global error code is also the default message, so a code without text cannot break the page
@@ -56,7 +56,7 @@ public final class EditConflicts {
 
     /**
      * A read made only to show a form again after a failed save. Empty when that read itself did not fit in the time
-     * budget or pool wait (ADR-19) or collided (ADR-15), so the caller can show the form from the request alone
+     * budget or pool wait or collided, so the caller can show the form from the request alone
      * (stand-in, {@link #markSnapshotUnavailable}) instead of losing the input on an error page. A plain read is
      * not behind the write boundary, so its budget failure arrives as the raw Spring exception and is recognised
      * here by {@link BusyCause}. Anything else (not found, a bug) is rethrown.

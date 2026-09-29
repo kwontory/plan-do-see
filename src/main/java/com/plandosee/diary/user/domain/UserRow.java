@@ -3,7 +3,7 @@ package com.plandosee.diary.user.domain;
 import java.util.UUID;
 
 /**
- * Only the fields needed for display and export. Email columns are never read in T06.
+ * Only the fields needed for display and export. Email columns are never read.
  */
 public class UserRow {
 

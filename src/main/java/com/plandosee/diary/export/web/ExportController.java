@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import com.plandosee.diary.export.application.ExportService;
 
 /**
- * S05. The download is a single UTF-8 JSON attachment; GET never changes state.
+ * JSON export. The download is a single UTF-8 JSON attachment; GET never changes state.
  */
 @Controller
 public class ExportController {

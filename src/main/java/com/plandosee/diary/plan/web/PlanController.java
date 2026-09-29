@@ -36,7 +36,7 @@ import com.plandosee.diary.plan.domain.PlanRow;
 import com.plandosee.diary.review.application.ReviewService;
 
 /**
- * S01 plan pages.
+ * Plan pages.
  */
 @Controller
 public class PlanController {
@@ -44,7 +44,7 @@ public class PlanController {
     static final String FORM_VIEW = "plans/form";
     public static final String FLASH_CREATED = "flash.plan.created";
     public static final String FLASH_UPDATED = "flash.plan.updated";
-    /** ADR-18 E5: the saved content equals the stored plan; nothing changed and no revision was added. */
+    /** The saved content equals the stored plan; nothing changed and no revision was added. */
     public static final String FLASH_UNCHANGED = "flash.plan.unchanged";
 
     private final PlanService planService;
@@ -116,7 +116,7 @@ public class PlanController {
         try {
             outcome = planService.revise(planId, form.toCommand(), form.getVersion());
         } catch (PlanStaleException ex) {
-            // ADR-18: 409, the input kept, the latest plan and what differs; the hidden version becomes the latest so
+            // 409, the input kept, the latest plan and what differs; the hidden version becomes the latest so
             // saving again is a deliberate overwrite. No DB read here: the snapshot came with the failure.
             form.setVersion(ex.latestVersion());
             EditConflicts.rejectStale(result, response, model, ex, ex.latest());
@@ -125,7 +125,7 @@ public class PlanController {
             FormErrors.reject(result, ex);
             return editView(model, planService.get(planId));
         } catch (ServiceBusyException ex) {
-            // ADR-18/ADR-19: out of time or connections. Shown again without reading the database, input kept.
+            // Out of time or connections. Shown again without reading the database, input kept.
             ConflictResponses.rejectForm(result, response, ex);
             EditConflicts.markSnapshotUnavailable(model);
             return editView(model, standIn(planId, form));
@@ -137,7 +137,7 @@ public class PlanController {
         return "redirect:/plans/" + planId;
     }
 
-    /** After a collision (ADR-15): the latest plan and what differs, or the stand-in if even the read fails. */
+    /** After a collision: the latest plan and what differs, or the stand-in if even the read fails. */
     private String editViewWithLatest(Model model, UUID planId, PlanForm form) {
         Optional<EditSnapshot<PlanRow>> read =
                 EditConflicts.readForForm(() -> planService.latestForEdit(planId, form.toCommand()));

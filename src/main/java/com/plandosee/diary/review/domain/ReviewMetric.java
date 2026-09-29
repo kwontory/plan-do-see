@@ -3,9 +3,9 @@ package com.plandosee.diary.review.domain;
 import java.util.Optional;
 
 /**
- * Review metrics and their drill-down keys (web-contract.md). The key is the only value accepted from the URL.
+ * Review metrics and their drill-down keys. The key is the only value accepted from the URL.
  * Labels and units live in messages.properties as metric.&lt;key&gt;.label / metric.&lt;key&gt;.unit, and the
- * card order is decided by the template (ADR-13).
+ * card order is decided by the template.
  */
 public enum ReviewMetric {
     PLANNED("planned"),

@@ -7,16 +7,16 @@ import com.plandosee.diary.common.domain.InputCheck;
 import com.plandosee.diary.common.error.DomainRuleException;
 
 /**
- * DEC-03: actual minutes are computed by the server from the elapsed time and rounded up so work is never
+ * Actual minutes are computed by the server from the elapsed time and rounded up so work is never
  * under-counted. Exactly zero elapsed time is 0 minutes; 1..60 seconds is 1 minute; 61 seconds is 2 minutes.
- * ADR-30: one record lasts at most {@link ExecutionRules#PERIOD_MAX_MINUTES} minutes ({@link #TOO_LONG}).
+ * One record lasts at most {@link ExecutionRules#PERIOD_MAX_MINUTES} minutes ({@link #TOO_LONG}).
  */
 public final class ActualMinutes {
 
     public static final String STARTED_AT_REQUIRED = "execution.startedAt.required";
     public static final String ENDED_AT_REQUIRED = "execution.endedAt.required";
     public static final String END_BEFORE_START = "execution.period.endBeforeStart";
-    /** ADR-30: the record is longer than ExecutionRules.PERIOD_MAX_MINUTES (365 days). */
+    /** The record is longer than ExecutionRules.PERIOD_MAX_MINUTES (365 days). */
     public static final String TOO_LONG = "execution.period.tooLong";
 
     private ActualMinutes() {

@@ -44,9 +44,9 @@
 </th:block>
 
 <!--/* PlanForm fields. Must be included inside a form with th:object="${planForm}". priorities: enum values.
-       v2 field order (canvas note dev-error-focus): label -> input -> field error (red text only; the form carries
+       Field order: label -> input -> field error (red text only; the form carries
        form--v2 so the input keeps its border) -> help. The input has aria-invalid="true" on error and its
-       aria-describedby lists the error id first, then the help, then the ADR-18 "differs from the latest" note
+       aria-describedby lists the error id first, then the help, then the "differs from the latest" note
        (changedNote, beside the label on a conflict page). Two-column grid: period dates side by side, priority in the
        first column, the rest full width. */-->
 <th:block th:fragment="planFields(priorities)">
@@ -109,7 +109,7 @@
     </div>
 </th:block>
 
-<!--/* ADR-18 latest panel values of a plan (model latest: PlanRow). "period" is one line for both dates. */-->
+<!--/* Latest panel values of a plan (model latest: PlanRow). "period" is one line for both dates. */-->
 <dl th:fragment="planLatestFields" class="dl-grid">
     <dt><th:block th:text="#{plans.field.title}">title</th:block> <span th:replace="~{fragments/layout :: changedBadge('title')}"></span></dt>
     <dd th:replace="~{fragments/layout :: latestValue('title', ${latest.title}, null)}"></dd>

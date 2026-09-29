@@ -16,7 +16,7 @@
         <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
             <ol>
                 <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
-                <!--/* ADR-19 stand-in (snapshotUnavailable): the plan and the todo title are unknown; those steps are left out. */-->
+                <!--/* Stand-in page (snapshotUnavailable): the plan and the todo title are unknown; those steps are left out. */-->
                 <th:block th:unless="${unavailable}">
                     <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#" th:text="${plan.title}">plan</a></li>
                     <li><a th:href="@{/plans/{id}/todos(id=${plan.id})}" href="#" th:text="#{breadcrumb.todos}">todos</a></li>
@@ -34,10 +34,10 @@
     <p class="note" th:if="${unavailable}" data-test="snapshot-unavailable" th:text="#{conflict.latest.unavailable}">unavailable</p>
 
     <!--/* Top: current values and completion (left column), execution form (right). Both columns end on the same line.
-           ADR-19 stand-in: only the execution form can be drawn; the other sections need the database. */-->
+           Stand-in page: only the execution form can be drawn; the other sections need the database. */-->
     <div class="section two" th:classappend="${unavailable} ? 'two--single'">
         <div class="card-stack" th:unless="${unavailable}">
-            <!--/* 1. Current values (ADR-16): plan value (estimate) and Do value (sum of execution records, server value). */-->
+            <!--/* 1. Current values: plan value (estimate) and Do value (sum of execution records, server value). */-->
             <section class="card" aria-labelledby="info-heading">
                 <div class="card__head">
                     <h2 id="info-heading" th:text="#{todos.detail.info.heading}">info</h2>
@@ -135,7 +135,7 @@
     <!--/* 4. Execution logs */-->
     <section class="section" aria-labelledby="logs-heading">
         <h2 id="logs-heading" th:text="#{todos.detail.logs.heading}">logs</h2>
-        <!--/* ADR-21: count and total cover every record of this todo (server values), not only this page. */-->
+        <!--/* Count and total cover every record of this todo (server values), not only this page. */-->
         <p class="summary-line num"><th:block th:text="#{todos.detail.logs.summaryLead(${logPage.totalCount})}">0</th:block> <th:block th:replace="~{fragments/layout :: duration(${logsActualDuration})}">0</th:block></p>
         <p class="sort-note" th:text="#{todos.detail.logs.sortNote}">sort</p>
         <p class="empty" th:if="${logs.isEmpty()}" th:text="#{todos.detail.logs.empty}">empty</p>
@@ -175,7 +175,7 @@
         <div th:replace="~{fragments/layout :: pager(${logPageNav}, 'logPage', @{/todos/{id}(id=${todo.id},historyPage=${historyPage.number})}, '#logs-heading', ${#messages.msg('pager.nav', #messages.msg('todos.detail.logs.heading'))})}"></div>
     </section>
 
-    <!--/* 5. Completions and reopens (ADR-16) next to 6. edit history. The server merges and orders the history
+    <!--/* 5. Completions and reopens next to 6. edit history. The server merges and orders the history
            (completionHistory, one page) and counts all of it (completionCount, reopenCount); the template neither
            merges nor counts. */-->
     <div class="section two">
@@ -213,7 +213,7 @@
             <div th:replace="~{fragments/layout :: pager(${historyPageNav}, 'historyPage', @{/todos/{id}(id=${todo.id},logPage=${logPage.number})}, '#history-heading', ${#messages.msg('pager.nav', #messages.msg('todos.detail.history.heading'))})}"></div>
         </section>
 
-        <!--/* 6. Edit history (ADR-16): values before each edit, newest first (server order). */-->
+        <!--/* 6. Edit history: values before each edit, newest first (server order). */-->
         <section class="card card--soft" aria-labelledby="todo-revisions-heading">
             <h2 id="todo-revisions-heading" th:text="#{todos.detail.revisions.heading}">revisions</h2>
             <p class="small-note card__intro" th:text="#{todos.detail.revisions.intro}">intro</p>

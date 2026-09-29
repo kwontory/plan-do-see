@@ -3,11 +3,11 @@ package com.plandosee.diary.common.error;
 import java.util.List;
 
 /**
- * A request that is well-formed but violates a domain rule (ADR-13).
+ * A request that is well-formed but violates a domain rule.
  * It carries only the offending field, an error code, and optional message arguments. The code is also the
  * message key in messages.properties; the web layer turns it into a field error or a flash key.
  * <p>
- * ADR-30: a command check reports every broken field at once. {@link #violations()} lists them in field order;
+ * A command check reports every broken field at once. {@link #violations()} lists them in field order;
  * {@link #field()}, {@link #code()} and {@link #args()} are the first one (callers that show a single notice, such as
  * a flash, use those). FormErrors puts every violation on the form.
  */

@@ -75,7 +75,7 @@ public class TodoRow {
         this.estimatedMinutes = estimatedMinutes;
     }
 
-    /** ADR-29: estimatedMinutes split into days, hours and minutes for display (not stored, not exported). */
+    /** estimatedMinutes split into days, hours and minutes for display (not stored, not exported). */
     public DurationParts getEstimatedDuration() {
         return DurationParts.of(estimatedMinutes);
     }
@@ -134,7 +134,7 @@ public class TodoRow {
     }
 
     /**
-     * Overdue in Asia/Seoul: not completed and due before today (TodoPredicates.overdue, T06-C30). Set by display
+     * Overdue in Asia/Seoul: not completed and due before today (TodoPredicates.overdue). Set by display
      * reads (get, search); false on rows read for a write.
      */
     public boolean isOverdue() {
@@ -157,7 +157,7 @@ public class TodoRow {
         this.dueToday = dueToday;
     }
 
-    /** ADR-18 edit version: +1 only when an edit form changes the content (E5, E7). */
+    /** Edit version: +1 only when an edit form changes the content. */
     public int getVersion() {
         return version;
     }

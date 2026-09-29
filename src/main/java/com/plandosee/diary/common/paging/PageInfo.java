@@ -1,7 +1,7 @@
 package com.plandosee.diary.common.paging;
 
 /**
- * ADR-21: one page of an offset-paged list, computed on the server so templates only print it.
+ * One page of an offset-paged list, computed on the server so templates only print it.
  * <ul>
  *   <li>number: the page actually shown, 1-based. A requested page below 1 or unreadable becomes 1; a page past
  *       the end becomes the last page; an empty list is page 1.</li>

@@ -7,7 +7,7 @@ import com.plandosee.diary.common.paging.PageInfo;
 import com.plandosee.diary.execution.domain.ExecutionLogRow;
 
 /**
- * S03 execution records of one todo (ADR-17 F-2, ADR-21): logs is one page in started_at, id order; page says where
+ * Execution records of one todo: logs is one page in started_at, id order; page says where
  * it sits; actualMinutes is the total of all the todo's records (not just this page), so the page never computes it.
  */
 public record TodoExecutionLogs(List<ExecutionLogRow> logs, long actualMinutes, PageInfo page) {
@@ -16,7 +16,7 @@ public record TodoExecutionLogs(List<ExecutionLogRow> logs, long actualMinutes, 
         logs = List.copyOf(logs);
     }
 
-    /** ADR-29: actualMinutes split into days, hours and minutes for display. */
+    /** actualMinutes split into days, hours and minutes for display. */
     public DurationParts actualDuration() {
         return DurationParts.of(actualMinutes);
     }

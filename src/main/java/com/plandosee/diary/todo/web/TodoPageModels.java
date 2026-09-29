@@ -37,8 +37,8 @@ import com.plandosee.diary.todo.domain.TodoSort;
 import com.plandosee.diary.todo.domain.TodoStatus;
 
 /**
- * Builds the S02 list and S03 detail models so a failed POST re-renders exactly what the GET shows.
- * Completion idempotency keys are issued here, once per rendering (ADR-05).
+ * Builds the todo list and todo detail models so a failed POST re-renders exactly what the GET shows.
+ * Completion idempotency keys are issued here, once per rendering.
  */
 @Component
 public class TodoPageModels {
@@ -49,7 +49,7 @@ public class TodoPageModels {
     private final IdGenerator idGenerator;
     private final PageSettings pageSettings;
 
-    /** ADR-18 E8 view: the todo was deleted while a form for it was being submitted (template owned by Frontend). */
+    /** View for a todo that was deleted while a form for it was being submitted. */
     public static final String DELETED_VIEW = "todos/deleted";
     public static final String DELETED_FROM_EDIT = "edit";
     public static final String DELETED_FROM_EXECUTION = "execution";
@@ -64,7 +64,7 @@ public class TodoPageModels {
     }
 
     /**
-     * S02. A search text the rule rejects (ADR-30 revised: longer than TodoRules.SEARCH_QUERY_MAX, line break,
+     * Todo list. A search text the rule rejects (longer than TodoRules.SEARCH_QUERY_MAX, line break,
      * control character) is not searched: searchRejected is true, the filter's BindingResult has the field error on
      * "q" (code and args of the rule), filter keeps the text and every other filter, sort and requested page as sent,
      * and the result part is empty (todos empty, page and pageNav of an empty list, completionKeys empty) for the
@@ -106,7 +106,7 @@ public class TodoPageModels {
         }
         model.addAttribute(BindingResult.MODEL_KEY_PREFIX + "filter", filterResult);
         model.addAttribute("searchRejected", rejected != null);
-        // ADR-30: longest search text the server accepts; for the search box maxlength and its help text.
+        // Longest search text the server accepts; for the search box maxlength and its help text.
         model.addAttribute("searchQueryMax", TodoRules.SEARCH_QUERY_MAX);
         model.addAttribute("sorts", TodoSort.values());
         model.addAttribute("statuses", TodoStatus.values());
@@ -118,13 +118,13 @@ public class TodoPageModels {
         return "todos/list";
     }
 
-    /** S03 after a form POST: the first page of each list. */
+    /** Todo detail after a form POST: the first page of each list. */
     public String detail(Model model, UUID todoId, ExecutionForm executionForm) {
         return detail(model, todoId, executionForm, PageRequest.FIRST, PageRequest.FIRST);
     }
 
     /**
-     * ADR-18 E8: HTTP 409 and the todos/deleted view. Nothing was stored. The submitted form stays in the model under
+     * HTTP 409 and the todos/deleted view. Nothing was stored. The submitted form stays in the model under
      * its usual name (todoForm or executionForm) so the page can show the input read-only for copying. Model:
      * todoId, planId (the plan the todo belonged to, for the list link), deletedFrom ("edit" or "execution").
      * No database read.
@@ -139,8 +139,8 @@ public class TodoPageModels {
     }
 
     /**
-     * S03. logs is one page (ADR-21, query parameter logPage, model logPage and logPageNav); logsActualMinutes is the
-     * total of all the todo's records (logsActualDuration: the same value as days, hours and minutes, ADR-29). ADR-16: todoRevisions (newest first), completionHistory (one page of
+     * Todo detail. logs is one page (query parameter logPage, model logPage and logPageNav); logsActualMinutes is the
+     * total of all the todo's records (logsActualDuration: the same value as days, hours and minutes). todoRevisions (newest first), completionHistory (one page of
      * completions and reopens merged in time order, query parameter historyPage, model historyPage and
      * historyPageNav), completionCount, reopenCount (all events).
      */
@@ -168,7 +168,7 @@ public class TodoPageModels {
     }
 
     /**
-     * ADR-15/ADR-19: S02 shown again after the add form ran out of its time budget or pool wait, without reading the
+     * Todo list shown again after the add form ran out of its time budget or pool wait, without reading the
      * database (a read would wait and fail again). Only what the request itself carries is in the model: plan (a
      * stand-in holding the id from the path; title and the rest unknown), filter (the submitted list state),
      * todoForm (the input), and the enum choices. todos, page, pageNav, tags and completionKeys are absent (null);
@@ -190,7 +190,7 @@ public class TodoPageModels {
     }
 
     /**
-     * ADR-15/ADR-19: S03 shown again after the execution form ran out of its time budget or pool wait, without
+     * Todo detail shown again after the execution form ran out of its time budget or pool wait, without
      * reading the database. Model: todo (a stand-in holding the id from the path; title, planId and the rest
      * unknown), executionForm (the input), snapshotUnavailable = true. plan, logs, logPage, logPageNav,
      * logsActualMinutes, completionHistory, historyPage, historyPageNav, completionCount, reopenCount, todoRevisions

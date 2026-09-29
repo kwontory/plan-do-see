@@ -4,7 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 /**
- * ADR-16: a completed todo put back to IN_PROGRESS. cycleNo is the completion cycle that was undone. Immutable.
+ * A completed todo put back to IN_PROGRESS. cycleNo is the completion cycle that was undone. Immutable.
  */
 public class ReopenEventRow {
 

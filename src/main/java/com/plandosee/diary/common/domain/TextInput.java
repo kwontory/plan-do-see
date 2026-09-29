@@ -1,16 +1,16 @@
 package com.plandosee.diary.common.domain;
 
 /**
- * ADR-30: the one place that decides what submitted text means, used by the web binding (FormBindingAdvice), the
+ * The one place that decides what submitted text means, used by the web binding (FormBindingAdvice), the
  * form constraint {@code @PlainText} and every command check (TextRule, InputCheck).
  * <ul>
  *   <li>{@link #normalize}: CRLF and lone CR become LF, surrounding whitespace is stripped, and a value without a
- *       single visible character is null (so a title of only NBSP or zero-width spaces is "required", IV-11).</li>
+ *       single visible character is null (so a title of only NBSP or zero-width spaces is "required").</li>
  *   <li>{@link #contentCode}: a single-line value may not contain a line break
  *       ({@link FieldCodes#TEXT_LINE_BREAK}) or any other control character; a multi-line value may contain LF and TAB
- *       but no other control character ({@link FieldCodes#TEXT_CONTROL_CHAR}, NUL included, IV-09, IV-10).</li>
+ *       but no other control character ({@link FieldCodes#TEXT_CONTROL_CHAR}, NUL included).</li>
  * </ul>
- * Lengths are counted in UTF-16 units ({@code String.length()}), like the form's {@code @Size} (ADR-22, IV-15).
+ * Lengths are counted in UTF-16 units ({@code String.length()}), like the form's {@code @Size}.
  */
 public final class TextInput {
 

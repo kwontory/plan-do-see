@@ -7,8 +7,7 @@ import com.plandosee.diary.common.web.PlainText;
 import com.plandosee.diary.review.domain.ReviewRules;
 
 /**
- * Optional improvement (1..ReviewRules.IMPROVEMENT_MAX chars after trim; blank clears it). Read-only after transfer
- * (ADR-08).
+ * Optional improvement (1..ReviewRules.IMPROVEMENT_MAX chars after trim; blank clears it). Read-only after transfer.
  */
 public class ImprovementForm {
 
@@ -24,7 +23,7 @@ public class ImprovementForm {
         return form;
     }
 
-    /** The stored improvement and the version to send back (ADR-18). */
+    /** The stored improvement and the version to send back. */
     public static ImprovementForm of(com.plandosee.diary.review.domain.ReviewRow review) {
         ImprovementForm form = of(review.getImprovement());
         form.setVersion(review.getVersion());
@@ -40,7 +39,7 @@ public class ImprovementForm {
     }
 
     /**
-     * ADR-18 hidden field: the version the edit form was opened with (after a stale-version conflict, the latest
+     * Hidden field: the version the edit form was opened with (after a stale-version conflict, the latest
      * version). Only compared to detect an out-of-date save; never an authorization value. Absent: no check.
      */
     public Integer getVersion() {

@@ -66,7 +66,7 @@ public class ReviewService {
     }
 
     /**
-     * DEC-01: a review belongs to one plan and copies the plan period for display and audit.
+     * A review belongs to one plan and copies the plan period for display and audit.
      */
     public UUID create(UUID planId, String improvement) {
         String normalized = normalizeImprovement(improvement);
@@ -114,17 +114,17 @@ public class ReviewService {
 
     /**
      * The review row lock serializes this with a concurrent transfer: either the new text is saved first and then
-     * carried, or the transfer wins and this is rejected (ADR-08, ADR-15).
+     * carried, or the transfer wins and this is rejected.
      */
     public EditOutcome updateImprovement(UUID reviewId, String improvement) {
         return updateImprovement(reviewId, improvement, null);
     }
 
     /**
-     * ADR-18: expectedVersion is the version the form was opened with (null: no check). Under the review row lock:
-     * already transferred is {@link ImprovementTransferredException} (E10); the same text as stored is UNCHANGED
-     * (E5); a different version is {@link ReviewStaleException} with the latest review; otherwise the text is saved
-     * and the version goes up by one. The transfer itself never changes the version (E7).
+     * expectedVersion is the version the form was opened with (null: no check). Under the review row lock:
+     * already transferred is {@link ImprovementTransferredException}; the same text as stored is UNCHANGED;
+     * a different version is {@link ReviewStaleException} with the latest review; otherwise the text is saved
+     * and the version goes up by one. The transfer itself never changes the version.
      */
     public EditOutcome updateImprovement(UUID reviewId, String improvement, Integer expectedVersion) {
         String normalized = normalizeImprovement(improvement);
@@ -153,8 +153,8 @@ public class ReviewService {
     }
 
     /**
-     * The review page in one read-only snapshot (ADR-14 C-4): review, plan, next plan, and summary cannot come from
-     * different moments. Aggregate reads run under the wider aggregate statement timeout (ADR-19).
+     * The review page in one read-only snapshot: review, plan, next plan, and summary cannot come from
+     * different moments. Aggregate reads run under the wider aggregate statement timeout.
      */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ReviewDetail detail(UUID reviewId) {
@@ -165,7 +165,7 @@ public class ReviewService {
     }
 
     /**
-     * The evidence page in one repeatable-read snapshot: review, plan, summary, and evidence lists agree (T06-C83).
+     * The evidence page in one repeatable-read snapshot: review, plan, summary, and evidence lists agree.
      * First page of each list.
      */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
@@ -174,9 +174,9 @@ public class ReviewService {
     }
 
     /**
-     * ADR-21: the evidence page with one page of the todo list ({@code todoPage}) and of the log list
+     * The evidence page with one page of the todo list ({@code todoPage}) and of the log list
      * ({@code logPage}). evidenceCount and the minute sums still cover the whole scope, so they match the summary
-     * whatever page is shown (T06-C83).
+     * whatever page is shown.
      */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ReviewEvidencePage evidencePage(UUID reviewId, ReviewMetric metric, int todoPage, int logPage) {
@@ -249,7 +249,7 @@ public class ReviewService {
     }
 
     /**
-     * ADR-08 / T06-C33: carries the review improvement into a new plan exactly once. The review row lock
+     * Carries the review improvement into a new plan exactly once. The review row lock
      * serializes concurrent requests; a repeated request returns the existing next plan without creating another.
      * created in the result is decided under that lock, so the caller never checks the transfer state itself.
      */
@@ -297,7 +297,7 @@ public class ReviewService {
     }
 
     /**
-     * ADR-22 / ADR-30: the same rule and code as ImprovementForm (ReviewRules.IMPROVEMENT with the common text tools):
+     * The same rule and code as ImprovementForm (ReviewRules.IMPROVEMENT with the common text tools):
      * normalized, null when nothing visible is left.
      */
     static String normalizeImprovement(String improvement) {

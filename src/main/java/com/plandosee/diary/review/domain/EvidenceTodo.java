@@ -11,7 +11,7 @@ import com.plandosee.diary.todo.domain.TodoStatus;
 
 /**
  * One todo in a review evidence list. actualMinutes is that todo's execution total, computed before any join; long
- * because the number of records has no limit (ADR-30, IV-02: an int overflowed and broke the evidence page).
+ * because the number of records has no limit (an int overflowed and broke the evidence page).
  */
 public class EvidenceTodo {
 
@@ -75,7 +75,7 @@ public class EvidenceTodo {
         this.estimatedMinutes = estimatedMinutes;
     }
 
-    /** ADR-29: estimatedMinutes split into days, hours and minutes for display (not stored, not exported). */
+    /** estimatedMinutes split into days, hours and minutes for display (not stored, not exported). */
     public DurationParts getEstimatedDuration() {
         return DurationParts.of(estimatedMinutes);
     }
@@ -88,7 +88,7 @@ public class EvidenceTodo {
         this.actualMinutes = actualMinutes;
     }
 
-    /** ADR-29: actualMinutes split into days, hours and minutes for display (not stored, not exported). */
+    /** actualMinutes split into days, hours and minutes for display (not stored, not exported). */
     public DurationParts getActualDuration() {
         return DurationParts.of(actualMinutes);
     }
@@ -114,7 +114,7 @@ public class EvidenceTodo {
         return status == TodoStatus.COMPLETED;
     }
 
-    /** Same meaning as TodoRow.isOverdue: the review scope's is_overdue (TodoPredicates.overdue, T06-C30). */
+    /** Same meaning as TodoRow.isOverdue: the review scope's is_overdue (TodoPredicates.overdue). */
     public boolean isOverdue() {
         return overdue;
     }

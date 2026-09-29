@@ -12,7 +12,7 @@ import com.plandosee.diary.common.error.ConstraintViolationTranslator;
 import com.plandosee.diary.todo.domain.TodoRules;
 
 /**
- * ADR-22: todo and tag table constraints (V1, V5) and the code each means. TodoCommand checks the same rules first
+ * Todo and tag table constraints (V1, V5) and the code each means. TodoCommand checks the same rules first
  * (TodoRules); a blank title or tag name is caught (or dropped) before the DB, so ck_todos_title and ck_tags_name can
  * only mean "too long".
  */

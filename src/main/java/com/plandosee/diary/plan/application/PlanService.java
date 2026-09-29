@@ -71,7 +71,7 @@ public class PlanService {
     }
 
     /**
-     * Ownership check for other features (ADR-14): the owned active plan, or NotFoundException. Joins the caller's
+     * Ownership check for other features: the owned active plan, or NotFoundException. Joins the caller's
      * transaction when there is one.
      */
     @Transactional(readOnly = true)
@@ -102,7 +102,7 @@ public class PlanService {
     }
 
     /**
-     * ADR-21: one page of the plan list (S00, S01). The count and the rows come from one repeatable-read snapshot,
+     * One page of the plan list (home and plan pages). The count and the rows come from one repeatable-read snapshot,
      * so the page position always matches the rows shown; a page past the end shows the last page.
      */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
@@ -115,7 +115,7 @@ public class PlanService {
     }
 
     /**
-     * ADR-18: the latest stored plan and the PlanForm fields where the given input differs from it, for an edit form
+     * The latest stored plan and the PlanForm fields where the given input differs from it, for an edit form
      * shown again after a failed save.
      */
     @Transactional(readOnly = true)
@@ -132,20 +132,20 @@ public class PlanService {
 
     /**
      * Snapshot of the previous values and the update of the current row commit or roll back together. The plan row
-     * lock serializes concurrent revisions so revision numbers never repeat or skip (ADR-15).
+     * lock serializes concurrent revisions so revision numbers never repeat or skip.
      */
     public EditOutcome revise(UUID planId, PlanCommand command) {
         return revise(planId, command, null);
     }
 
     /**
-     * ADR-18: expectedVersion is the version the edit form was opened with (null: no check, internal callers).
+     * expectedVersion is the version the edit form was opened with (null: no check, internal callers).
      * Under the plan row lock, in this order:
      * <ol>
-     *   <li>content equal to the stored plan: nothing is written, UNCHANGED (E5; also when the version moved on,
+     *   <li>content equal to the stored plan: nothing is written, UNCHANGED (also when the version moved on,
      *       since there is nothing to lose)</li>
      *   <li>version differs: {@link PlanStaleException} with the latest plan and the fields that differ; nothing is
-     *       written, so no revision (ADR-18 decision 6)</li>
+     *       written, so no revision</li>
      *   <li>otherwise the revision and the update commit together and the version goes up by one</li>
      * </ol>
      */
@@ -233,7 +233,7 @@ public class PlanService {
     }
 
     /**
-     * ADR-22 / ADR-30: the service does not trust the form. A PlanCommand checks itself when it is built (the same
+     * The service does not trust the form. A PlanCommand checks itself when it is built (the same
      * rules and codes as PlanForm), so only a missing command is left to reject here.
      */
     private static void requireCommand(PlanCommand command) {

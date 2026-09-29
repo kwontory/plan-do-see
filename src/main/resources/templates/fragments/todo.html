@@ -2,9 +2,9 @@
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <body>
 
-<!--/* S02 list state (contract amendment 1, Q10) and the page shown (ADR-21). filter: TodoListQuery.
+<!--/* Todo list state and the page shown. filter: TodoListQuery.
        withPriority=false on the add form: TodoForm.priority owns "priority" there, so the list
-       priority condition is sent as "listPriority" (main agent decision). */-->
+       priority condition is sent as "listPriority". */-->
 <th:block th:fragment="listState(filter, withPriority)">
     <input type="hidden" name="returnTo" value="list">
     <input type="hidden" name="q" th:value="${filter != null ? filter.q : null}">
@@ -17,9 +17,9 @@
     <input type="hidden" name="page" th:value="${filter != null ? filter.page : null}">
 </th:block>
 
-<!--/* Status + derived badges as pills (v2): state (in progress grey / completed green with a check), then overdue
+<!--/* Status + derived badges as pills: state (in progress grey / completed green with a check), then overdue
        (red with a flag) or due today. todo: TodoRow or EvidenceTodo with the server flags completed, overdue, dueToday
-       (web-contract revision 4, ADR-17 F-2: the template does not compare dates). dueToday looks at the date only,
+       (the template does not compare dates). dueToday looks at the date only,
        so the badge also checks !completed. The word carries the meaning; color and icon are secondary. */-->
 <th:block th:fragment="statusBadges(todo)">
     <span th:if="${todo.completed}" class="badge badge--done"><svg th:replace="~{fragments/layout :: icon('check')}"></svg><th:block
@@ -42,8 +42,8 @@
             : (${!todo.completed and todo.dueToday} ? ${#messages.msg('todos.item.dueWithFlag', todo.dueDate, #messages.msg('badge.dueToday'))}
             : ${todo.dueDate}))">due</span></span>
 
-<!--/* S02 add form (v2 composer). Must be included inside a form with th:object="${todoForm}".
-       v2 error pattern: label -> input -> error (fieldMessage) -> help; aria-describedby lists the error before the help.
+<!--/* Todo add form (composer). Must be included inside a form with th:object="${todoForm}".
+       Error pattern: label -> input -> error (fieldMessage) -> help; aria-describedby lists the error before the help.
        The title label and help are visually hidden until the title has an error (the placeholder shows them; with an
        error the placeholder is dropped because the visible label names the field);
        the other fields' help lines sit under the row (todoComposerHelp) and keep their ids. */-->
@@ -89,7 +89,7 @@
     <p class="field-help" id="tags-help" th:text="#{todos.add.help.tags}">help</p>
 </div>
 
-<!--/* ADR-18 latest panel values of a todo (model latest: TodoRow with tags). Status is shown but not compared (E7). */-->
+<!--/* Latest panel values of a todo (model latest: TodoRow with tags). Status is shown but not compared. */-->
 <dl th:fragment="todoLatestFields" class="dl-grid">
     <dt><th:block th:text="#{todos.field.title}">title</th:block> <span th:replace="~{fragments/layout :: changedBadge('title')}"></span></dt>
     <dd th:replace="~{fragments/layout :: latestValue('title', ${latest.title}, null)}"></dd>
@@ -105,7 +105,7 @@
     <dd th:replace="~{fragments/layout :: latestValue('tags', ${latest.tags != null and !latest.tags.isEmpty()} ? ${#strings.listJoin(latest.tags.![name], ', ')} : #{common.none}, null)}"></dd>
 </dl>
 
-<!--/* ADR-16 values of one todo revision (the values before that edit, tag names as they were). rev: TodoRevisionRow.
+<!--/* Values of one todo revision (the values before that edit, tag names as they were). rev: TodoRevisionRow.
        No todo-estimated-minutes hook here: that one marks the current value only. */-->
 <dl th:fragment="todoRevisionFields(rev)" class="dl-grid">
     <dt th:text="#{todos.field.title}">title</dt>
@@ -120,7 +120,7 @@
     <dd th:text="${rev.tagNames != null and !rev.tagNames.isEmpty()} ? ${#strings.listJoin(rev.tagNames, ', ')} : #{common.none}">tags</dd>
 </dl>
 
-<!--/* ADR-18 E8: submitted TodoForm shown read-only for copying. form: TodoForm; any value may be empty. */-->
+<!--/* Submitted TodoForm shown read-only for copying. form: TodoForm; any value may be empty. */-->
 <dl th:fragment="todoInputReadonly(form)" class="dl-grid">
     <dt th:text="#{todos.field.title}">title</dt>
     <dd th:text="${#strings.isEmpty(form.title)} ? #{common.none} : ${form.title}">title</dd>
@@ -135,7 +135,7 @@
     <dd th:text="${#strings.isEmpty(form.tags)} ? #{common.none} : ${form.tags}">tags</dd>
 </dl>
 
-<!--/* ADR-18 E8: submitted ExecutionForm shown read-only for copying. Times are the Seoul local values typed in. */-->
+<!--/* Submitted ExecutionForm shown read-only for copying. Times are the Seoul local values typed in. */-->
 <dl th:fragment="executionInputReadonly(form)" class="dl-grid">
     <dt th:text="#{todos.detail.exec.startedAt}">start</dt>
     <dd th:text="${form.startedAt != null} ? ${#temporals.format(form.startedAt, 'yyyy-MM-dd HH:mm:ss')} : #{common.none}">start</dd>

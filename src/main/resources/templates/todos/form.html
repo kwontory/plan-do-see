@@ -14,7 +14,7 @@
         <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
             <ol>
                 <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
-                <!--/* planId is unknown on the ADR-19 stand-in (snapshotUnavailable): those two steps are left out. */-->
+                <!--/* planId is unknown on the stand-in page (snapshotUnavailable): those two steps are left out. */-->
                 <th:block th:if="${todo.planId != null}">
                     <li><a th:href="@{/plans/{id}(id=${todo.planId})}" href="#"
                            th:text="${plan != null} ? ${plan.title} : #{breadcrumb.thisPlan}">plan</a></li>
@@ -30,7 +30,7 @@
         <nav th:replace="~{fragments/layout :: flowSteps('do', ${todo.planId})}"></nav>
     </div>
 
-    <!--/* ADR-18 (screens.md 11.5.2): "not saved" alert -> latest (read-only, left) | my input (kept, right). */-->
+    <!--/* Conflict: "not saved" alert -> latest (read-only, left) | my input (kept, right). */-->
     <th:block th:object="${todoForm}" th:with="showJumps=${latest != null}">
         <div th:replace="~{fragments/layout :: errorAlert}"></div>
     </th:block>
@@ -55,8 +55,8 @@
                 </div>
             </div>
 
-            <!--/* v2 field order (canvas note dev-error-focus): label -> input -> field error -> help; aria-describedby lists
-                   the error id first, then the help, then the ADR-18 "differs from the latest" note. */-->
+            <!--/* Field order: label -> input -> field error -> help; aria-describedby lists
+                   the error id first, then the help, then the "differs from the latest" note. */-->
             <form method="post" novalidate class="form form--v2 form-card" data-js="focus-first-invalid"
                   th:action="@{/todos/{id}(id=${todo.id})}" th:object="${todoForm}">
                 <input type="hidden" name="_method" value="put">

@@ -3,7 +3,7 @@ package com.plandosee.diary.common.error;
 import com.plandosee.diary.common.concurrency.TransientConflict;
 
 /**
- * ADR-15, ADR-19: a write collided with another request (row held by another request: NOWAIT or lock_timeout,
+ * A write collided with another request (row held by another request: NOWAIT or lock_timeout,
  * deadlock, serialization failure) and every automatic retry (none by default) failed too. Nothing was
  * committed. Forms are re-rendered with the input kept (HTTP 409), buttons redirect with a flash key, anything
  * else gets the error/409 view. Carries only the kind and attempt count.

@@ -12,7 +12,7 @@ import com.plandosee.diary.common.error.ConstraintViolationTranslator;
 import com.plandosee.diary.plan.domain.PlanPeriod;
 
 /**
- * ADR-22: plan table constraints (V1, V5) and the code each means. PlanCommand checks the same rules first (PlanRules),
+ * Plan table constraints (V1, V5) and the code each means. PlanCommand checks the same rules first (PlanRules),
  * so these are reached only if a rule and its CHECK ever drift apart; a blank title is caught before the DB, so
  * ck_plans_title can only mean "too long".
  */

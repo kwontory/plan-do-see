@@ -45,9 +45,9 @@ import com.plandosee.diary.review.domain.ReviewRow;
 import com.plandosee.diary.review.domain.ReviewSummary;
 
 /**
- * S04 review, evidence drill-down, and improvement transfer. Each page is one service snapshot (ADR-14 C-4);
- * the transfer notice comes only from the service's TransferResult (ADR-14 C-2); the plan period rule is the
- * form-level constraint on PlanForm (ADR-14 C-3).
+ * Review, evidence drill-down, and improvement transfer. Each page is one service snapshot;
+ * the transfer notice comes only from the service's TransferResult; the plan period rule is the
+ * form-level constraint on PlanForm.
  */
 @Controller
 public class ReviewController {
@@ -55,10 +55,10 @@ public class ReviewController {
     public static final String FLASH_CREATED = "flash.review.created";
     public static final String FLASH_IMPROVEMENT_SAVED = "flash.review.improvementSaved";
     public static final String FLASH_TRANSFERRED = "flash.review.transferred";
-    /** ADR-18 E5: the saved improvement equals the stored one; nothing changed. */
+    /** The saved improvement equals the stored one; nothing changed. */
     public static final String FLASH_IMPROVEMENT_UNCHANGED = "flash.review.improvementUnchanged";
     /**
-     * ADR-18 E10: the next-plan form was submitted for a review whose improvement had already been carried to a next
+     * The next-plan form was submitted for a review whose improvement had already been carried to a next
      * plan. Global form error; the page is shown again (409) with the input and the existing next plan.
      */
     public static final String NEXT_PLAN_ALREADY_TRANSFERRED = "review.nextPlan.alreadyTransferred";
@@ -69,7 +69,7 @@ public class ReviewController {
         this.reviewService = reviewService;
     }
 
-    /** Revision 1 Q5: no fields; the improvement is entered on the review page. */
+    /** No fields; the improvement is entered on the review page. */
     @PostMapping("/plans/{id}/reviews")
     public String create(@PathVariable("id") UUID planId, RedirectAttributes redirect) {
         UUID reviewId;
@@ -101,12 +101,12 @@ public class ReviewController {
         try {
             outcome = reviewService.updateImprovement(reviewId, form.getImprovement(), form.getVersion());
         } catch (ReviewStaleException ex) {
-            // ADR-18: 409, input kept, the latest review and what differs; hidden version = latest.
+            // 409, input kept, the latest review and what differs; hidden version = latest.
             form.setVersion(ex.latestVersion());
             EditConflicts.rejectStale(result, response, model, ex, ex.latest());
             return detailView(model, reviewService.detail(reviewId), form);
         } catch (ImprovementTransferredException ex) {
-            // ADR-18 E10 / 11.5.5: already carried to a next plan. 409 with the transferred improvement (review,
+            // Already carried to a next plan. 409 with the transferred improvement (review,
             // latest) and the next plan (nextPlan); the input is kept for copying.
             FormErrors.reject(result, ex);
             response.setStatus(HttpServletResponse.SC_CONFLICT);
@@ -117,7 +117,7 @@ public class ReviewController {
             FormErrors.reject(result, ex);
             return detailAgain(model, reviewId, form);
         } catch (ServiceBusyException ex) {
-            // ADR-19: out of time or connections. Shown again without reading the database, input kept (503).
+            // Out of time or connections. Shown again without reading the database, input kept (503).
             ConflictResponses.rejectForm(result, response, ex);
             return detailUnavailable(model, reviewId, form);
         } catch (RetryLaterException ex) {
@@ -169,7 +169,7 @@ public class ReviewController {
 
     /**
      * A valid form always goes to the service, which decides under the review lock whether a plan is created
-     * (TransferResult.created). ADR-18 E10: when the improvement had already been carried to a next plan (the page
+     * (TransferResult.created). When the improvement had already been carried to a next plan (the page
      * was out of date, or the form was sent twice), nothing is created and the form is shown again with HTTP 409,
      * the input kept, the global error {@link #NEXT_PLAN_ALREADY_TRANSFERRED}, and the existing next plan
      * (model nextPlan). The GET still goes straight to that plan (no input to keep).
@@ -192,7 +192,7 @@ public class ReviewController {
             FormErrors.reject(result, ex);
             return nextPlanAgain(model, reviewId);
         } catch (ServiceBusyException ex) {
-            // ADR-19: out of time or connections. Shown again without reading the database, input kept (503).
+            // Out of time or connections. Shown again without reading the database, input kept (503).
             ConflictResponses.rejectForm(result, response, ex);
             return nextPlanUnavailable(model, reviewId);
         } catch (RetryLaterException ex) {
@@ -222,7 +222,7 @@ public class ReviewController {
     }
 
     /**
-     * ADR-15/ADR-19: the review page from the request alone. Model: review (a stand-in holding the id from the path
+     * The review page from the request alone. Model: review (a stand-in holding the id from the path
      * and the submitted version; improvement, period, nextPlanId and the rest unknown), improvementForm (the input),
      * snapshotUnavailable = true. plan, nextPlan, summary and metricValues are absent (null).
      */
@@ -241,7 +241,7 @@ public class ReviewController {
     }
 
     /**
-     * ADR-15/ADR-19: the next-plan page from the request alone. Model: review (a stand-in holding the id from the
+     * The next-plan page from the request alone. Model: review (a stand-in holding the id from the
      * path; the improvement to carry is unknown), planForm (the input, already in the model), priorities,
      * snapshotUnavailable = true. plan and nextPlan are absent (null).
      */
@@ -272,8 +272,7 @@ public class ReviewController {
     }
 
     /**
-     * metric key to value only. Labels, units, sign notation, card order, and evidence links are template concerns
-     * (ADR-13, web-contract revision 3).
+     * metric key to value only. Labels, units, sign notation, card order, and evidence links are template concerns.
      */
     static Map<String, Long> metricValues(ReviewSummary summary) {
         Map<String, Long> values = new LinkedHashMap<>();
@@ -284,7 +283,7 @@ public class ReviewController {
     }
 
     /**
-     * ADR-29: the time metrics (estimated, actual, variance; same keys as metricValues) as days, hours and minutes.
+     * The time metrics (estimated, actual, variance; same keys as metricValues) as days, hours and minutes.
      * Count metrics are not in this map.
      */
     static Map<String, DurationParts> metricDurations(ReviewSummary summary) {

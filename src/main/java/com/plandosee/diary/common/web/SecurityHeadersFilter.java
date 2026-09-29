@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * ADR-26 security response headers on every response (pages, redirects, downloads, error pages, static files).
+ * Security response headers on every response (pages, redirects, downloads, error pages, static files).
  * The app has no inline script or style, no external request, no image, and self-hosted fonts, so
  * {@code default-src 'self'} needs no extra source. Everything except the static resource paths is
  * {@code Cache-Control: no-store} (pages show the user's data); static files keep the default caching.

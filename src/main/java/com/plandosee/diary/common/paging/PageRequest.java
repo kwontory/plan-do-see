@@ -1,7 +1,7 @@
 package com.plandosee.diary.common.paging;
 
 /**
- * ADR-21: the requested page number from the query string ({@code page}, {@code logPage}, ...). Anything that is
+ * The requested page number from the query string ({@code page}, {@code logPage}, ...). Anything that is
  * not a positive whole number is page 1; a page past the end is corrected when the total is known (PageInfo.of).
  * The value is only ever used as a number, never spliced into SQL or a URL.
  */

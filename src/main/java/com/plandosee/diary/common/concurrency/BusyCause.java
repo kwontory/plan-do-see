@@ -8,7 +8,7 @@ import org.springframework.dao.QueryTimeoutException;
 import org.springframework.transaction.TransactionTimedOutException;
 
 /**
- * ADR-19: a failure caused by the time budget rather than by the request itself. Classified anywhere in the cause
+ * A failure caused by the time budget rather than by the request itself. Classified anywhere in the cause
  * chain, so the same failure is recognised whether it surfaces from MyBatis, the transaction manager, or JDBC.
  * <ul>
  *   <li>QUERY_TIMEOUT: SQLSTATE 57014 (statement_timeout, or a JDBC query timeout derived from the transaction

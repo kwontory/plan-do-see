@@ -5,11 +5,11 @@ import com.plandosee.diary.common.domain.IntRange;
 import com.plandosee.diary.common.domain.TextRule;
 
 /**
- * ADR-22 / ADR-30: the one place for the plan field rules (DEC-07). Only declarations: which common tool applies to
+ * The one place for the plan field rules. Only declarations: which common tool applies to
  * which field with which constant. PlanCommand checks every command with them (InputCheck), PlanForm's annotations
  * use the same constants, and they equal the CHECK constraints (V1 ck_plans_title, ck_plans_success_criteria,
- * ck_plans_estimated_minutes, ck_plans_period; V5 date ranges, ADR-30); ValidationRulesConsistencyTest compares them.
- * Dates use DateBounds (ADR-29) and the period rule PlanPeriod.
+ * ck_plans_estimated_minutes, ck_plans_period; V5 date ranges); ValidationRulesConsistencyTest compares them.
+ * Dates use DateBounds and the period rule PlanPeriod.
  */
 public final class PlanRules {
 

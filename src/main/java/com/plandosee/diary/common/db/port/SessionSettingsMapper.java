@@ -4,7 +4,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 /**
- * Transaction-local PostgreSQL settings (ADR-19). The value is a bound parameter, never spliced into SQL.
+ * Transaction-local PostgreSQL settings. The value is a bound parameter, never spliced into SQL.
  */
 @Mapper
 public interface SessionSettingsMapper {
