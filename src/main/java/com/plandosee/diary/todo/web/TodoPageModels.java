@@ -106,6 +106,8 @@ public class TodoPageModels {
         }
         model.addAttribute(BindingResult.MODEL_KEY_PREFIX + "filter", filterResult);
         model.addAttribute("searchRejected", rejected != null);
+        // Conditions in use for the list heading (ADR-41); a rejected search text was not applied.
+        model.addAttribute("filterActiveCount", filter.activeFilterCount(rejected == null));
         // Longest search text the server accepts; for the search box maxlength and its help text.
         model.addAttribute("searchQueryMax", TodoRules.SEARCH_QUERY_MAX);
         model.addAttribute("sorts", TodoSort.values());
@@ -181,6 +183,7 @@ public class TodoPageModels {
         EditConflicts.markSnapshotUnavailable(model);
         model.addAttribute("plan", plan);
         model.addAttribute("filter", filter);
+        model.addAttribute("filterActiveCount", filter.activeFilterCount(filter.searchViolations().isEmpty()));
         model.addAttribute("sorts", TodoSort.values());
         model.addAttribute("statuses", TodoStatus.values());
         model.addAttribute("priorities", Priority.values());

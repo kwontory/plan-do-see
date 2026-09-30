@@ -13,12 +13,13 @@ public class OwnedCounts {
     private long todoTags;
     private long tags;
     private long executionLogs;
+    private long executionLogRevisions;
     private long completionEvents;
     private long reopenEvents;
     private long reviews;
 
     public long total() {
-        return plans + planRevisions + todos + todoRevisions + todoTags + tags + executionLogs + completionEvents
+        return plans + planRevisions + todos + todoRevisions + todoTags + tags + executionLogs + executionLogRevisions + completionEvents
                 + reopenEvents + reviews;
     }
 
@@ -31,7 +32,7 @@ public class OwnedCounts {
     public String describe() {
         return "plans=" + plans + " planRevisions=" + planRevisions + " todos=" + todos + " todoRevisions="
                 + todoRevisions + " todoTags=" + todoTags + " tags=" + tags + " executionLogs=" + executionLogs
-                + " completionEvents=" + completionEvents + " reopenEvents=" + reopenEvents + " reviews=" + reviews;
+                + " executionLogRevisions=" + executionLogRevisions + " completionEvents=" + completionEvents + " reopenEvents=" + reopenEvents + " reviews=" + reviews;
     }
 
     @Override
@@ -63,6 +64,8 @@ public class OwnedCounts {
     public void setTags(long tags) { this.tags = tags; }
     public long getExecutionLogs() { return executionLogs; }
     public void setExecutionLogs(long executionLogs) { this.executionLogs = executionLogs; }
+    public long getExecutionLogRevisions() { return executionLogRevisions; }
+    public void setExecutionLogRevisions(long executionLogRevisions) { this.executionLogRevisions = executionLogRevisions; }
     public long getCompletionEvents() { return completionEvents; }
     public void setCompletionEvents(long completionEvents) { this.completionEvents = completionEvents; }
     public long getReopenEvents() { return reopenEvents; }

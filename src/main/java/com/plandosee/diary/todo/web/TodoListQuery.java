@@ -100,6 +100,32 @@ public class TodoListQuery {
         return TodoRules.searchQueryViolations(q);
     }
 
+    /**
+     * How many search and filter conditions are in use (ADR-41): the search text (only when the list was searched with
+     * it, so a rejected text does not count), status, priority, tag and due filter, each when set to something other
+     * than "all". The sort is not a filter and is never counted. Read from the allowlisted values, the same ones the
+     * list query uses.
+     */
+    public int activeFilterCount(boolean searchApplied) {
+        int count = 0;
+        if (searchApplied && TextInput.normalize(q) != null) {
+            count++;
+        }
+        if (statusValue() != null) {
+            count++;
+        }
+        if (priorityValue() != null) {
+            count++;
+        }
+        if (tagIdValue() != null) {
+            count++;
+        }
+        if (dueValue() != null) {
+            count++;
+        }
+        return count;
+    }
+
     public TodoStatus statusValue() {
         return parseEnum(TodoStatus.class, status);
     }

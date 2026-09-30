@@ -137,6 +137,35 @@
         ORDER BY e.id ASC
     </select>
 
+    <resultMap id="executionLogRevisionRow" type="com.plandosee.diary.execution.domain.ExecutionLogRevisionRow">
+        <id property="id" column="id"/>
+        <result property="executionLogId" column="execution_log_id"/>
+        <result property="revisionNo" column="revision_no"/>
+        <result property="startedAt" column="started_at"/>
+        <result property="endedAt" column="ended_at"/>
+        <result property="actualMinutes" column="actual_minutes"/>
+        <result property="blockerReason" column="blocker_reason"/>
+        <result property="revisedAt" column="revised_at"/>
+    </resultMap>
+
+    <!-- Revisions of the exported records only (same todo rule as executionLogs). -->
+    <select id="executionLogRevisions" resultMap="executionLogRevisionRow">
+        SELECT r.id,
+               r.execution_log_id,
+               r.revision_no,
+               r.started_at,
+               r.ended_at,
+               r.actual_minutes,
+               r.blocker_reason,
+               r.revised_at
+        FROM execution_log_revisions r
+        JOIN execution_logs e ON e.id = r.execution_log_id
+        JOIN todos t ON t.id = e.todo_id
+        JOIN plans p ON p.id = t.plan_id
+        WHERE <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+        ORDER BY r.id ASC
+    </select>
+
     <select id="completionEvents" resultMap="com.plandosee.diary.todo.application.port.TodoMapper.completionEventRow">
         SELECT c.id,
                c.todo_id,

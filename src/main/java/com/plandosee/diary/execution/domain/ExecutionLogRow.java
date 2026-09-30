@@ -6,7 +6,9 @@ import java.util.UUID;
 import com.plandosee.diary.common.domain.DurationParts;
 
 /**
- * An immutable execution record. todoTitle is a joined display column for evidence lists and is never written.
+ * An execution record. Start, end (with the recomputed actual minutes) and the blocker reason can be edited; the
+ * previous values go to execution_log_revisions (ADR-40). todoTitle is a joined display column and is never written.
+ * version counts saved edits (edit-conflict detection, ADR-18).
  */
 public class ExecutionLogRow {
 
@@ -18,6 +20,7 @@ public class ExecutionLogRow {
     private int actualMinutes;
     private String blockerReason;
     private OffsetDateTime createdAt;
+    private int version;
 
     public UUID getId() {
         return id;
@@ -86,5 +89,13 @@ public class ExecutionLogRow {
 
     public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
     }
 }

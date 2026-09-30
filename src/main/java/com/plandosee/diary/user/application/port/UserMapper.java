@@ -22,4 +22,11 @@ public interface UserMapper {
 
     /** Physically deletes the person row (account deletion, ADR-35); every owned row must be gone first. */
     int delete(@Param("userId") UUID userId);
+
+    /**
+     * Locks the active person row without waiting (FOR NO KEY UPDATE NOWAIT): serializes writes that must see the
+     * person's other rows first (execution overlap check). Does not block inserts that only reference the row.
+     * Another holder is SQLState 55P03 at once. Null when there is no such active person.
+     */
+    UUID lockActive(@Param("userId") UUID userId);
 }

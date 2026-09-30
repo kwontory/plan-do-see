@@ -36,4 +36,12 @@
         DELETE FROM users
         WHERE id = #{userId}
     </delete>
+
+    <select id="lockActive" resultType="java.util.UUID">
+        SELECT u.id
+        FROM users u
+        WHERE u.id = #{userId}
+          AND u.deleted_at IS NULL
+        FOR NO KEY UPDATE NOWAIT
+    </select>
 </mapper>

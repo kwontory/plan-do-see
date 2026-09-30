@@ -9,6 +9,8 @@ import jakarta.validation.constraints.Size;
 import com.plandosee.diary.common.domain.TextInput;
 import com.plandosee.diary.common.time.TimeConfig;
 import com.plandosee.diary.common.web.PlainText;
+import com.plandosee.diary.execution.application.ExecutionCommand;
+import com.plandosee.diary.execution.domain.ExecutionLogRow;
 import com.plandosee.diary.execution.domain.ExecutionRules;
 
 /**
@@ -28,6 +30,32 @@ public class ExecutionForm {
     @Size(max = ExecutionRules.BLOCKER_REASON_MAX, message = "{validation.blockerReason.max}")
     @PlainText(TextInput.Lines.MULTI)
     private String blockerReason;
+
+    /** Hidden edit version (edit form only, ADR-18); null when adding a record. */
+    private Integer version;
+
+    /** The edit form's values from a stored record (times in Asia/Seoul). */
+    public static ExecutionForm from(ExecutionLogRow log) {
+        ExecutionForm form = new ExecutionForm();
+        form.setStartedAt(log.getStartedAt().atZoneSameInstant(TimeConfig.SEOUL).toLocalDateTime());
+        form.setEndedAt(log.getEndedAt().atZoneSameInstant(TimeConfig.SEOUL).toLocalDateTime());
+        form.setBlockerReason(log.getBlockerReason());
+        form.setVersion(log.getVersion());
+        return form;
+    }
+
+    /** The command of this input (checks every rule; DomainRuleException when one is broken). */
+    public ExecutionCommand toCommand() {
+        return new ExecutionCommand(startedAtInSeoul(), endedAtInSeoul(), blockerReason);
+    }
+
+    public Integer getVersion() {
+        return version;
+    }
+
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
 
     public static OffsetDateTime inSeoul(LocalDateTime value) {
         return value == null ? null : value.atZone(TimeConfig.SEOUL).toOffsetDateTime();

@@ -11,6 +11,7 @@
         <result property="todoTags" column="todo_tags"/>
         <result property="tags" column="tags"/>
         <result property="executionLogs" column="execution_logs"/>
+        <result property="executionLogRevisions" column="execution_log_revisions"/>
         <result property="completionEvents" column="completion_events"/>
         <result property="reopenEvents" column="reopen_events"/>
         <result property="reviews" column="reviews"/>
@@ -47,6 +48,9 @@
                (SELECT COUNT(g.id) FROM tags g WHERE g.user_id = #{userId}) AS tags,
                (SELECT COUNT(e.id) FROM execution_logs e JOIN todos t ON t.id = e.todo_id JOIN plans p ON p.id = t.plan_id
                  WHERE p.user_id = #{userId}) AS execution_logs,
+               (SELECT COUNT(r.id) FROM execution_log_revisions r JOIN execution_logs e ON e.id = r.execution_log_id
+                 JOIN todos t ON t.id = e.todo_id JOIN plans p ON p.id = t.plan_id
+                 WHERE p.user_id = #{userId}) AS execution_log_revisions,
                (SELECT COUNT(c.id) FROM completion_events c JOIN todos t ON t.id = c.todo_id JOIN plans p ON p.id = t.plan_id
                  WHERE p.user_id = #{userId}) AS completion_events,
                (SELECT COUNT(o.id) FROM reopen_events o JOIN todos t ON t.id = o.todo_id JOIN plans p ON p.id = t.plan_id

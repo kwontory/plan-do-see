@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.plandosee.diary.execution.domain.ExecutionLogRevisionRow;
 import com.plandosee.diary.execution.domain.ExecutionLogRow;
 import com.plandosee.diary.export.domain.ExportTagRow;
 import com.plandosee.diary.export.domain.ExportTodoTagRow;
@@ -38,6 +39,9 @@ public interface ExportMapper {
     List<ExportTodoTagRow> todoTags(@Param("userId") UUID userId);
 
     List<ExecutionLogRow> executionLogs(@Param("userId") UUID userId);
+
+    /** Edit revisions of the exported execution records (ADR-40), by id. */
+    List<ExecutionLogRevisionRow> executionLogRevisions(@Param("userId") UUID userId);
 
     List<CompletionEventRow> completionEvents(@Param("userId") UUID userId);
 

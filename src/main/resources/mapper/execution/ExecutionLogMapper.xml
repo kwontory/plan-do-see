@@ -11,6 +11,7 @@
         <result property="actualMinutes" column="actual_minutes"/>
         <result property="blockerReason" column="blocker_reason"/>
         <result property="createdAt" column="created_at"/>
+        <result property="version" column="version"/>
     </resultMap>
 
     <!-- Called only after the owning todo is locked by the service in the same transaction. -->
@@ -41,7 +42,8 @@
         e.ended_at,
         e.actual_minutes,
         e.blocker_reason,
-        e.created_at
+        e.created_at,
+        e.version
     </sql>
 
     <select id="listForTodoOwned" resultMap="executionLogRow">
@@ -68,6 +70,84 @@
         DELETE FROM execution_logs e
         USING todos t, plans p
         WHERE e.todo_id = t.id
+          AND t.plan_id = p.id
+          AND p.user_id = #{userId}
+    </delete>
+
+    <!-- Owned record on an active todo of an active plan (the same rule as the todo's record list). -->
+    <sql id="activeOwnedLogFromWhere">
+        FROM execution_logs e
+        JOIN todos t ON t.id = e.todo_id
+        JOIN plans p ON p.id = t.plan_id
+        WHERE e.id = #{logId}
+          AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+    </sql>
+
+    <select id="findActiveOwned" resultMap="executionLogRow">
+        SELECT <include refid="todoLogColumns"/>
+        <include refid="activeOwnedLogFromWhere"/>
+    </select>
+
+    <select id="lockActiveOwned" resultMap="executionLogRow">
+        SELECT <include refid="todoLogColumns"/>
+        <include refid="activeOwnedLogFromWhere"/>
+        FOR UPDATE OF e NOWAIT
+    </select>
+
+    <!-- Half-open periods [start, end) overlap when each starts before the other ends; records of 0 minutes never do. -->
+    <select id="findOverlapOwned" resultMap="executionLogRow">
+        SELECT <include refid="todoLogColumns"/>
+        FROM execution_logs e
+        JOIN todos t ON t.id = e.todo_id
+        JOIN plans p ON p.id = t.plan_id
+        WHERE p.user_id = #{userId}
+          AND p.deleted_at IS NULL
+          AND t.deleted_at IS NULL
+          AND e.started_at &lt; e.ended_at
+          AND e.started_at &lt; #{endedAt}
+          AND #{startedAt} &lt; e.ended_at
+          <if test="excludeId != null">
+          AND e.id &lt;&gt; #{excludeId}
+          </if>
+        ORDER BY e.started_at ASC, e.id ASC
+        LIMIT 1
+    </select>
+
+    <select id="nextRevisionNo" resultType="int">
+        SELECT COALESCE(MAX(r.revision_no), 0) + 1
+        FROM execution_log_revisions r
+        WHERE r.execution_log_id = #{logId}
+    </select>
+
+    <insert id="insertRevision" parameterType="com.plandosee.diary.execution.domain.ExecutionLogRevisionRow">
+        INSERT INTO execution_log_revisions (id, execution_log_id, revision_no, started_at, ended_at, actual_minutes,
+                                             blocker_reason, revised_at)
+        VALUES (#{id}, #{executionLogId}, #{revisionNo}, #{startedAt}, #{endedAt}, #{actualMinutes},
+                #{blockerReason}, #{revisedAt})
+    </insert>
+
+    <!-- Called only after lockActiveOwned in the same transaction; the owner join keeps the write owned. -->
+    <update id="updateOwned">
+        UPDATE execution_logs e
+        SET started_at = #{log.startedAt},
+            ended_at = #{log.endedAt},
+            actual_minutes = #{log.actualMinutes},
+            blocker_reason = #{log.blockerReason},
+            version = e.version + 1
+        FROM todos t, plans p
+        WHERE e.id = #{log.id}
+          AND t.id = e.todo_id
+          AND p.id = t.plan_id
+          AND p.user_id = #{userId}
+          AND p.deleted_at IS NULL
+          AND t.deleted_at IS NULL
+    </update>
+
+    <delete id="deleteRevisionsOwnedBy">
+        DELETE FROM execution_log_revisions r
+        USING execution_logs e, todos t, plans p
+        WHERE r.execution_log_id = e.id
+          AND e.todo_id = t.id
           AND t.plan_id = p.id
           AND p.user_id = #{userId}
     </delete>

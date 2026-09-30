@@ -18,6 +18,7 @@ import com.plandosee.diary.common.config.CurrentUserProvider;
 import com.plandosee.diary.common.db.StatementBudget;
 import com.plandosee.diary.common.time.SeoulDates;
 import com.plandosee.diary.common.time.TimeConfig;
+import com.plandosee.diary.execution.domain.ExecutionLogRevisionRow;
 import com.plandosee.diary.execution.domain.ExecutionLogRow;
 import com.plandosee.diary.export.application.port.ExportMapper;
 import com.plandosee.diary.export.domain.ExportOwnerRow;
@@ -42,7 +43,7 @@ import com.plandosee.diary.todo.domain.TodoRow;
 public class ExportService {
 
     /** 2.1.0: todoRevisions and reopenEvents added; every 2.0.0 field is unchanged. */
-    public static final String SCHEMA_VERSION = "2.2.0";
+    public static final String SCHEMA_VERSION = "2.3.0";
 
     private final ExportMapper exportMapper;
     private final CurrentUserProvider currentUserProvider;
@@ -77,6 +78,8 @@ public class ExportService {
         document.put("tags", map(exportMapper.tags(userId), ExportService::tag));
         document.put("todoTags", map(exportMapper.todoTags(userId), ExportService::todoTag));
         document.put("executionLogs", map(exportMapper.executionLogs(userId), ExportService::executionLog));
+        document.put("executionLogRevisions",
+                map(exportMapper.executionLogRevisions(userId), ExportService::executionLogRevision));
         document.put("completionEvents", map(exportMapper.completionEvents(userId), ExportService::completionEvent));
         document.put("reopenEvents", map(exportMapper.reopenEvents(userId), ExportService::reopenEvent));
         document.put("reviews", map(exportMapper.reviews(userId), ExportService::review));
@@ -196,6 +199,19 @@ public class ExportService {
         m.put("actualMinutes", e.getActualMinutes());
         m.put("blockerReason", e.getBlockerReason());
         m.put("createdAt", time(e.getCreatedAt()));
+        return m;
+    }
+
+    private static Map<String, Object> executionLogRevision(ExecutionLogRevisionRow r) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", id(r.getId()));
+        m.put("executionLogId", id(r.getExecutionLogId()));
+        m.put("revisionNo", r.getRevisionNo());
+        m.put("startedAt", time(r.getStartedAt()));
+        m.put("endedAt", time(r.getEndedAt()));
+        m.put("actualMinutes", r.getActualMinutes());
+        m.put("blockerReason", r.getBlockerReason());
+        m.put("revisedAt", time(r.getRevisedAt()));
         return m;
     }
 
