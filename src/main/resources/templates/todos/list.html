@@ -41,7 +41,7 @@
            folds it unless the server says it starts open (data-open: the add form came back with errors) or the tab
            keeps a draft of it. Without the script the bar stays hidden and the form stays open. */-->
     <div class="section add-area">
-    <button type="button" class="add-bar" data-js="add-open" data-test="add-open" aria-controls="add-panel"
+    <button type="button" class="fold-bar add-bar" data-js="add-open" data-test="add-open" aria-controls="add-panel"
             aria-expanded="true" hidden><svg th:replace="~{fragments/layout :: icon('plus')}"></svg><span
             th:text="#{todos.add.open}">add</span></button>
     <section id="add-panel" class="add-panel" aria-labelledby="add-heading" th:object="${todoForm}"
@@ -78,8 +78,9 @@
             <span class="badge badge--active num" data-test="filter-active-count"
                   th:if="${filterActiveCount != null and filterActiveCount > 0}"
                   th:text="#{todos.filter.activeCount(${filterActiveCount})}">n</span>
-            <button type="button" class="btn btn--line btn--sm filter-toggle" data-js="filter-toggle" data-test="filter-toggle"
-                    aria-controls="filter-panel" aria-expanded="true" hidden><th:block th:text="#{todos.filter.toggle}">show</th:block><span
+            <button type="button" class="fold-bar filter-toggle" data-js="filter-toggle" data-test="filter-toggle"
+                    aria-controls="filter-panel" aria-expanded="true" hidden><svg
+                    th:replace="~{fragments/layout :: icon('filter')}"></svg><th:block th:text="#{todos.filter.toggle}">show</th:block><span
                     class="visually-hidden" th:text="${#messages.msg('common.srContext', #messages.msg('todos.filter.heading'))}">: filter</span></button>
         </div>
         <div id="filter-panel" class="filter-panel" data-js="filter-panel" th:attr="data-open=${rejected} ? 'true' : null">

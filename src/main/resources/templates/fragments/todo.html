@@ -48,13 +48,12 @@
        error the placeholder is dropped because the visible label names the field);
        the other fields' help lines sit under the row (todoComposerHelp) and keep their ids. */-->
 <th:block th:fragment="todoComposerFields(priorities)">
-    <div class="composer__title" th:with="err=${#fields.hasErrors('title')}"
-         th:classappend="${err} ? 'composer__title--error'">
-        <label for="title" th:classappend="${!err} ? 'visually-hidden'" th:text="#{form.todo.title.label}">title</label>
-        <input type="text" th:field="*{title}" maxlength="200" required th:placeholder="${err} ? null : #{todos.add.titlePlaceholder}"
+    <div class="composer__title" th:with="err=${#fields.hasErrors('title')}">
+        <label for="title" th:text="#{form.todo.title.label}">title</label>
+        <input type="text" th:field="*{title}" maxlength="200" required
                th:attr="aria-describedby=${(err ? 'title-error ' : '') + 'title-help'},aria-invalid=${err} ? 'true' : null">
         <p th:replace="~{fragments/layout :: fieldMessage('title')}"></p>
-        <p class="field-help" id="title-help" th:classappend="${!err} ? 'visually-hidden'" th:text="#{form.title.help}">help</p>
+        <p class="field-help" id="title-help" th:text="#{form.title.help}">help</p>
     </div>
     <div class="composer__row">
         <div class="field" th:with="err=${#fields.hasErrors('dueDate')}">
