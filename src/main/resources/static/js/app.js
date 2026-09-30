@@ -7,7 +7,8 @@
  * Elements are found by behaviour attributes only: data-js="flash",
  * data-js="error-summary", data-js="focus-first-invalid", data-js="busy-label", data-js="delete-confirm",
  * data-js="logout", data-js="draft-note" (+ data-draft-for), data-js="draft-continue", data-js="draft-discard",
- * form[data-draft-id], data-no-lock, data-submitting. data-js may hold several space-separated names (matched with ~=).
+ * form[data-draft-id], data-js="add-open", data-js="add-panel" (+ data-open), data-js="add-close",
+ * data-js="filter-toggle", data-js="filter-panel" (+ data-open), data-no-lock, data-submitting. data-js may hold several space-separated names (matched with ~=).
  * Logged-in pages carry <meta name="pds-draft-owner"> and <meta name="pds-keepalive"> (ADR-38): the tab drafts and the
  * keepalive request below are off without them (login and sign-up pages).
  * State written here for CSS: aria-busy on a busy button, data-focus-origin="script" on an element focused by this file.
@@ -464,4 +465,114 @@
 
     document.addEventListener('input', keepAliveWhileTyping, true);
     document.addEventListener('change', keepAliveWhileTyping, true);
+
+    // ---------- Todo list: folded add area and narrow-screen filter panel (ADR-41) ----------
+    // Without this script both toggles stay hidden and both areas stay open. Folding is only a view state.
+
+    // The one place that decides whether the add area starts open: the server marks it (data-open="true": the add form
+    // came back with errors), or the tab's draft note of the add form is showing (set up above, same load). After a
+    // successful add the list page has neither, so the area starts folded and the list comes first.
+    function addPanelStartsOpen(panel) {
+        if (panel.getAttribute('data-open') === 'true') {
+            return true;
+        }
+        var note = panel.querySelector('[data-js~="draft-note"]');
+        return !!(note && !note.hidden);
+    }
+
+    function firstFieldIn(container) {
+        return Array.prototype.filter.call(container.querySelectorAll('input, select, textarea'), function (element) {
+            return (element.getAttribute('type') || '').toLowerCase() !== 'hidden' && !element.disabled
+                && element.getClientRects().length > 0;
+        })[0];
+    }
+
+    function setUpAddPanel() {
+        var panel = document.querySelector('[data-js~="add-panel"]');
+        var toggle = document.querySelector('[data-js~="add-open"]');
+        if (!panel || !toggle) {
+            return;
+        }
+        var closeButton = panel.querySelector('[data-js~="add-close"]');
+
+        // Open: the form shows in place and the bar hides (its words would repeat the form heading). Folded: the
+        // bar shows and the form hides.
+        function show(open) {
+            panel.hidden = !open;
+            toggle.hidden = open;
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+
+        function close() {
+            show(false);
+            toggle.focus();
+        }
+
+        if (closeButton) {
+            closeButton.hidden = false;
+            closeButton.addEventListener('click', close);
+        }
+        show(addPanelStartsOpen(panel));
+        toggle.addEventListener('click', function () {
+            show(true);
+            var first = firstFieldIn(panel);
+            if (first) {
+                first.focus();
+            }
+        });
+        // Escape inside the form folds it; the typed text stays (and the tab draft keeps it).
+        panel.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !event.defaultPrevented) {
+                close();
+            }
+        });
+    }
+
+    function setUpFilterPanel() {
+        var panel = document.querySelector('[data-js~="filter-panel"]');
+        var toggle = document.querySelector('[data-js~="filter-toggle"]');
+        if (!panel || !toggle || typeof window.matchMedia !== 'function') {
+            return;
+        }
+        var narrow = window.matchMedia('(max-width: 767px)');
+
+        function show(open) {
+            panel.hidden = !open;
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+
+        // Narrow: the toggle shows and the panel folds, unless the server keeps it open (data-open: a rejected search
+        // whose error must be seen). Wide: no toggle, the panel is always open. Checked again when the width changes.
+        function layout() {
+            if (narrow.matches) {
+                toggle.hidden = false;
+                show(panel.getAttribute('data-open') === 'true');
+            } else {
+                toggle.hidden = true;
+                show(true);
+            }
+        }
+
+        toggle.addEventListener('click', function () {
+            if (panel.hidden) {
+                show(true);
+                var first = firstFieldIn(panel);
+                if (first) {
+                    first.focus();
+                }
+            } else {
+                show(false);
+                toggle.focus();
+            }
+        });
+        if (typeof narrow.addEventListener === 'function') {
+            narrow.addEventListener('change', layout);
+        }
+        layout();
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        setUpAddPanel();
+        setUpFilterPanel();
+    });
 })();

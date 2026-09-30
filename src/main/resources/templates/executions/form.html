@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<!--/* S03 execution record edit (ADR-40). Model: log (ExecutionLogRow: id, todoId, todoTitle, actual time, version; the
+       503 stand-in has only id and the submitted values), executionForm (startedAt, endedAt, blockerReason, hidden
+       version). Conflict (409): latest + changedFields, the global error execution.edit.staleVersion. Busy (503):
+       snapshotUnavailable. An overlap or another rule comes back as a field error (200) with the input kept.
+       Optional model plan (id, title, priority) fills the shell's open plan and the breadcrumb when the server gives it.
+       The edit history is never shown (ADR-40 amendment 1). */-->
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:with="formError=${#fields.hasErrors('${executionForm.*}')},
+               conflict=${latest != null or snapshotUnavailable == true},
+               todoKnown=${log.todoId != null},
+               todoName=${log.todoTitle}">
+<head th:replace="~{fragments/layout :: head(${todoName != null} ? #{executions.form.pageTitle(${todoName})} : #{executions.form.heading}, ${formError})}">
+    <meta charset="UTF-8">
+    <title>execution edit</title>
+</head>
+<body>
+<header th:replace="~{fragments/shell :: shell('plans', ${plan}, 'do')}"></header>
+
+<main id="main" tabindex="-1" class="wrap">
+    <div class="page-head">
+        <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
+            <ol>
+                <li><a th:href="@{/plans}" href="/plans" th:text="#{breadcrumb.plans}">plans</a></li>
+                <th:block th:if="${plan != null and plan.id != null}">
+                    <li><a th:href="@{/plans/{id}(id=${plan.id})}" href="#"
+                           th:text="${plan.title} ?: #{breadcrumb.thisPlan}">plan</a></li>
+                    <li><a th:href="@{/plans/{id}/todos(id=${plan.id})}" href="#" th:text="#{breadcrumb.todos}">todos</a></li>
+                </th:block>
+                <li th:if="${todoKnown}"><a th:href="@{/todos/{id}(id=${log.todoId})}" href="#"
+                                            th:text="${todoName} ?: #{todos.detail.headingUnknown}">todo</a></li>
+                <li aria-current="page" th:text="#{breadcrumb.executionEdit}">edit</li>
+            </ol>
+        </nav>
+        <div th:replace="~{fragments/layout :: flash}"></div>
+        <h1 th:text="#{executions.form.heading}">edit</h1>
+        <p class="subtitle" th:if="${todoName != null and !conflict}" th:text="${todoName}">todo</p>
+        <nav th:replace="~{fragments/layout :: flowSteps('do', ${plan != null ? plan.id : null})}"></nav>
+    </div>
+
+    <!--/* Conflict: "not saved" alert -> latest (read-only, left) | my input (kept, right). */-->
+    <th:block th:object="${executionForm}" th:with="showJumps=${latest != null}">
+        <div th:replace="~{fragments/layout :: errorAlert}"></div>
+    </th:block>
+    <p class="note" th:if="${snapshotUnavailable == true}" th:text="#{conflict.latest.unavailable}">unavailable</p>
+
+    <div class="section" th:classappend="${latest != null} ? 'conflict-layout' : 'form-page'">
+        <th:block th:if="${latest != null}">
+            <section th:replace="~{fragments/layout :: conflictLatest(2, null, @{/executions/{id}/edit(id=${log.id})}, ~{fragments/execution :: executionLatestFields})}"></section>
+        </th:block>
+
+        <section class="form-area" th:classappend="${latest != null} ? 'conflict-col'"
+                 th:attr="id=${conflict} ? 'my-input' : null,tabindex=${conflict} ? '-1' : null,data-test=${conflict} ? 'conflict-mine' : null,aria-labelledby=${conflict} ? 'my-input-heading' : null,aria-label=${conflict} ? null : #{executions.form.heading}">
+            <div class="conflict-col__head" th:remove="${latest != null} ? 'none' : 'tag'">
+                <div class="form-area__head" th:if="${conflict}">
+                    <th:block th:replace="~{fragments/layout :: conflictMineHead(2, true)}"></th:block>
+                </div>
+                <div class="hint" role="note">
+                    <p th:text="#{executions.form.note}">note</p>
+                    <p th:text="#{todos.detail.exec.zoneHelp}">zone</p>
+                </div>
+            </div>
+
+            <div th:replace="~{fragments/layout :: draftNote('execution-edit')}"></div>
+            <form method="post" novalidate class="form form--v2 form-card" data-js="focus-first-invalid"
+                  data-draft-id="execution-edit" data-test="execution-edit-form"
+                  th:action="@{/executions/{id}(id=${log.id})}" th:object="${executionForm}">
+                <input type="hidden" name="_method" value="put">
+                <input type="hidden" th:field="*{version}">
+                <th:block th:replace="~{fragments/execution :: executionFields}"></th:block>
+                <div class="form-actions">
+                    <button type="submit" class="btn" th:attr="data-test=${conflict} ? 'conflict-resubmit' : null"
+                            th:text="${conflict} ? #{conflict.mine.resubmit} : #{common.saveEdit}">save</button>
+                    <a class="btn btn--line" th:href="${todoKnown} ? @{/todos/{id}(id=${log.todoId})} + '#logs-heading' : @{/plans}"
+                       href="#" th:text="#{common.cancel}">cancel</a>
+                </div>
+            </form>
+        </section>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

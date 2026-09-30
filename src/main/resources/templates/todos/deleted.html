@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!--/* The todo was deleted while its edit form or execution form was being saved.
-       HTTP 409, nothing stored. Model: todoId, planId (list link), deletedFrom ("edit" | "execution"), and the submitted
+       HTTP 409, nothing stored. Model: todoId, planId (list link), deletedFrom ("edit" | "execution" | "execution-edit"), and the submitted
        form under its usual name (todoForm or executionForm). No database read, so there is no plan title.
        The input is printed as plain escaped text for copying; there is no form and no save button. */-->
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
@@ -33,7 +33,7 @@
             <th:block th:if="${deletedFrom == 'edit' and todoForm != null}">
                 <dl th:replace="~{fragments/todo :: todoInputReadonly(${todoForm})}"></dl>
             </th:block>
-            <th:block th:if="${deletedFrom == 'execution' and executionForm != null}">
+            <th:block th:if="${(deletedFrom == 'execution' or deletedFrom == 'execution-edit') and executionForm != null}">
                 <dl th:replace="~{fragments/todo :: executionInputReadonly(${executionForm})}"></dl>
             </th:block>
         </div>

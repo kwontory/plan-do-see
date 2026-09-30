@@ -36,9 +36,21 @@
     </div>
     <p class="note" th:if="${unavailable}" data-test="snapshot-unavailable" th:text="#{conflict.latest.unavailable}">unavailable</p>
 
-    <!--/* 1. Add (composer). The error box sits above the form box; th:object on the section serves both. */-->
-    <section class="section" aria-labelledby="add-heading" th:object="${todoForm}">
-        <h2 id="add-heading" th:text="#{todos.add.heading}">add</h2>
+    <!--/* 1. Add (composer), in place under the head (ADR-41 amendment 1): a folded bar "+ 할 일 추가" opens the form
+           right there; while open the bar is hidden, so "할 일 추가" shows once (bar or form heading). The page script
+           folds it unless the server says it starts open (data-open: the add form came back with errors) or the tab
+           keeps a draft of it. Without the script the bar stays hidden and the form stays open. */-->
+    <div class="section add-area">
+    <button type="button" class="add-bar" data-js="add-open" data-test="add-open" aria-controls="add-panel"
+            aria-expanded="true" hidden><svg th:replace="~{fragments/layout :: icon('plus')}"></svg><span
+            th:text="#{todos.add.open}">add</span></button>
+    <section id="add-panel" class="add-panel" aria-labelledby="add-heading" th:object="${todoForm}"
+             data-js="add-panel" data-test="add-panel" th:attr="data-open=${formError} ? 'true' : null">
+        <div class="add-panel__head">
+            <h2 id="add-heading" th:text="#{todos.add.heading}">add</h2>
+            <button type="button" class="btn btn--line btn--sm" data-js="add-close" hidden
+                    th:text="#{todos.add.close}">close</button>
+        </div>
         <div th:replace="~{fragments/layout :: errorAlert}"></div>
         <div th:replace="~{fragments/layout :: draftNote('todo-new')}"></div>
         <form method="post" novalidate class="composer" data-js="focus-first-invalid" data-draft-id="todo-new"
@@ -52,18 +64,33 @@
             </div>
         </form>
     </section>
+    </div>
 
     <!--/* 2. Search and filter (one toolbar row on wide screens). A rejected search text (searchRejected: too long,
            line break or control character) comes back as a field error on filter.q: the error sits under the search box
            (fieldMessage, id q-error), the box keeps the typed text and gets focus (focus-first-invalid). */-->
     <section class="section" aria-labelledby="filter-heading">
-        <h2 id="filter-heading" class="visually-hidden" th:text="#{todos.filter.heading}">filter</h2>
+        <!--/* Head: visible heading, the number of conditions in use (server value filterActiveCount, shown on every
+               width, none at 0; not counted here, ADR-17) and, on narrow screens only, the toggle that the page script
+               shows while it folds the filter panel. */-->
+        <div class="filter-head">
+            <h2 id="filter-heading" th:text="#{todos.filter.heading}">filter</h2>
+            <span class="badge badge--active num" data-test="filter-active-count"
+                  th:if="${filterActiveCount != null and filterActiveCount > 0}"
+                  th:text="#{todos.filter.activeCount(${filterActiveCount})}">n</span>
+            <button type="button" class="btn btn--line btn--sm filter-toggle" data-js="filter-toggle" data-test="filter-toggle"
+                    aria-controls="filter-panel" aria-expanded="true" hidden><th:block th:text="#{todos.filter.toggle}">show</th:block><span
+                    class="visually-hidden" th:text="${#messages.msg('common.srContext', #messages.msg('todos.filter.heading'))}">: filter</span></button>
+        </div>
+        <div id="filter-panel" class="filter-panel" data-js="filter-panel" th:attr="data-open=${rejected} ? 'true' : null">
         <form method="get" role="search" aria-labelledby="filter-heading" class="toolbar" data-js="focus-first-invalid"
               th:action="@{/plans/{id}/todos(id=${plan.id})}" th:object="${filter}">
             <div class="field toolbar__q" th:with="qErr=${#fields.hasErrors('q')}">
                 <label for="filter-q" th:text="#{todos.filter.q.label}">q</label>
-                <input type="search" id="filter-q" name="q" th:value="${filter.q}" th:maxlength="${searchQueryMax}"
-                       th:attr="aria-describedby=${(qErr ? 'q-error ' : '') + 'filter-q-help'},aria-invalid=${qErr} ? 'true' : null">
+                <div class="search-box"><svg th:replace="~{fragments/layout :: icon('search')}"></svg><input type="search"
+                        id="filter-q" name="q" th:value="${filter.q}" th:maxlength="${searchQueryMax}"
+                        th:placeholder="#{todos.filter.q.placeholder}"
+                        th:attr="aria-describedby=${(qErr ? 'q-error ' : '') + 'filter-q-help'},aria-invalid=${qErr} ? 'true' : null"></div>
                 <p th:replace="~{fragments/layout :: fieldMessage('q')}"></p>
             </div>
             <div class="field">
@@ -119,10 +146,12 @@
                 <button type="submit" class="btn btn--line" data-no-lock th:text="#{todos.filter.submit}">apply</button>
             </div>
         </form>
-        <div class="toolbar__help">
+        <details class="filter-help" data-test="filter-help">
+            <summary class="lnk" th:text="#{todos.filter.helpToggle}">help</summary>
             <p class="field-help" id="filter-q-help"><th:block th:text="#{todos.filter.q.help}">help</th:block><th:block
                     th:if="${searchQueryMax != null}" th:text="' ' + #{todos.filter.q.max(${searchQueryMax})}"> max</th:block></p>
             <p class="field-help" id="filter-due-help" th:text="#{todos.filter.due.help(${today})}">help</p>
+        </details>
         </div>
     </section>
 

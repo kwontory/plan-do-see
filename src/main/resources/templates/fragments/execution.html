@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* Execution record fields, the same for adding (todos/detail) and editing (executions/form): start and end on one
+       row (datetime-local, Seoul, seconds), then the blocker reason. Must be used where th:object is an ExecutionForm.
+       Field order: label -> input -> field error -> help; aria-describedby lists the error id, the help id, then the
+       "differs from the latest" note of a conflict (model changedFields, absent on the add form). */-->
+<th:block th:fragment="executionFields">
+    <div class="form-grid form-grid--2">
+        <div class="field" th:with="err=${#fields.hasErrors('startedAt')}, chg=${changedFields != null and changedFields.contains('startedAt')}">
+            <label for="startedAt"><th:block th:text="#{todos.detail.exec.startedAt}">start</th:block><span
+                    th:replace="~{fragments/layout :: changedMark('startedAt')}"></span></label>
+            <span th:replace="~{fragments/layout :: changedNote('startedAt')}"></span>
+            <input th:replace="~{fragments/layout :: dateInput('datetime-local', 'startedAt', true, ${#strings.trim((err ? 'startedAt-error ' : '') + (chg ? 'startedAt-changed' : ''))})}">
+            <p th:replace="~{fragments/layout :: fieldMessage('startedAt')}"></p>
+        </div>
+        <div class="field" th:with="err=${#fields.hasErrors('endedAt')}, chg=${changedFields != null and changedFields.contains('endedAt')}">
+            <label for="endedAt"><th:block th:text="#{todos.detail.exec.endedAt}">end</th:block><span
+                    th:replace="~{fragments/layout :: changedMark('endedAt')}"></span></label>
+            <span th:replace="~{fragments/layout :: changedNote('endedAt')}"></span>
+            <input th:replace="~{fragments/layout :: dateInput('datetime-local', 'endedAt', true, ${(err ? 'endedAt-error ' : '') + 'endedAt-help' + (chg ? ' endedAt-changed' : '')})}">
+            <p th:replace="~{fragments/layout :: fieldMessage('endedAt')}"></p>
+            <p class="field-help" id="endedAt-help" th:text="#{todos.detail.exec.endedAtHelp}">help</p>
+        </div>
+    </div>
+    <div class="field" th:with="err=${#fields.hasErrors('blockerReason')}, chg=${changedFields != null and changedFields.contains('blockerReason')}">
+        <label for="blockerReason"><th:block th:text="#{todos.detail.exec.blockerReason}">blocker</th:block><span
+                th:replace="~{fragments/layout :: changedMark('blockerReason')}"></span></label>
+        <span th:replace="~{fragments/layout :: changedNote('blockerReason')}"></span>
+        <textarea th:field="*{blockerReason}" rows="3" maxlength="1000"
+                  th:attr="aria-describedby=${(err ? 'blockerReason-error ' : '') + 'blockerReason-help' + (chg ? ' blockerReason-changed' : '')},aria-invalid=${err} ? 'true' : null"></textarea>
+        <p th:replace="~{fragments/layout :: fieldMessage('blockerReason')}"></p>
+        <p class="field-help" id="blockerReason-help" th:text="#{todos.detail.exec.blockerReasonHelp}">help</p>
+    </div>
+</th:block>
+
+<!--/* Latest values of an execution record on the edit conflict page (read-only). latest: ExecutionLogRow. What differs
+       comes from the server (changedFields); the actual time is recalculated by the server, never edited. */-->
+<dl th:fragment="executionLatestFields" class="dl-grid">
+    <dt><th:block th:text="#{todos.detail.logs.col.start}">start</th:block> <span th:replace="~{fragments/layout :: changedBadge('startedAt')}"></span></dt>
+    <dd th:replace="~{fragments/layout :: latestContent('startedAt', ~{fragments/layout :: datetimeOrUnknown(${latest.startedAt})}, 'num')}"></dd>
+    <dt><th:block th:text="#{todos.detail.logs.col.end}">end</th:block> <span th:replace="~{fragments/layout :: changedBadge('endedAt')}"></span></dt>
+    <dd th:replace="~{fragments/layout :: latestContent('endedAt', ~{fragments/layout :: datetimeOrUnknown(${latest.endedAt})}, 'num')}"></dd>
+    <dt th:text="#{todos.detail.logs.col.actual}">actual</dt>
+    <dd class="num"><th:block th:replace="~{fragments/layout :: duration(${latest.actualDuration})}">0</th:block></dd>
+    <dt><th:block th:text="#{todos.detail.logs.col.blocker}">blocker</th:block> <span th:replace="~{fragments/layout :: changedBadge('blockerReason')}"></span></dt>
+    <dd th:replace="~{fragments/layout :: latestValue('blockerReason', ${latest.blockerReason != null} ? ${latest.blockerReason} : #{common.none}, 'pre-wrap')}"></dd>
+</dl>
+
+<!--/* "Edit" action of one execution record row (the last table column). Below 480px only the pencil shows; the name
+       stays as visually hidden text with the row's start time as context. */-->
+<a th:fragment="editLink(log)" class="lnk lnk--compact" th:href="@{/executions/{id}/edit(id=${log.id})}" href="#"
+   data-test="execution-edit"><svg th:replace="~{fragments/layout :: icon('edit')}"></svg><span class="lnk__label"
+        th:text="#{todos.detail.logs.edit}">edit</span><span class="visually-hidden" th:if="${log.startedAt != null}"
+        th:text="#{common.srContext(${#temporals.format(log.startedAt.atZoneSameInstant(displayZone), 'yyyy-MM-dd HH:mm:ss')})}">: start</span></a>
+
+</body>
+</html>

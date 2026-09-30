@@ -112,6 +112,11 @@
     box-sizing: border-box;
 }
 
+/* The hidden attribute always wins over a component's display (buttons and panels that app.js shows or folds). */
+[hidden] {
+    display: none !important;
+}
+
 html {
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
@@ -1040,6 +1045,37 @@ a.flow__item:hover {
 .lnk--danger:hover {
     color: var(--color-danger);
     background: var(--color-danger-bg);
+}
+
+/* Row action in a table's last column (execution record "edit"): as narrow as its content. Below 480px only the icon
+   shows (the name stays as visually hidden text) in a 44px square, so the fitted table keeps its width at 360px. */
+.logs-actions {
+    width: 1%;
+    white-space: nowrap;
+    text-align: right;
+}
+
+.table--fit th.logs-actions,
+.table--fit td.logs-actions {
+    padding-left: 0;
+}
+
+@media (max-width: 479px) {
+    .lnk--compact {
+        justify-content: center;
+        min-width: var(--target-min);
+        min-height: var(--target-min);
+        padding: 0;
+    }
+
+    .lnk--compact .lnk__label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+    }
 }
 
 /* Very narrow screens: a long button label wraps inside the button instead of running out of it. */
@@ -2114,12 +2150,150 @@ fieldset.field-group {
     width: 100%;
 }
 
-.toolbar__help {
-    margin-top: var(--space-3);
+/* Filter help (search rule, due-state meaning) folded under the toolbar; the ids stay described by the fields. */
+.filter-help {
+    margin-top: var(--space-2);
 }
 
-.toolbar__help p {
+.filter-help > summary {
+    width: max-content;
+    max-width: 100%;
+    margin-left: -6px;
+    list-style: none;
+}
+
+.filter-help > summary::-webkit-details-marker {
+    display: none;
+}
+
+.filter-help > p {
+    margin: var(--space-2) 0 0;
+}
+
+/* Todo list add area (ADR-41 amendment 1): one place. Folded = a full-width bar "+ 할 일 추가"; open = a light primary
+   card (heading + 닫기) in the same spot, the bar hidden, so "할 일 추가" shows once. app.js switches them; without it
+   the bar stays hidden and the card open. */
+.add-area > * {
     margin: 0;
+}
+
+.add-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 48px;
+    padding: 0 18px;
+    font: var(--font-weight-bold) var(--font-size-base) / 1.25 var(--font-sans);
+    color: var(--color-primary);
+    text-align: left;
+    background: var(--color-bg);
+    border: var(--border-width) solid var(--color-control-line);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+}
+
+.add-bar:hover {
+    background: var(--color-primary-bg);
+}
+
+.add-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: 20px 22px;
+    background: var(--color-primary-bg);
+    border: var(--border-width) solid var(--color-primary-line);
+    border-radius: var(--radius-lg);
+}
+
+.add-panel > * {
+    margin: 0;
+}
+
+.add-panel__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.add-panel__head h2 {
+    margin: 0;
+}
+
+/* One layer: the composer inside the card has no box of its own. Field edges on the tinted face use the control
+   line (3.14:1 on primary-bg; the input border would be 2.72:1). */
+.add-panel .composer {
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+}
+
+.add-panel input,
+.add-panel select,
+.add-panel textarea {
+    border-color: var(--color-control-line);
+}
+
+.add-panel .composer__title {
+    border-bottom-color: var(--color-control-line);
+}
+
+@media (max-width: 767px) {
+    .add-panel {
+        padding: var(--space-4);
+    }
+}
+
+/* Search and filter (no card): head with the visible heading, the conditions-in-use badge and, below 768px only,
+   the toggle shown by app.js. */
+.filter-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.filter-head h2 {
+    margin: 0;
+}
+
+.badge--active {
+    color: var(--color-primary);
+    background: var(--color-primary-bg);
+}
+
+.filter-toggle {
+    margin-left: auto;
+}
+
+@media (max-width: 767px) {
+    .filter-head {
+        margin-bottom: var(--space-3);
+    }
+}
+
+/* Search box: magnifier inside the box on the left (decorative; the label names the box). */
+.search-box {
+    position: relative;
+}
+
+.search-box .icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    width: 17px;
+    height: 17px;
+    color: var(--color-text-muted);
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.search-box input {
+    padding-left: 36px;
 }
 
 @container page (min-width: 560px) {
@@ -2808,9 +2982,12 @@ tfoot td {
         overflow-wrap: normal;
     }
 
-    .table--fit td:last-child,
-    .table--fit th:last-child {
+    /* The text column (blocker reason) keeps room for whole words: at least 5em, and a word is never split into
+       letters (break-word does not lower the column's minimum like the page-wide "anywhere" does; a longer word
+       widens the column and the table scrolls inside its area). The narrow action column does not take this room. */
+    .table--fit .table__wide {
         min-width: 5em;
+        overflow-wrap: break-word;
     }
 
     /* Heads may take two lines at word breaks; values (td.num, totals) keep the global nowrap rule. */

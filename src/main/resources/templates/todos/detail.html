@@ -102,27 +102,9 @@
                 <div id="exec-help" class="hint" role="note">
                     <p th:text="#{todos.detail.exec.zoneHelp}">zone</p>
                     <p th:text="#{todos.detail.exec.calcHelp}">calc</p>
+                    <p th:text="#{todos.detail.exec.overlapHelp}">overlap</p>
                 </div>
-                <div class="form-grid form-grid--2">
-                    <div class="field" th:with="err=${#fields.hasErrors('startedAt')}">
-                        <label for="startedAt" th:text="#{todos.detail.exec.startedAt}">start</label>
-                        <input th:replace="~{fragments/layout :: dateInput('datetime-local', 'startedAt', true, (${err} ? 'startedAt-error' : ''))}">
-                        <p th:replace="~{fragments/layout :: fieldMessage('startedAt')}"></p>
-                    </div>
-                    <div class="field" th:with="err=${#fields.hasErrors('endedAt')}">
-                        <label for="endedAt" th:text="#{todos.detail.exec.endedAt}">end</label>
-                        <input th:replace="~{fragments/layout :: dateInput('datetime-local', 'endedAt', true, ${(err ? 'endedAt-error ' : '') + 'endedAt-help'})}">
-                        <p th:replace="~{fragments/layout :: fieldMessage('endedAt')}"></p>
-                        <p class="field-help" id="endedAt-help" th:text="#{todos.detail.exec.endedAtHelp}">help</p>
-                    </div>
-                </div>
-                <div class="field" th:with="err=${#fields.hasErrors('blockerReason')}">
-                    <label for="blockerReason" th:text="#{todos.detail.exec.blockerReason}">blocker</label>
-                    <textarea th:field="*{blockerReason}" rows="3" maxlength="1000"
-                              th:attr="aria-describedby=${(err ? 'blockerReason-error ' : '') + 'blockerReason-help'},aria-invalid=${err} ? 'true' : null"></textarea>
-                    <p th:replace="~{fragments/layout :: fieldMessage('blockerReason')}"></p>
-                    <p class="field-help" id="blockerReason-help" th:text="#{todos.detail.exec.blockerReasonHelp}">help</p>
-                </div>
+                <th:block th:replace="~{fragments/execution :: executionFields}"></th:block>
                 <div class="form-actions">
                     <button type="submit" class="btn" th:text="#{todos.detail.exec.submit}">save</button>
                     <p class="lock"><svg th:replace="~{fragments/layout :: icon('info')}"></svg><span
@@ -152,7 +134,8 @@
                     <th scope="col" th:text="#{todos.detail.logs.col.start}">start</th>
                     <th scope="col" th:text="#{todos.detail.logs.col.end}">end</th>
                     <th scope="col" class="num" th:text="#{todos.detail.logs.col.actual}">actual</th>
-                    <th scope="col" th:text="#{todos.detail.logs.col.blocker}">blocker</th>
+                    <th scope="col" class="table__wide" th:text="#{todos.detail.logs.col.blocker}">blocker</th>
+                    <th scope="col" class="logs-actions"><span class="visually-hidden" th:text="#{todos.detail.logs.col.actions}">actions</span></th>
                 </tr>
                 </thead>
                 <tbody>
@@ -160,13 +143,15 @@
                     <td><time th:replace="~{fragments/layout :: datetimeOrUnknown(${log.startedAt})}"></time></td>
                     <td><time th:replace="~{fragments/layout :: datetimeOrUnknown(${log.endedAt})}"></time></td>
                     <td class="num" data-test="execution-actual-minutes" th:data-value="${log.actualMinutes}"><th:block th:replace="~{fragments/layout :: duration(${log.actualDuration})}">0</th:block></td>
-                    <td class="pre-wrap" th:text="${log.blockerReason != null} ? ${log.blockerReason} : #{common.none}">none</td>
+                    <td class="pre-wrap table__wide" th:text="${log.blockerReason != null} ? ${log.blockerReason} : #{common.none}">none</td>
+                    <td class="logs-actions"><a th:replace="~{fragments/execution :: editLink(${log})}"></a></td>
                 </tr>
                 </tbody>
                 <tfoot>
                 <tr>
                     <th scope="row" colspan="2" th:text="#{common.total}">total</th>
                     <td class="num"><th:block th:replace="~{fragments/layout :: duration(${logsActualDuration})}">0</th:block></td>
+                    <td></td>
                     <td></td>
                 </tr>
                 </tfoot>
