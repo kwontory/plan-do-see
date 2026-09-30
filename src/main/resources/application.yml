@@ -62,6 +62,21 @@ spring:
     hiddenmethod:
       filter:
         enabled: true
+  web:
+    resources:
+      # Static files are linked with a content hash in the name (/css/app-<md5>.css; @{...} in templates
+      # and url() in CSS are rewritten), so browsers and the CDN can keep them for a year. A changed file
+      # gets a new name. Pages stay no-store (SecurityHeadersFilter).
+      chain:
+        strategy:
+          content:
+            enabled: true
+            paths: /**
+      cache:
+        cachecontrol:
+          max-age: 365d
+          s-max-age: 365d
+          cache-public: true
   thymeleaf:
     cache: true
   jackson:
