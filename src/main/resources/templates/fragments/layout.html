@@ -144,15 +144,9 @@
         th:if="${parts.showHours and parts.showMinutes}" th:text="' '"> </th:block><th:block
         th:if="${parts.showMinutes}" th:text="#{common.duration.minutes(${parts.minutes})}">30분</th:block></th:block>
 
-<!--/* The same with the sign of a difference (variance): "+30분", "-1시간 5분", "0분" (sign only, no words). */-->
-<th:block th:fragment="signedDuration(parts)"><th:block th:if="${parts.positive}" th:text="#{common.duration.sign.plus}">+</th:block><th:block
-        th:if="${parts.negative}" th:text="#{common.duration.sign.minus}">-</th:block><th:block
-        th:replace="~{fragments/layout :: duration(${parts})}">1시간</th:block></th:block>
-
 <!--/* Big-number variant for stat cards: each number large, each unit small ("1일 2시간" -> 1<small>일</small> ...).
-       signed: true prints the sign of a difference first. Same parts rule as duration(parts). */-->
-<th:block th:fragment="durationStat(parts, signed)"><th:block th:if="${signed and parts.positive}" th:text="#{common.duration.sign.plus}">+</th:block><th:block
-        th:if="${signed and parts.negative}" th:text="#{common.duration.sign.minus}">-</th:block><th:block
+       Same parts rule as duration(parts). A difference is never shown with a sign: see review :: varianceSentence. */-->
+<th:block th:fragment="durationStat(parts)"><th:block
         th:if="${parts.showDays}"><th:block th:text="${parts.days}">1</th:block><small th:text="#{common.duration.unit.days}">일</small></th:block><th:block
         th:if="${parts.showDays and (parts.showHours or parts.showMinutes)}" th:text="' '"> </th:block><th:block
         th:if="${parts.showHours}"><th:block th:text="${parts.hours}">2</th:block><small th:text="#{common.duration.unit.hours}">시간</small></th:block><th:block
@@ -224,14 +218,17 @@
 
 <!--/* Form error pattern. Field order: label -> input -> fieldMessage -> help;
        the input's aria-describedby lists the error id before the help id. Only the message text is red.
-       errorAlert: one "not saved" heading (role=alert: validation errors, rule errors and the 409 conflict
-       re-render all mean "not saved") and only the errors that have no field (global errors); field errors are shown
-       under their inputs, and focus goes to the first invalid field (static/js/app.js, hook
-       data-js="focus-first-invalid" on the form). Inputs keep the submitted values (th:field).
+       errorAlert (every form): drawn only for errors that have no field (global errors: an edit conflict, a
+       concurrent change, a busy app, a rule of the whole form), with one "not saved" heading (role=alert) and those
+       errors. Field errors alone draw no box: the red text under each field, the page title prefix, the focus on the
+       first invalid field (static/js/app.js, hook data-js="focus-first-invalid" on the form) and its aria-describedby
+       (error first) carry the failure. Inputs keep the submitted values (th:field).
        Must be included where th:object is set (it may sit just above the form). Optional th:with variables:
          nestedSummary=true  the alert sits inside an h2 section, so its heading is h3 (reviews/detail)
-         showJumps=true      a conflict page: links to the latest panel (#latest) and my input (#my-input) */-->
-<div th:fragment="errorAlert" th:if="${#fields.hasErrors('*')}"
+         showJumps=true      a conflict page: links to the latest panel (#latest) and my input (#my-input)
+         forceBox=true       draw the box for field errors too, when the field is not on the page (an improvement
+                             that was already carried: its input is shown read-only) */-->
+<div th:fragment="errorAlert" th:if="${#fields.hasErrors('*') and (forceBox == true or #fields.hasGlobalErrors())}"
      class="error-alert" role="alert" tabindex="-1" id="error-summary" data-js="error-summary">
     <h3 th:if="${nestedSummary == true}" th:text="#{form.errorSummary.heading}">errors</h3>
     <h2 th:unless="${nestedSummary == true}" th:text="#{form.errorSummary.heading}">errors</h2>
@@ -263,33 +260,31 @@
        th:step="${dt} ? '1' : null" th:required="${required}"
        th:attr="aria-describedby=${#strings.isEmpty(describedBy)} ? null : ${describedBy},aria-invalid=${#fields.hasErrors(field)} ? 'true' : null">
 
-<!--/* Conflict screens. The server decides what differs (model changedFields, a List of
-       form field names); these fragments only print it. What differs is shown with a highlighter and a triangle: the value is painted yellow (mark.hl on the latest value; the input itself on my side via
-       its aria-describedby "-changed" id), and a small triangle sits right after the item's name (dt on the left,
-       label on the right). Color is not the only cue: the triangle is a shape, and a visually hidden word names the
-       difference for screen readers (no explaining line on the page). */-->
+<!--/* Conflict screens. The server decides what differs (model changedFields, a List of form field names); these
+       fragments only print it. What differs is marked with an orange "*" right after the item's name (dt on the left,
+       label on the right); there is no background paint. Color is not the only cue: the "*" is a character, the legend
+       line in the latest column (conflict.changedLegend) says what it means, and a visually hidden word names the
+       difference for screen readers. */-->
 
-<!--/* Decorative triangle after the name of a changed item (inside a label or dt). field: form field name. */-->
+<!--/* Decorative "*" after the name of a changed item (inside a label or dt). field: form field name. */-->
 <span th:fragment="changedMark(field)" th:if="${changedFields != null and changedFields.contains(field)}"
-      class="changed-mark" aria-hidden="true"><svg th:replace="~{fragments/layout :: icon('triangle')}"></svg></span>
+      class="changed-mark" aria-hidden="true">*</span>
 
-<!--/* Latest panel dt: triangle + hidden "changed" word (the dd value is highlighted). field: form field name. */-->
+<!--/* Latest panel dt: "*" + hidden "changed" word. field: form field name. */-->
 <th:block th:fragment="changedBadge(field)" th:if="${changedFields != null and changedFields.contains(field)}"><span
         th:replace="~{fragments/layout :: changedMark(${field})}"></span><span class="visually-hidden"
         th:data-test="${'latest-changed-' + field}" th:text="#{badge.changed}">changed</span></th:block>
 
-<!--/* One latest value (dd) of a conflict panel. field: form field name, text: the value as text, cls: dd class or null
-       (pre-wrap, num). A changed value is wrapped in mark.hl (highlighter); otherwise the plain text. */-->
-<dd th:fragment="latestValue(field, text, cls)" th:class="${cls}"><mark class="hl" th:remove="${changedFields != null and changedFields.contains(field)} ? 'none' : 'tag'"
-        th:text="${text}">value</mark></dd>
+<!--/* One latest value (dd) of a conflict panel. field: form field name (kept for the callers), text: the value as
+       text, cls: dd class or null (pre-wrap, num). */-->
+<dd th:fragment="latestValue(field, text, cls)" th:class="${cls}" th:text="${text}">value</dd>
 
 <!--/* The same as latestValue for a value drawn by a fragment (content: fragment expression, e.g. enumLabel). */-->
-<dd th:fragment="latestContent(field, content, cls)" th:class="${cls}"><mark class="hl"
-        th:remove="${changedFields != null and changedFields.contains(field)} ? 'none' : 'tag'"><th:block
-        th:replace="${content}">value</th:block></mark></dd>
+<dd th:fragment="latestContent(field, content, cls)" th:class="${cls}"><th:block
+        th:replace="${content}">value</th:block></dd>
 
 <!--/* Hidden "differs from the latest" note next to a form label. Its id (field-changed) goes into the input's
-       aria-describedby, which also paints the input yellow (CSS); aria-invalid is not set (the input is not wrong). */-->
+       aria-describedby; aria-invalid is not set (the input is not wrong). */-->
 <span th:fragment="changedNote(field)" th:if="${changedFields != null and changedFields.contains(field)}"
       class="visually-hidden" th:id="${field + '-changed'}" th:text="#{conflict.mine.changed}">differs</span>
 
@@ -307,6 +302,9 @@
         <p th:text="#{conflict.latest.intro}">intro</p>
         <p th:if="${updatedAt != null}"><th:block th:text="#{conflict.latest.updatedAt}">updated</th:block> <time
                 th:replace="~{fragments/layout :: datetime(${updatedAt})}"></time></p>
+        <!--/* Legend of the "*" (only when something differs). The "*" here is read aloud on purpose. */-->
+        <p class="changed-legend" th:if="${changedFields != null and !changedFields.isEmpty()}" data-test="changed-legend"><span
+                class="changed-mark">*</span> <th:block th:text="#{conflict.changedLegend}">legend</th:block></p>
     </div>
     <div class="card conflict-panel">
         <th:block th:replace="${fields}"></th:block>
@@ -327,18 +325,10 @@
     <p th:text="${editable} ? #{conflict.mine.intro} : #{conflict.mine.readonlyIntro}">intro</p>
 </th:block>
 
-<!--/* Revision card head shared by plan and todo history (h3, time, "before" badge). */-->
-<th:block th:fragment="revisionHead(revisionNo, revisedAt)">
-    <h3 th:text="#{common.revision.item(${revisionNo})}">revision</h3>
-    <p class="muted"><th:block th:text="#{common.revision.revisedAt}">revised</th:block> <time
-            th:replace="~{fragments/layout :: datetime(${revisedAt})}"></time></p>
-    <p><span class="badge badge--readonly" th:text="#{badge.readonly}">before</span></p>
-</th:block>
-
 <!--/* Page navigation. nav: PageNavigation (server computed: the page window, gaps,
        neighbours; the template only prints them and builds the links). Nothing renders for an empty list or a list
        that is not on this page (null).
-       pageParam: query parameter of this list (page, logPage, historyPage). base: context URL of page 1 of this list with
+       pageParam: query parameter of this list (page, logPage). base: context URL of page 1 of this list with
        every other condition already in it (search, filter, sort, the other list's page); page 1 is the base itself
        because an absent parameter means page 1. anchor: "#id" of the list heading or ''. label: nav name. */-->
 <div th:fragment="pager(nav, pageParam, base, anchor, label)" class="pager" th:if="${nav != null and nav.visible}"

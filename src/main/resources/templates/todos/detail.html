@@ -10,8 +10,7 @@
 <body>
 <header th:replace="~{fragments/shell :: shell('plans', ${unavailable ? null : plan}, 'do')}"></header>
 
-<main id="main" tabindex="-1" class="wrap"
-      th:with="hasRevisions=${!unavailable and todoRevisions != null and !todoRevisions.isEmpty()}">
+<main id="main" tabindex="-1" class="wrap">
     <div class="page-head">
         <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
             <ol>
@@ -66,9 +65,7 @@
                     </th:block>
                 </dl>
                 <p class="card-actions"><a class="btn btn--line btn--sm" th:href="@{/todos/{id}/edit(id=${todo.id})}" href="#"><svg
-                        th:replace="~{fragments/layout :: icon('edit')}"></svg><span th:text="#{common.edit}">edit</span></a>
-                    <a th:if="${hasRevisions}" class="lnk" href="#todo-revisions-heading"
-                       th:text="#{common.revision.jump}">revisions</a></p>
+                        th:replace="~{fragments/layout :: icon('edit')}"></svg><span th:text="#{common.edit}">edit</span></a></p>
             </section>
 
             <!--/* 2. Completion */-->
@@ -100,8 +97,6 @@
                   th:action="@{/todos/{id}/executions(id=${todo.id})}" th:object="${executionForm}">
                 <div th:replace="~{fragments/layout :: errorAlert}"></div>
                 <div id="exec-help" class="hint" role="note">
-                    <p th:text="#{todos.detail.exec.zoneHelp}">zone</p>
-                    <p th:text="#{todos.detail.exec.calcHelp}">calc</p>
                     <p th:text="#{todos.detail.exec.overlapHelp}">overlap</p>
                 </div>
                 <th:block th:replace="~{fragments/execution :: executionFields}"></th:block>
@@ -159,62 +154,9 @@
         </div>
         </th:block>
         <p th:replace="~{fragments/layout :: allPagesNote(${logPageNav})}"></p>
-        <div th:replace="~{fragments/layout :: pager(${logPageNav}, 'logPage', @{/todos/{id}(id=${todo.id},historyPage=${historyPage.number})}, '#logs-heading', ${#messages.msg('pager.nav', #messages.msg('todos.detail.logs.heading'))})}"></div>
+        <div th:replace="~{fragments/layout :: pager(${logPageNav}, 'logPage', @{/todos/{id}(id=${todo.id})}, '#logs-heading', ${#messages.msg('pager.nav', #messages.msg('todos.detail.logs.heading'))})}"></div>
     </section>
-
-    <!--/* 5. Completions and reopens next to 6. edit history. The server merges and orders the history
-           (completionHistory, one page) and counts all of it (completionCount, reopenCount); the template neither
-           merges nor counts. */-->
-    <div class="section two">
-        <section class="card card--soft" aria-labelledby="history-heading">
-            <h2 id="history-heading" th:text="#{todos.detail.history.heading}">history</h2>
-            <p class="small-note card__intro"><th:block th:text="#{todos.detail.history.intro}">intro</th:block> <th:block
-                    th:text="#{todos.detail.history.sortNote}">sort</th:block></p>
-            <p class="summary-line num"><span data-test="completion-count" th:data-value="${completionCount}"
-                    th:text="#{todos.detail.history.completionCount(${completionCount})}">0</span> · <span data-test="reopen-count"
-                    th:data-value="${reopenCount}" th:text="#{todos.detail.history.reopenCount(${reopenCount})}">0</span></p>
-            <p class="small-note" th:if="${completionHistory.isEmpty()}" th:text="#{todos.detail.history.empty}">empty</p>
-            <th:block th:unless="${completionHistory.isEmpty()}">
-                <div class="table-wrap" tabindex="0" role="region" th:attr="aria-label=#{todos.detail.history.heading}">
-                    <table class="table--fit">
-                        <caption class="visually-hidden" th:text="#{todos.detail.history.heading}">history</caption>
-                        <thead>
-                        <tr>
-                            <th scope="col" th:text="#{todos.detail.history.col.kind}">kind</th>
-                            <th scope="col" class="num" th:text="#{todos.detail.history.col.cycle}">cycle</th>
-                            <th scope="col" th:text="#{todos.detail.history.col.at}">at</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <tr th:each="h : ${completionHistory}">
-                            <td data-test="completion-history-kind" th:data-value="${h.kind}"><th:block
-                                    th:replace="~{fragments/layout :: enumLabel('CompletionHistoryKind', ${h.kind})}">kind</th:block></td>
-                            <td class="num" th:text="#{todos.detail.history.cycle(${h.cycleNo})}">1</td>
-                            <td><time th:replace="~{fragments/layout :: datetime(${h.occurredAt})}"></time></td>
-                        </tr>
-                        </tbody>
-                    </table>
-                </div>
-                <p class="small-note" th:text="#{todos.detail.history.cycleNote}">cycle note</p>
-            </th:block>
-            <div th:replace="~{fragments/layout :: pager(${historyPageNav}, 'historyPage', @{/todos/{id}(id=${todo.id},logPage=${logPage.number})}, '#history-heading', ${#messages.msg('pager.nav', #messages.msg('todos.detail.history.heading'))})}"></div>
-        </section>
-
-        <!--/* 6. Edit history: values before each edit, newest first (server order). */-->
-        <section class="card card--soft" aria-labelledby="todo-revisions-heading">
-            <h2 id="todo-revisions-heading" th:text="#{todos.detail.revisions.heading}">revisions</h2>
-            <p class="small-note card__intro" th:text="#{todos.detail.revisions.intro}">intro</p>
-            <p class="small-note" th:if="${todoRevisions == null or todoRevisions.isEmpty()}" th:text="#{todos.detail.revisions.empty}">empty</p>
-            <ol reversed class="revision-list" th:unless="${todoRevisions == null or todoRevisions.isEmpty()}">
-                <li th:each="rev : ${todoRevisions}">
-                    <article class="revision" data-test="todo-revision" th:data-value="${rev.revisionNo}">
-                        <th:block th:replace="~{fragments/layout :: revisionHead(${rev.revisionNo}, ${rev.revisedAt})}"></th:block>
-                        <dl th:replace="~{fragments/todo :: todoRevisionFields(${rev})}"></dl>
-                    </article>
-                </li>
-            </ol>
-        </section>
-    </div>
+    <!--/* Completion/reopen records and the todo edit history are not shown (ADR-43): stored and exported only. */-->
     </th:block>
 </main>
 

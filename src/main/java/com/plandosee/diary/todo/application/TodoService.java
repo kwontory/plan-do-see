@@ -30,8 +30,6 @@ import com.plandosee.diary.plan.application.PlanService;
 import com.plandosee.diary.todo.application.port.TagMapper;
 import com.plandosee.diary.todo.application.port.TodoMapper;
 import com.plandosee.diary.todo.domain.CompletionEventRow;
-import com.plandosee.diary.todo.domain.CompletionHistoryCounts;
-import com.plandosee.diary.todo.domain.CompletionHistoryEntry;
 import com.plandosee.diary.todo.domain.DueFilter;
 import com.plandosee.diary.todo.domain.TagRow;
 import com.plandosee.diary.todo.domain.TodoFilter;
@@ -307,33 +305,6 @@ public class TodoService {
         TodoRow latest = get(todoId);
         List<String> tags = latest.getTags().stream().map(TagRow::getName).toList();
         return new EditSnapshot<>(latest, changedFields(latest, tags, input, input.tagNames()));
-    }
-
-    /** The owned active todo's edit history, newest first. NotFoundException otherwise. */
-    @Transactional(readOnly = true)
-    public List<TodoRevisionRow> revisions(UUID todoId) {
-        UUID userId = currentUserProvider.currentUserId();
-        if (todoMapper.findActiveOwned(userId, todoId, seoulDates.today()) == null) {
-            throw new NotFoundException("todo");
-        }
-        return todoMapper.listRevisionsOwned(userId, todoId);
-    }
-
-    /**
-     * One page of the merged completion and reopen history in time order, with the counts of all
-     * events, in one repeatable-read snapshot. NotFoundException when the todo is not an owned active todo.
-     */
-    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
-    public CompletionHistory completionHistory(UUID todoId, int requestedPage) {
-        UUID userId = currentUserProvider.currentUserId();
-        if (todoMapper.findActiveOwned(userId, todoId, seoulDates.today()) == null) {
-            throw new NotFoundException("todo");
-        }
-        CompletionHistoryCounts counts = todoMapper.countCompletionHistoryOwned(userId, todoId);
-        PageInfo info = pageSettings.page(requestedPage, counts.total());
-        List<CompletionHistoryEntry> entries = info.totalCount() == 0 ? List.of()
-                : todoMapper.listCompletionHistoryOwned(userId, todoId, info.limit(), info.offset());
-        return new CompletionHistory(entries, counts.getCompletionCount(), counts.getReopenCount(), info);
     }
 
     @Transactional(readOnly = true)

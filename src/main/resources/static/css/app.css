@@ -35,10 +35,7 @@
     --color-danger-line: #f4b4b4;
     --color-notice-bg: #fff8e1;
     --color-notice-line: #f0d58a;
-    /* Conflict highlighter: values that differ from the latest. Body text on it 13.7:1,
-       muted text 5.9:1. */
-    --color-highlight: #fff08a;
-    /* Triangle after the name of a changed item (with the highlighter): 5.43:1 on white, 5.11:1 on canvas. */
+    /* Orange "*" after the name of a changed item on conflict screens: 5.43:1 on white, 5.11:1 on canvas. */
     --color-changed-mark: #b54708;
     --color-pri-high: #b42318;
     --color-pri-medium: #b54708;
@@ -130,8 +127,12 @@ body {
     line-height: var(--line-height);
     color: var(--color-text);
     background: var(--color-bg);
+    /* Line breaks: Korean breaks only between words (keep-all). A word is cut only when it cannot fit its line on its
+       own (break-word: a long URL or an unbroken string), and it does not shrink boxes to single letters the way
+       "anywhere" does. Shrink-to-fit parts that show user text (chips, pills, the side plan title, the text beside an
+       icon) opt in to "anywhere" or min-width: 0 further down so a long token cannot run out of them at 320px. */
     word-break: keep-all;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
     -webkit-font-smoothing: antialiased;
 }
 
@@ -564,6 +565,8 @@ main:focus {
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 3;
         overflow: hidden;
+        min-width: 0;
+        overflow-wrap: anywhere;
     }
 
     .side-plan__dot {
@@ -1146,6 +1149,21 @@ a.flow__item:hover {
     font-weight: var(--font-weight-bold);
 }
 
+/* Shrink-to-fit parts that can show a user's long unbroken token (a tag name, a search word, a plan or todo title):
+   they may not grow past their line and may cut such a token anywhere. Everything else keeps whole words. */
+.chip,
+.pill {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+.chip > span,
+.error-text > span,
+.draft-note__text > span,
+.danger-lead > span {
+    min-width: 0;
+}
+
 /* Priority: text + a dot. The dot is decorative; the word carries the meaning. */
 .pri {
     display: inline-flex;
@@ -1281,7 +1299,7 @@ a.flow__item:hover {
     padding: 14px 20px;
     font-size: var(--font-size-sm);
     line-height: 1.55;
-    text-align: center;
+    text-align: left;
     color: var(--color-text);
     background: var(--color-primary-bg);
     border: var(--border-width) solid var(--color-primary-line);
@@ -1481,14 +1499,14 @@ a.flow__item:hover {
     container-type: inline-size;
 }
 
-/* Empty state: dashed box, round icon, one line, optional action. */
+/* Empty state: dashed box, round icon, one line, optional action. Text in boxes is left aligned (every box). */
 .empty-state {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
-    padding: 40px 24px;
-    text-align: center;
+    padding: 32px 24px;
+    text-align: left;
     background: var(--color-canvas);
     border: var(--border-width) dashed var(--color-line-strong);
     border-radius: var(--radius-lg);
@@ -1710,13 +1728,6 @@ input::placeholder {
 
 /* An invalid field keeps its border: only the message text under it is red. */
 
-/* Conflict: a field whose value differs from the latest is painted like a highlighter. Its aria-describedby
-   holds the hidden "differs from the latest" note (id ending in -changed), so the same attribute gives the look. */
-input[aria-describedby*="-changed"],
-select[aria-describedby*="-changed"],
-textarea[aria-describedby*="-changed"] {
-    background: var(--color-highlight);
-}
 
 .input-unit {
     display: flex;
@@ -1838,15 +1849,15 @@ fieldset.field-group {
     color: var(--color-text-muted);
 }
 
-/* "Not saved" box (fragments/layout :: errorAlert): centred heading, only errors that have no field. */
+/* "Not saved" box (fragments/layout :: errorAlert): heading, then only errors that have no field. Left aligned. */
 .error-alert {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     gap: 6px;
     margin: 0 0 var(--space-4);
     padding: var(--space-4) 20px;
-    text-align: center;
+    text-align: left;
     color: var(--color-text);
     background: var(--color-danger-bg);
     border: var(--border-width) solid var(--color-danger-line);
@@ -1960,36 +1971,23 @@ fieldset.field-group {
 .conflict-jumps {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: flex-start;
     gap: var(--space-1) var(--space-4);
     margin: var(--space-2) 0 0;
 }
 
-/* Triangle after the name (label or dt) of an item that differs from the latest. Small and inline so the label line
-   keeps its height (paired inputs stay on one line). */
+/* Orange "*" after the name (label or dt) of an item that differs from the latest (no background paint anywhere).
+   Bold, the label's size, inline so the label line keeps its height (paired inputs stay on one line). Orange text
+   5.43:1 on white, 5.11:1 on canvas. */
 .changed-mark {
-    display: inline-flex;
-    margin-left: 5px;
+    margin-left: 3px;
+    font-weight: var(--font-weight-bold);
     color: var(--color-changed-mark);
-    vertical-align: 0;
 }
 
-.changed-mark .icon {
-    width: 11px;
-    height: 11px;
-    fill: currentColor;
-    stroke: currentColor;
-    stroke-width: 2;
-}
-
-/* Highlighter on a latest value that differs (mark.hl): a yellow band behind the lower part of the text, repeated on
-   every line of a wrapped value. Text stays --color-text (contrast 14:1 or more on the band). */
-.hl {
-    color: inherit;
-    background: linear-gradient(transparent 30%, var(--color-highlight) 30%);
-    -webkit-box-decoration-break: clone;
-    box-decoration-break: clone;
-    padding: 0 2px;
+/* Legend line of the "*" in the latest column head. */
+.changed-legend .changed-mark {
+    margin: 0;
 }
 
 /* ---------- Todo add form (composer) ---------- */
@@ -3069,6 +3067,24 @@ tfoot td {
     color: var(--color-text-muted);
 }
 
+/* Variance card (ADR-42): one sentence, no heading. The duration is the emphasis (bold, larger) and one chunk that
+   never splits; the words around it wrap between words. */
+.stat__sentence {
+    font-size: var(--font-size-lg);
+    line-height: 32px;
+    color: var(--color-text);
+}
+
+.stat__sentence .duration-chunk {
+    font-size: var(--font-size-xl);
+    letter-spacing: -0.01em;
+}
+
+.duration-chunk {
+    font-weight: var(--font-weight-bold);
+    white-space: nowrap;
+}
+
 .stat__cta {
     margin-top: auto;
     padding-top: 6px;
@@ -3090,6 +3106,15 @@ tfoot td {
     .stat__value {
         font-size: var(--font-size-xl);
         line-height: 30px;
+    }
+
+    .stat__sentence {
+        font-size: var(--font-size-md);
+        line-height: 28px;
+    }
+
+    .stat__sentence .duration-chunk {
+        font-size: var(--font-size-lg);
     }
 }
 

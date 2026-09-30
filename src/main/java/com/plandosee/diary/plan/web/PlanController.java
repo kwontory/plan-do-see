@@ -92,7 +92,6 @@ public class PlanController {
     @GetMapping("/plans/{id}")
     public String detail(@PathVariable("id") UUID planId, Model model) {
         model.addAttribute("plan", planService.get(planId));
-        model.addAttribute("revisions", planService.revisions(planId));
         model.addAttribute("reviews", reviewService.listForPlan(planId));
         model.addAttribute("sourceReview", reviewService.findSourceReview(planId));
         return "plans/detail";

@@ -9,8 +9,6 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.plandosee.diary.todo.domain.CompletionEventRow;
-import com.plandosee.diary.todo.domain.CompletionHistoryCounts;
-import com.plandosee.diary.todo.domain.CompletionHistoryEntry;
 import com.plandosee.diary.todo.domain.ReopenEventRow;
 import com.plandosee.diary.todo.domain.TodoFilter;
 import com.plandosee.diary.todo.domain.TodoRevisionRow;
@@ -55,14 +53,7 @@ public interface TodoMapper {
 
     int insertRevision(TodoRevisionRow revision);
 
-    List<TodoRevisionRow> listRevisionsOwned(@Param("userId") UUID userId, @Param("todoId") UUID todoId);
-
     int insertReopenEvent(ReopenEventRow event);
-
-    List<CompletionHistoryEntry> listCompletionHistoryOwned(@Param("userId") UUID userId, @Param("todoId") UUID todoId,
-                                                            @Param("limit") int limit, @Param("offset") long offset);
-
-    CompletionHistoryCounts countCompletionHistoryOwned(@Param("userId") UUID userId, @Param("todoId") UUID todoId);
 
     /** Physically deletes the owner's reopen events (account deletion, ADR-35: every row, soft-deleted or not). */
     int deleteReopenEventsOwnedBy(@Param("userId") UUID userId);

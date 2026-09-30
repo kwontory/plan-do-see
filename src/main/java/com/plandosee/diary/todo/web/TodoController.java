@@ -100,10 +100,8 @@ public class TodoController {
 
     @GetMapping("/todos/{id}")
     public String detail(@PathVariable("id") UUID todoId,
-                         @RequestParam(name = "logPage", required = false) String logPage,
-                         @RequestParam(name = "historyPage", required = false) String historyPage, Model model) {
-        return pages.detail(model, todoId, new ExecutionForm(), PageRequest.parse(logPage),
-                PageRequest.parse(historyPage));
+                         @RequestParam(name = "logPage", required = false) String logPage, Model model) {
+        return pages.detail(model, todoId, new ExecutionForm(), PageRequest.parse(logPage));
     }
 
     @GetMapping("/todos/{id}/edit")

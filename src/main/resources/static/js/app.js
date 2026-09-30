@@ -420,7 +420,8 @@
             return;
         }
         settleSubmittedDraft();
-        var shownAgain = !!document.querySelector('[data-js~="error-summary"]');
+        // Shown again by the server after a failed save: the error box, or (forms without the box) an invalid field.
+        var shownAgain = !!document.querySelector('[data-js~="error-summary"], [data-js~="focus-first-invalid"] [aria-invalid="true"]');
         document.querySelectorAll('form[data-draft-id]').forEach(function (form) {
             setUpDraft(form, shownAgain);
         });

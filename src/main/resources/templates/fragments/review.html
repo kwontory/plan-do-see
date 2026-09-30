@@ -20,23 +20,45 @@
     </th:block>
 </dl>
 
-<!--/* One metric card of the review screen. key: metric key, v: server value, reviewId: review id.
-       Labels, units and the sign of the variance are chosen here; the card links to the evidence.
-       Time metrics (model metricDurations: estimated, actual, variance) print as days, hours and minutes with each number
-       large and each unit small (layout :: durationStat); counts print the number and metric.<key>.unit.
-       The variance shows its sign only ("+30분", "-1시간 5분", "0분"); the description says which way is more or less. */-->
-<a th:fragment="metricCard(key, v, reviewId)" class="stat" th:classappend="${key == 'variance'} ? 'stat--variance'"
+<!--/* One metric card of the review screen (counts, estimated, actual; the variance has its own card below).
+       key: metric key, v: server value, reviewId: review id. Labels and units are chosen here; the card links to the
+       evidence. Time metrics (model metricDurations: estimated, actual) print as days, hours and minutes with each number
+       large and each unit small (layout :: durationStat); counts print the number and metric.<key>.unit. */-->
+<a th:fragment="metricCard(key, v, reviewId)" class="stat"
    th:href="@{/reviews/{id}/evidence(id=${reviewId},metric=${key})}" href="#"
    th:attr="aria-describedby=|metric-desc-${key}|">
     <span class="stat__label" th:text="${#messages.msg('metric.' + key + '.label')}">label</span>
     <span class="visually-hidden"> </span>
     <span class="stat__value num" th:attr="data-test=|metric-value-${key}|" th:data-value="${v}"
           th:with="d=${metricDurations != null ? metricDurations.get(key) : null}"><th:block th:if="${d != null}"><th:block
-            th:replace="~{fragments/layout :: durationStat(${d}, ${key == 'variance'})}">0</th:block></th:block><th:block
+            th:replace="~{fragments/layout :: durationStat(${d})}">0</th:block></th:block><th:block
             th:if="${d == null}"><th:block th:text="${v}">0</th:block><small
             th:text="${#messages.msg('metric.' + key + '.unit')}">unit</small></th:block></span>
     <span class="stat__desc" aria-hidden="true" th:id="|metric-desc-${key}|"
           th:text="${#messages.msg('metric.' + key + '.description')}">description</span>
+    <span class="stat__cta"><span class="visually-hidden">, </span><th:block
+            th:text="#{reviews.detail.metrics.cta}">evidence</th:block><span aria-hidden="true"> →</span></span>
+</a>
+
+<!--/* Difference between actual and estimated as one sentence (ADR-42). parts: DurationParts of "actual - estimated"
+       from the server (metricDurations.variance, summary.varianceDuration, evidenceVarianceDuration): negative = took
+       less than the estimate, positive = took more, neither = the same. The template only picks the sentence; the
+       duration prints without a sign (layout :: duration, "1일 2시간 30분") inside one unbreakable chunk. Fixed word
+       order: review.variance.lead + duration + review.variance.faster | review.variance.slower. */-->
+<th:block th:fragment="varianceSentence(parts)"><th:block th:if="${parts.negative or parts.positive}"><th:block
+        th:text="#{review.variance.lead}">than estimated</th:block> <strong class="duration-chunk"><th:block
+        th:replace="~{fragments/layout :: duration(${parts})}">41분</th:block></strong> <th:block
+        th:text="${parts.negative} ? #{review.variance.faster} : #{review.variance.slower}">faster</th:block></th:block><th:block
+        th:unless="${parts.negative or parts.positive}" th:text="#{review.variance.same}">same</th:block></th:block>
+
+<!--/* Variance card: no heading, one sentence, then the evidence link (T06-C83). v: the signed minutes (metricValues,
+       kept in data-value for tests). Without metricDurations (stand-in page) the minutes and unit are printed. */-->
+<a th:fragment="varianceCard(v, reviewId)" class="stat stat--variance"
+   th:href="@{/reviews/{id}/evidence(id=${reviewId},metric='variance')}" href="#">
+    <span class="stat__sentence" data-test="metric-value-variance" th:data-value="${v}"
+          th:with="d=${metricDurations != null ? metricDurations.get('variance') : null}"><th:block th:if="${d != null}"><th:block
+            th:replace="~{fragments/review :: varianceSentence(${d})}">sentence</th:block></th:block><th:block
+            th:if="${d == null}"><th:block th:text="${v}">0</th:block><small th:text="#{metric.variance.unit}">unit</small></th:block></span>
     <span class="stat__cta"><span class="visually-hidden">, </span><th:block
             th:text="#{reviews.detail.metrics.cta}">evidence</th:block><span aria-hidden="true"> →</span></span>
 </a>

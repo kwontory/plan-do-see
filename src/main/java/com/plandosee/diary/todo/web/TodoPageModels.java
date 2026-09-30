@@ -26,11 +26,9 @@ import com.plandosee.diary.execution.application.TodoExecutionLogs;
 import com.plandosee.diary.execution.web.ExecutionForm;
 import com.plandosee.diary.plan.application.PlanService;
 import com.plandosee.diary.plan.domain.PlanRow;
-import com.plandosee.diary.todo.application.CompletionHistory;
 import com.plandosee.diary.todo.application.TodoService;
 import com.plandosee.diary.todo.domain.DueFilter;
 import com.plandosee.diary.todo.domain.TagRow;
-import com.plandosee.diary.todo.domain.TodoRevisionRow;
 import com.plandosee.diary.todo.domain.TodoRow;
 import com.plandosee.diary.todo.domain.TodoRules;
 import com.plandosee.diary.todo.domain.TodoSort;
@@ -122,7 +120,7 @@ public class TodoPageModels {
 
     /** Todo detail after a form POST: the first page of each list. */
     public String detail(Model model, UUID todoId, ExecutionForm executionForm) {
-        return detail(model, todoId, executionForm, PageRequest.FIRST, PageRequest.FIRST);
+        return detail(model, todoId, executionForm, PageRequest.FIRST);
     }
 
     /**
@@ -142,28 +140,20 @@ public class TodoPageModels {
 
     /**
      * Todo detail. logs is one page (query parameter logPage, model logPage and logPageNav); logsActualMinutes is the
-     * total of all the todo's records (logsActualDuration: the same value as days, hours and minutes). todoRevisions (newest first), completionHistory (one page of
-     * completions and reopens merged in time order, query parameter historyPage, model historyPage and
-     * historyPageNav), completionCount, reopenCount (all events).
+     * total of all the todo's records (logsActualDuration: the same value as days, hours and minutes). Edit and
+     * completion histories are not on the screen (ADR-43); they are stored and exported only.
      */
-    public String detail(Model model, UUID todoId, ExecutionForm executionForm, int logPage, int historyPage) {
+    public String detail(Model model, UUID todoId, ExecutionForm executionForm, int logPage) {
         // Every read happens before the model is filled, so a failed read leaves no partial page behind.
         TodoRow todo = todoService.get(todoId);
         PlanRow plan = planService.get(todo.getPlanId());
         TodoExecutionLogs logs = executionService.logsForTodo(todoId, logPage);
-        CompletionHistory history = todoService.completionHistory(todoId, historyPage);
-        List<TodoRevisionRow> revisions = todoService.revisions(todoId);
         model.addAttribute("todo", todo);
         model.addAttribute("plan", plan);
         model.addAttribute("logs", logs.logs());
         PageNavigation.addTo(model, "logPage", logs.page());
         model.addAttribute("logsActualMinutes", logs.actualMinutes());
         model.addAttribute("logsActualDuration", logs.actualDuration());
-        model.addAttribute("completionHistory", history.entries());
-        PageNavigation.addTo(model, "historyPage", history.page());
-        model.addAttribute("completionCount", history.completionCount());
-        model.addAttribute("reopenCount", history.reopenCount());
-        model.addAttribute("todoRevisions", revisions);
         model.addAttribute("executionForm", executionForm);
         model.addAttribute("completionKey", idGenerator.newId());
         return "todos/detail";
@@ -196,8 +186,7 @@ public class TodoPageModels {
      * Todo detail shown again after the execution form ran out of its time budget or pool wait, without
      * reading the database. Model: todo (a stand-in holding the id from the path; title, planId and the rest
      * unknown), executionForm (the input), snapshotUnavailable = true. plan, logs, logPage, logPageNav,
-     * logsActualMinutes, completionHistory, historyPage, historyPageNav, completionCount, reopenCount, todoRevisions
-     * and completionKey are absent (null). The caller has set the status and the global error.
+     * logsActualMinutes, logsActualDuration and completionKey are absent (null). The caller has set the status and the global error.
      */
     public String detailUnavailable(Model model, UUID todoId, ExecutionForm executionForm) {
         TodoRow todo = new TodoRow();

@@ -124,12 +124,6 @@ public class PlanService {
         return new EditSnapshot<>(latest, changedFields(latest, input));
     }
 
-    @Transactional(readOnly = true)
-    public List<PlanRevisionRow> revisions(UUID planId) {
-        get(planId);
-        return planMapper.listRevisionsOwned(currentUserProvider.currentUserId(), planId);
-    }
-
     /**
      * Snapshot of the previous values and the update of the current row commit or roll back together. The plan row
      * lock serializes concurrent revisions so revision numbers never repeat or skip.

@@ -104,21 +104,6 @@
     <dd th:replace="~{fragments/layout :: latestValue('tags', ${latest.tags != null and !latest.tags.isEmpty()} ? ${#strings.listJoin(latest.tags.![name], ', ')} : #{common.none}, null)}"></dd>
 </dl>
 
-<!--/* Values of one todo revision (the values before that edit, tag names as they were). rev: TodoRevisionRow.
-       No todo-estimated-minutes hook here: that one marks the current value only. */-->
-<dl th:fragment="todoRevisionFields(rev)" class="dl-grid">
-    <dt th:text="#{todos.field.title}">title</dt>
-    <dd th:text="${rev.title}">title</dd>
-    <dt th:text="#{todos.field.dueDate}">due</dt>
-    <dd th:text="${rev.dueDate != null} ? ${rev.dueDate} : #{todos.item.noDue}">due</dd>
-    <dt th:text="#{todos.field.priority}">priority</dt>
-    <dd><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${rev.priority})}">priority</th:block></dd>
-    <dt th:text="#{todos.field.estimatedMinutes}">estimated</dt>
-    <dd class="num"><th:block th:replace="~{fragments/layout :: duration(${rev.estimatedDuration})}">0</th:block></dd>
-    <dt th:text="#{todos.field.tags}">tags</dt>
-    <dd th:text="${rev.tagNames != null and !rev.tagNames.isEmpty()} ? ${#strings.listJoin(rev.tagNames, ', ')} : #{common.none}">tags</dd>
-</dl>
-
 <!--/* Submitted TodoForm shown read-only for copying. form: TodoForm; any value may be empty. */-->
 <dl th:fragment="todoInputReadonly(form)" class="dl-grid">
     <dt th:text="#{todos.field.title}">title</dt>

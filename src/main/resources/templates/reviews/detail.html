@@ -76,7 +76,7 @@
             </ul>
             <div class="card time-board__compare">
                 <div th:replace="~{fragments/review :: timeBars(${summary})}"></div>
-                <a th:replace="~{fragments/review :: metricCard('variance', ${metricValues.get('variance')}, ${review.id})}"></a>
+                <a th:replace="~{fragments/review :: varianceCard(${metricValues.get('variance')}, ${review.id})}"></a>
             </div>
         </div>
     </section>
@@ -92,7 +92,7 @@
                       loadUrl=${transferred} ? null : @{/reviews/{id}(id=${review.id})} + '#improvement-heading'">
         <h2 id="improvement-heading" class="card__title" th:text="#{reviews.detail.improvement.heading}">improvement</h2>
         <th:block th:if="${improvementForm != null}" th:object="${improvementForm}"
-                  th:with="nestedSummary=true, showJumps=${conflict}">
+                  th:with="nestedSummary=true, showJumps=${conflict}, forceBox=${transferred}">
             <div th:replace="~{fragments/layout :: errorAlert}"></div>
         </th:block>
         <th:block th:if="${conflict}">
@@ -144,6 +144,9 @@
             <div class="readonly-box" id="improvement" tabindex="-1">
                 <p class="pre-wrap" th:text="${improvementForm == null or #strings.isEmpty(improvementForm.improvement)} ? #{common.none} : ${improvementForm.improvement}">input</p>
             </div>
+            <!--/* The reason (review.improvement.alreadyTransferred, a field error on improvement) under the read-only copy. */-->
+            <th:block th:if="${improvementForm != null}" th:object="${improvementForm}"><p
+                    th:replace="~{fragments/layout :: fieldMessage('improvement')}"></p></th:block>
         </div>
     </section>
 

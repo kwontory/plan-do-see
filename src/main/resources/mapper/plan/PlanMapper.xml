@@ -129,26 +129,6 @@
                 #{successCriteria}, #{estimatedMinutes}, #{carriedImprovement}, #{revisedAt})
     </insert>
 
-    <select id="listRevisionsOwned" resultMap="planRevisionRow">
-        SELECT r.id,
-               r.plan_id,
-               r.revision_no,
-               r.title,
-               r.start_date,
-               r.end_date,
-               r.priority,
-               r.success_criteria,
-               r.estimated_minutes,
-               r.carried_improvement,
-               r.revised_at
-        FROM plan_revisions r
-        JOIN plans p ON p.id = r.plan_id
-        WHERE r.plan_id = #{planId}
-          AND p.user_id = #{userId}
-          AND p.deleted_at IS NULL
-        ORDER BY r.revision_no DESC, r.id ASC
-    </select>
-
     <delete id="deleteRevisionsOwnedBy">
         DELETE FROM plan_revisions r
         USING plans p

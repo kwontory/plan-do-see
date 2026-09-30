@@ -7,8 +7,7 @@
 <body>
 <header th:replace="~{fragments/shell :: shell('plans', ${plan}, 'plan')}"></header>
 
-<main id="main" tabindex="-1" class="wrap"
-      th:with="hasRevisions=${revisions != null and !revisions.isEmpty()}">
+<main id="main" tabindex="-1" class="wrap">
     <div class="page-head">
         <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
             <ol>
@@ -66,8 +65,6 @@
                 <dt th:text="#{plans.field.updatedAt}">updated</dt>
                 <dd class="num"><time th:replace="~{fragments/layout :: datetime(${plan.updatedAt})}"></time></dd>
             </dl>
-            <p class="card__foot" th:if="${hasRevisions}"><a class="lnk" href="#revisions-heading"
-                    th:text="#{common.revision.jump}">revisions</a></p>
         </section>
 
         <div class="card-stack">
@@ -110,35 +107,7 @@
             </section>
         </div>
     </div>
-
-    <section class="section" aria-labelledby="revisions-heading">
-        <h2 id="revisions-heading" th:text="#{plans.detail.revisions.heading}">revisions</h2>
-        <p class="sort-note" th:text="#{plans.detail.revisions.intro}">intro</p>
-        <p class="empty" th:if="${revisions == null or revisions.isEmpty()}" th:text="#{plans.detail.revisions.empty}">empty</p>
-        <ol reversed class="revision-list" th:unless="${revisions == null or revisions.isEmpty()}">
-            <li th:each="rev : ${revisions}">
-                <article class="revision">
-                    <th:block th:replace="~{fragments/layout :: revisionHead(${rev.revisionNo}, ${rev.revisedAt})}"></th:block>
-                    <dl class="dl-grid">
-                        <dt th:text="#{plans.field.title}">title</dt>
-                        <dd th:text="${rev.title}">title</dd>
-                        <dt th:text="#{plans.field.period}">period</dt>
-                        <dd class="num" th:text="#{common.period(${rev.startDate}, ${rev.endDate})}">period</dd>
-                        <dt th:text="#{plans.field.priority}">priority</dt>
-                        <dd><th:block th:replace="~{fragments/layout :: enumLabel('Priority', ${rev.priority})}">priority</th:block></dd>
-                        <dt th:text="#{plans.field.successCriteria}">criteria</dt>
-                        <dd class="pre-wrap" th:text="${rev.successCriteria}">criteria</dd>
-                        <dt th:text="#{plans.field.estimatedMinutes}">estimated</dt>
-                        <dd class="num"><th:block th:replace="~{fragments/layout :: duration(${rev.estimatedDuration})}">0</th:block></dd>
-                        <th:block th:if="${rev.carriedImprovement != null and !#strings.isEmpty(rev.carriedImprovement)}">
-                            <dt th:text="#{plans.field.carriedImprovement}">carried</dt>
-                            <dd class="pre-wrap" th:text="${rev.carriedImprovement}">improvement</dd>
-                        </th:block>
-                    </dl>
-                </article>
-            </li>
-        </ol>
-    </section>
+    <!--/* Plan edit history is not shown (ADR-43): it is stored and included in the export file only. */-->
 </main>
 
 <footer th:replace="~{fragments/layout :: footer}"></footer>
