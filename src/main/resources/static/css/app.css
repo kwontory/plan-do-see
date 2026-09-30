@@ -2820,6 +2820,9 @@ button.check:hover .icon {
    (tabindex=0, so it can be scrolled with the arrow keys): the focus ring is the usual 3px blue outline outside the
    box, which neither the sticky first column nor the head row can cover. */
 .table-wrap {
+    /* Containing block for visually-hidden text inside the table, so it is clipped by this scroll area
+       instead of widening the page on narrow screens. */
+    position: relative;
     overflow-x: auto;
     margin: 0 0 var(--space-3);
     background: var(--color-bg);
