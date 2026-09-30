@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<!--/* S07 account settings. Model: account (loginId, nickname), nicknameForm (nickname), passwordForm (currentPassword,
+       newPassword), authRules (limits for help text and maxlength), optional deleteForm (password) for the account
+       delete confirmation. Password inputs are never refilled. A wrong password when deleting keeps the confirmation
+       open with the field error only (no "not saved" box). */-->
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:with="nicknameError=${#fields.hasErrors('${nicknameForm.*}')},
+               passwordError=${#fields.hasErrors('${passwordForm.*}')},
+               deleteError=${deleteForm != null and #fields.hasErrors('${deleteForm.*}')}">
+<head th:replace="~{fragments/layout :: head(#{account.pageTitle}, ${nicknameError or passwordError or deleteError})}">
+    <meta charset="UTF-8">
+    <title>account</title>
+</head>
+<body>
+<header th:replace="~{fragments/layout :: header('account')}"></header>
+
+<main id="main" tabindex="-1" class="wrap account-page">
+    <div class="page-head">
+        <nav class="breadcrumb" th:attr="aria-label=#{layout.breadcrumb.label}">
+            <ol>
+                <li aria-current="page" th:text="#{breadcrumb.account}">account</li>
+            </ol>
+        </nav>
+        <div th:replace="~{fragments/layout :: flash}"></div>
+        <h1 th:text="#{account.heading}">account</h1>
+        <p class="subtitle" th:text="#{account.intro}">intro</p>
+    </div>
+
+    <!--/* 1. Profile: login id (text, never changes) and the nickname form (tab draft). */-->
+    <section class="section card form-page" aria-labelledby="profile-heading" th:object="${nicknameForm}">
+        <h2 id="profile-heading" th:text="#{account.profile.heading}">profile</h2>
+        <dl class="dl-grid">
+            <dt th:text="#{auth.field.loginId.label}">id</dt>
+            <dd><span data-test="account-username" th:text="${account.loginId}">id</span><span class="dd-note"
+                    th:text="#{account.profile.usernameNote}">note</span></dd>
+        </dl>
+        <th:block th:with="nestedSummary=true"><div th:replace="~{fragments/layout :: errorAlert}"></div></th:block>
+        <div th:replace="~{fragments/layout :: draftNote('account-nickname')}"></div>
+        <form method="post" novalidate class="form" data-js="focus-first-invalid" data-draft-id="account-nickname"
+              data-test="account-nickname-form" th:action="@{/account/nickname}" action="/account/nickname">
+            <input type="hidden" name="_method" value="put">
+            <div class="field">
+                <label for="nickname" th:text="#{auth.field.nickname.label}">nickname</label>
+                <input type="text" th:field="*{nickname}" autocomplete="nickname" required
+                       th:maxlength="${authRules?.nicknameMax}"
+                       th:attr="aria-describedby=${#fields.hasErrors('nickname')} ? 'nickname-error nickname-help' : 'nickname-help',aria-invalid=${#fields.hasErrors('nickname')} ? 'true' : null">
+                <p th:replace="~{fragments/layout :: fieldMessage('nickname')}"></p>
+                <p class="field-help" id="nickname-help" th:text="#{account.nickname.help(${authRules?.nicknameMax})}">help</p>
+            </div>
+            <div class="form-actions"><button type="submit" class="btn" th:text="#{account.nickname.submit}">save</button></div>
+        </form>
+    </section>
+
+    <!--/* 2. Password change: the notice comes before the form (every device is logged out). */-->
+    <section class="section card form-page" aria-labelledby="password-heading" th:object="${passwordForm}">
+        <h2 id="password-heading" th:text="#{account.password.heading}">password</h2>
+        <p class="note" th:text="#{account.password.notice}">notice</p>
+        <th:block th:with="nestedSummary=true"><div th:replace="~{fragments/layout :: errorAlert}"></div></th:block>
+        <form method="post" novalidate class="form" data-js="focus-first-invalid" data-test="account-password-form"
+              th:action="@{/account/password}" action="/account/password">
+            <input type="hidden" name="_method" value="put">
+            <div class="field" th:with="err=${#fields.hasErrors('currentPassword')}">
+                <label for="currentPassword" th:text="#{account.password.current.label}">current</label>
+                <input id="currentPassword" name="currentPassword" type="password" autocomplete="current-password"
+                       required value="" th:maxlength="${authRules?.passwordMax}"
+                       th:attr="aria-describedby=${err} ? 'currentPassword-error' : null,aria-invalid=${err} ? 'true' : null">
+                <p th:replace="~{fragments/layout :: fieldMessage('currentPassword')}"></p>
+            </div>
+            <div class="field" th:with="err=${#fields.hasErrors('newPassword')}">
+                <label for="newPassword" th:text="#{account.password.new.label}">new</label>
+                <input id="newPassword" name="newPassword" type="password" autocomplete="new-password" required value=""
+                       th:maxlength="${authRules?.passwordMax}"
+                       th:attr="aria-describedby=${err} ? 'newPassword-error newPassword-help' : 'newPassword-help',aria-invalid=${err} ? 'true' : null">
+                <p th:replace="~{fragments/layout :: fieldMessage('newPassword')}"></p>
+                <p class="field-help" id="newPassword-help"
+                   th:text="#{auth.field.password.help(${authRules?.passwordMin}, ${authRules?.passwordMax})}">help</p>
+            </div>
+            <div class="form-actions"><button type="submit" class="btn" th:text="#{account.password.submit}">change</button></div>
+        </form>
+    </section>
+
+    <!--/* 3. Export: a link to S05, where the download and its contents are explained. */-->
+    <section class="section card form-page" aria-labelledby="export-heading">
+        <h2 id="export-heading" th:text="#{account.export.heading}">export</h2>
+        <p th:text="#{account.export.body}">body</p>
+        <p class="card-actions"><a class="btn btn--line" th:href="@{/export}" href="/export"><svg
+                th:replace="~{fragments/layout :: icon('download')}"></svg><span th:text="#{account.export.link}">open</span></a></p>
+    </section>
+
+    <!--/* 4. Delete: warning, scope and the export link come before the confirmation. */-->
+    <section class="section card card--danger form-page" aria-labelledby="delete-heading">
+        <h2 id="delete-heading" th:text="#{account.delete.heading}">delete</h2>
+        <p class="danger-lead" data-test="account-delete-warning"><svg th:replace="~{fragments/layout :: icon('warning')}"></svg><span
+                th:text="#{account.delete.warning}">warning</span></p>
+        <p th:text="#{account.delete.scope}">scope</p>
+        <p><th:block th:text="#{account.delete.exportFirst}">export first</th:block> <a th:href="@{/export}" href="/export"
+                th:text="#{account.delete.exportLink}">export</a></p>
+        <details class="confirm" data-js="delete-confirm" th:open="${deleteError}">
+            <summary class="btn btn--danger-line" th:text="#{account.delete.open}">delete</summary>
+            <div class="confirm__body">
+                <p class="confirm__question" th:text="#{account.delete.question}">sure?</p>
+                <form method="post" novalidate class="form" data-js="focus-first-invalid" data-test="account-delete-form"
+                      th:action="@{/account/delete}" action="/account/delete">
+                    <div class="field">
+                        <label for="password" th:text="#{account.delete.password.label}">password</label>
+                        <input id="password" name="password" type="password" autocomplete="current-password" required value=""
+                               th:maxlength="${authRules?.passwordMax}"
+                               th:attr="aria-describedby=${deleteError} ? 'password-error password-help' : 'password-help',aria-invalid=${deleteError} ? 'true' : null">
+                        <th:block th:if="${deleteError}" th:object="${deleteForm}"><p
+                                th:replace="~{fragments/layout :: fieldMessage('password')}"></p></th:block>
+                        <p class="field-help" id="password-help" th:text="#{account.delete.password.help}">help</p>
+                    </div>
+                    <div class="form-actions"><button type="submit" class="btn btn--danger" th:text="#{account.delete.confirm}">confirm</button></div>
+                </form>
+            </div>
+        </details>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

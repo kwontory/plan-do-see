@@ -63,7 +63,9 @@
                 </div>
             </div>
 
+            <div th:replace="~{fragments/layout :: draftNote(${isEdit} ? 'plan-edit' : 'plan-new')}"></div>
             <form method="post" novalidate class="form form--v2 form-card" data-js="focus-first-invalid"
+                  th:data-draft-id="${isEdit} ? 'plan-edit' : 'plan-new'"
                   th:action="${isEdit} ? @{/plans/{id}(id=${plan.id})} : @{/plans}"
                   th:object="${planForm}">
                 <input type="hidden" name="_method" value="put" th:if="${isEdit}">

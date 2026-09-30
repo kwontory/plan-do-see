@@ -92,12 +92,6 @@
         <th:block th:replace="~{fragments/plan :: planList(${plans})}"></th:block>
         <div th:replace="~{fragments/layout :: pager(${pageNav}, 'page', @{/}, '#plans-heading', #{plans.list.pagerLabel})}"></div>
     </section>
-
-    <section aria-labelledby="notice-heading" class="section card card--soft home-notice">
-        <h2 id="notice-heading" th:text="#{home.notice.heading}">notice</h2>
-        <p id="public-notice" class="home-notice__text" data-test="public-notice" th:text="${publicNotice}">notice text</p>
-        <p class="home-notice__advice" th:text="#{home.notice.advice}">advice</p>
-    </section>
 </main>
 
 <footer th:replace="~{fragments/layout :: footer}"></footer>

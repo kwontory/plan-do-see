@@ -75,7 +75,8 @@
 
             <section class="section" aria-labelledby="new-plan-heading">
                 <h2 id="new-plan-heading" th:text="#{reviews.nextPlan.newPlan.heading}">new plan</h2>
-                <form method="post" novalidate class="form form--v2 form-card" data-js="focus-first-invalid"
+                <div th:replace="~{fragments/layout :: draftNote('next-plan')}"></div>
+                <form method="post" novalidate class="form form--v2 form-card" data-js="focus-first-invalid" data-draft-id="next-plan"
                       th:action="@{/reviews/{id}/next-plan(id=${review.id})}" th:object="${planForm}">
                     <th:block th:replace="~{fragments/plan :: planFields(${priorities})}"></th:block>
                     <div class="form-actions">

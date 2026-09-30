@@ -19,9 +19,7 @@
         <p class="subtitle" th:text="#{export.intro}">intro</p>
     </div>
 
-    <!--/* The public warning sits right before the download button. */-->
     <section class="section card export-download" th:attr="aria-label=#{export.download}">
-        <p class="export-download__warning" th:text="#{export.publicWarning}">warning</p>
         <a class="btn" th:href="@{/export/download}" href="/export/download"><svg
                 th:replace="~{fragments/layout :: icon('download')}"></svg><span th:text="#{export.download}">download</span></a>
     </section>
@@ -30,6 +28,7 @@
         <section class="card" aria-labelledby="included-heading">
             <h2 id="included-heading" class="card__title" th:text="#{export.included.heading}">included</h2>
             <ul class="plain-bullets">
+                <li th:text="#{export.included.account}">account</li>
                 <li th:text="#{export.included.plans}">plans</li>
                 <li th:text="#{export.included.revisions}">revisions</li>
                 <li th:text="#{export.included.todos}">todos</li>

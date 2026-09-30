@@ -40,7 +40,8 @@
     <section class="section" aria-labelledby="add-heading" th:object="${todoForm}">
         <h2 id="add-heading" th:text="#{todos.add.heading}">add</h2>
         <div th:replace="~{fragments/layout :: errorAlert}"></div>
-        <form method="post" novalidate class="composer" data-js="focus-first-invalid"
+        <div th:replace="~{fragments/layout :: draftNote('todo-new')}"></div>
+        <form method="post" novalidate class="composer" data-js="focus-first-invalid" data-draft-id="todo-new"
               th:action="@{/plans/{id}/todos(id=${plan.id})}" th:object="${todoForm}">
             <th:block th:replace="~{fragments/todo :: listState(${filter}, false)}"></th:block>
             <th:block th:replace="~{fragments/todo :: todoComposerFields(${priorities})}"></th:block>

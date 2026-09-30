@@ -250,28 +250,6 @@ a:hover {
     top: var(--space-2);
 }
 
-/* Public banner: the full sentence on every page, never shortened. */
-.public-banner {
-    background: var(--color-surface);
-    padding-top: var(--space-3);
-}
-
-.public-banner__box {
-    margin: 0;
-    padding: 10px 12px;
-    text-align: center;
-    font-size: var(--font-size-xs);
-    line-height: 1.5;
-    color: var(--color-text);
-    background: var(--color-notice-bg);
-    border: var(--border-width) solid var(--color-notice-line);
-    border-radius: var(--radius-sm);
-}
-
-.public-banner__label {
-    margin-right: var(--space-2);
-}
-
 /* Narrow: the header is the top bar (brand, then the main menu as tabs). */
 .site-header {
     display: flex;
@@ -351,6 +329,98 @@ a:hover {
     display: none;
 }
 
+/* Account block of the logged-in shell (right after the brand). Narrow: one line, the nickname cut with an ellipsis
+   (the full text stays in the DOM), the two actions on the right. Wide: a bordered card in the sidebar. */
+.account {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 8px;
+    min-height: var(--target-min);
+}
+
+.account__who {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    margin: 0;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    line-height: 20px;
+}
+
+.account__who .icon {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    color: var(--color-text-muted);
+}
+
+.account__name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.account__acts {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 2px;
+    margin: 0 -6px 0 0;
+}
+
+.account__acts form {
+    display: flex;
+    margin: 0;
+}
+
+.account__acts .lnk[aria-current="page"] {
+    color: var(--color-primary);
+    font-weight: var(--font-weight-bold);
+    background: var(--color-primary-active);
+}
+
+/* Narrow windows: the two account actions drop their icons so the nickname keeps more room. */
+@media (max-width: 399px) {
+    .account__acts .icon {
+        display: none;
+    }
+}
+
+@media (min-width: 1024px) {
+    .account {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 6px;
+        padding: 12px 10px 8px;
+        background: var(--color-bg);
+        border: var(--border-width) solid var(--color-border);
+        border-radius: var(--radius-md);
+    }
+
+    .account__who {
+        align-items: flex-start;
+        font-size: var(--font-size-base);
+        line-height: 22px;
+    }
+
+    .account__who .icon {
+        margin-top: 3px;
+    }
+
+    .account__name {
+        white-space: normal;
+    }
+
+    .account__acts {
+        flex-wrap: wrap;
+        margin: 0 0 0 -6px;
+    }
+}
+
 /* width: 100% because inline-size containment gives main no content width: with auto margins it would shrink to 0. */
 main {
     display: block;
@@ -379,32 +449,19 @@ main:focus {
 }
 
 @media (min-width: 768px) {
-    .public-banner__box {
-        padding: 14px 20px;
-        font-size: 0.90625rem;
-        line-height: 1.55;
-    }
-
     main {
         padding-top: var(--space-5);
         padding-bottom: 56px;
     }
 }
 
-/* Wide: sidebar | page column. The banner sits on top of the page column. */
+/* Wide: sidebar | page column. */
 @media (min-width: 1024px) {
     body {
         display: grid;
         grid-template-columns: var(--sidebar) minmax(0, 1fr);
-        grid-template-rows: auto 1fr auto;
+        grid-template-rows: 1fr;
         min-height: 100vh;
-    }
-
-    .public-banner {
-        grid-column: 2;
-        grid-row: 1;
-        padding-top: var(--space-5);
-        background: none;
     }
 
     .site-header {
@@ -423,7 +480,7 @@ main:focus {
 
     main {
         grid-column: 2;
-        grid-row: 2;
+        grid-row: 1;
         padding-top: 28px;
     }
 
@@ -932,6 +989,24 @@ a.flow__item:hover {
 .btn--danger:disabled:hover {
     background: var(--color-danger);
     border-color: var(--color-danger);
+}
+
+/* Danger line button: the summary that opens a destructive confirmation (account delete). */
+.btn--danger-line {
+    color: var(--color-danger);
+    background: var(--color-bg);
+    border-color: var(--color-danger);
+}
+
+.btn--danger-line:hover {
+    color: var(--color-danger-hover);
+    background: var(--color-danger-bg);
+    border-color: var(--color-danger-hover);
+}
+
+/* Full-width button (login and sign-up submit). */
+.btn--block {
+    width: 100%;
 }
 
 /* Text action (lnk): a row's secondary actions. No underline; hover shows a light face. */
@@ -1775,6 +1850,77 @@ fieldset.field-group {
     margin: 0;
 }
 
+/* One-line failure of login and sign-up (fragments/auth :: failure): the box without heading or list. */
+.error-alert--line p {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-bold);
+}
+
+/* Draft found (ADR-38): sentence + "continue" / "start over" right above the form card it belongs to. Both are line
+   buttons; the form's save button stays the only primary button. The template draws it hidden; app.js shows it. */
+.draft-note {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin: 0 0 var(--space-4);
+    padding: 12px 16px;
+    font-size: var(--font-size-sm);
+    line-height: 1.55;
+    color: var(--color-text);
+    background: var(--color-primary-bg);
+    border: var(--border-width) solid var(--color-primary-line);
+    border-radius: var(--radius-sm);
+}
+
+.form-area > .draft-note {
+    margin: 0;
+}
+
+.draft-note[hidden] {
+    display: none;
+}
+
+.draft-note > p {
+    margin: 0;
+}
+
+.draft-note__text {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-weight: var(--font-weight-bold);
+}
+
+.draft-note__text .icon {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    margin-top: 3px;
+    color: var(--color-primary);
+}
+
+.draft-note__acts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+@container page (max-width: 559px) {
+    .draft-note__acts .btn {
+        flex: 1 1 0;
+    }
+}
+
+@container page (min-width: 560px) {
+    .draft-note {
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 12px 10px 16px;
+    }
+}
+
 .conflict-jumps {
     display: flex;
     flex-wrap: wrap;
@@ -2516,21 +2662,6 @@ button.check:hover .icon {
     .flow-card {
         padding: 18px 18px 20px;
     }
-}
-
-.home-notice h2 {
-    margin-bottom: 6px;
-    font-size: var(--font-size-md);
-}
-
-.home-notice__text {
-    margin: 0;
-}
-
-.home-notice__advice {
-    margin: var(--space-1) 0 0;
-    font-size: var(--font-size-xs);
-    color: var(--color-text-muted);
 }
 
 /* ---------- Tables ---------- */

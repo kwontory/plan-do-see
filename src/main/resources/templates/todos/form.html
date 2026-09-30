@@ -57,7 +57,8 @@
 
             <!--/* Field order: label -> input -> field error -> help; aria-describedby lists
                    the error id first, then the help, then the "differs from the latest" note. */-->
-            <form method="post" novalidate class="form form--v2 form-card" data-js="focus-first-invalid"
+            <div th:replace="~{fragments/layout :: draftNote('todo-edit')}"></div>
+            <form method="post" novalidate class="form form--v2 form-card" data-js="focus-first-invalid" data-draft-id="todo-edit"
                   th:action="@{/todos/{id}(id=${todo.id})}" th:object="${todoForm}">
                 <input type="hidden" name="_method" value="put">
                 <input type="hidden" th:field="*{version}">

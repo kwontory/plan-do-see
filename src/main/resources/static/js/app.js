@@ -5,8 +5,11 @@
  * Never write user strings through innerHTML; this file only moves existing DOM nodes
  * and sets fixed textContent.
  * Elements are found by behaviour attributes only: data-js="flash",
- * data-js="error-summary", data-js="focus-first-invalid", data-js="busy-label", data-js="delete-confirm", data-no-lock,
- * data-submitting. data-js may hold several space-separated names (matched with ~=).
+ * data-js="error-summary", data-js="focus-first-invalid", data-js="busy-label", data-js="delete-confirm",
+ * data-js="logout", data-js="draft-note" (+ data-draft-for), data-js="draft-continue", data-js="draft-discard",
+ * form[data-draft-id], data-no-lock, data-submitting. data-js may hold several space-separated names (matched with ~=).
+ * Logged-in pages carry <meta name="pds-draft-owner"> and <meta name="pds-keepalive"> (ADR-38): the tab drafts and the
+ * keepalive request below are off without them (login and sign-up pages).
  * State written here for CSS: aria-busy on a busy button, data-focus-origin="script" on an element focused by this file.
  * Style classes (class) and test hooks (data-test) are never used as selectors here.
  */
@@ -154,4 +157,311 @@
             summary.focus();
         }
     });
+
+    // ---------- Tab drafts (ADR-38, common-layout.md 11) ----------
+    // A form marked data-draft-id keeps what is typed in sessionStorage (this tab only, gone when the tab closes), so a
+    // save refused after the session ended does not lose the text. Passwords, hidden fields (CSRF token, _method,
+    // version) and files are never kept. Key: "draft:" + the person's hash (meta pds-draft-owner) + ":" + the form's
+    // action path (the same for the empty form and a form shown again after an error) + ":" + data-draft-id.
+    // When the form opens and a draft differs from the fields, the note above the form offers "continue" (fill the
+    // fields) or "start over" (forget the draft); nothing is filled on its own. Until one is chosen, typing does not
+    // overwrite the old draft. A form shown again by the server with its error box already holds the input: no note.
+    // A submitted form's draft is forgotten when the next logged-in page shows a result notice (flash) and no error box;
+    // the login page (session ended) keeps it. Logout forgets every draft of the tab.
+    var ownerMeta = document.querySelector('meta[name="pds-draft-owner"]');
+    var OWNER = ownerMeta ? ownerMeta.getAttribute('content') : '';
+    var DRAFT_PREFIX = 'draft:';
+    var PENDING_KEY = 'draft-pending';
+    var SKIPPED_TYPES = ['password', 'hidden', 'file', 'submit', 'button', 'reset', 'image'];
+    var SKIPPED_NAMES = ['_csrf', '_method', 'version'];
+
+    function tabStore() {
+        try {
+            return window.sessionStorage;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function storeGet(key) {
+        var store = tabStore();
+        try {
+            return store ? store.getItem(key) : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function storeSet(key, value) {
+        var store = tabStore();
+        try {
+            if (store) {
+                store.setItem(key, value);
+            }
+        } catch (e) {
+            // Storage full or blocked: the form still works, only the draft is not kept.
+        }
+    }
+
+    function storeRemove(key) {
+        var store = tabStore();
+        try {
+            if (store) {
+                store.removeItem(key);
+            }
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    function forgetAllDrafts() {
+        var store = tabStore();
+        if (!store) {
+            return;
+        }
+        try {
+            var keys = [];
+            for (var i = 0; i < store.length; i++) {
+                var key = store.key(i);
+                if (key && (key.indexOf(DRAFT_PREFIX) === 0 || key === PENDING_KEY)) {
+                    keys.push(key);
+                }
+            }
+            keys.forEach(function (key) {
+                store.removeItem(key);
+            });
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    function draftable(element) {
+        if (!element || !element.name || element.disabled) {
+            return false;
+        }
+        var tag = element.tagName;
+        if (tag !== 'INPUT' && tag !== 'TEXTAREA' && tag !== 'SELECT') {
+            return false;
+        }
+        var type = (element.getAttribute('type') || '').toLowerCase();
+        return SKIPPED_TYPES.indexOf(type) < 0 && SKIPPED_NAMES.indexOf(element.name) < 0;
+    }
+
+    function draftFields(form) {
+        return Array.prototype.filter.call(form.elements, draftable);
+    }
+
+    // Values by field name, in document order (several boxes may share a name, e.g. checkboxes).
+    function snapshot(form) {
+        var data = {};
+        draftFields(form).forEach(function (element) {
+            var list = data[element.name] || (data[element.name] = []);
+            var type = (element.getAttribute('type') || '').toLowerCase();
+            if (type === 'checkbox' || type === 'radio') {
+                list.push(element.checked);
+            } else if (element.tagName === 'SELECT' && element.multiple) {
+                list.push(Array.prototype.filter.call(element.options, function (option) {
+                    return option.selected;
+                }).map(function (option) {
+                    return option.value;
+                }));
+            } else {
+                list.push(element.value);
+            }
+        });
+        return data;
+    }
+
+    function fill(form, data) {
+        var seen = {};
+        draftFields(form).forEach(function (element) {
+            var list = data[element.name];
+            if (!Array.isArray(list)) {
+                return;
+            }
+            var index = seen[element.name] || 0;
+            seen[element.name] = index + 1;
+            if (index >= list.length) {
+                return;
+            }
+            var value = list[index];
+            var type = (element.getAttribute('type') || '').toLowerCase();
+            if (type === 'checkbox' || type === 'radio') {
+                if (typeof value === 'boolean') {
+                    element.checked = value;
+                }
+            } else if (element.tagName === 'SELECT' && element.multiple) {
+                if (Array.isArray(value)) {
+                    Array.prototype.forEach.call(element.options, function (option) {
+                        option.selected = value.indexOf(option.value) >= 0;
+                    });
+                }
+            } else if (typeof value === 'string') {
+                element.value = value;
+            }
+        });
+    }
+
+    function differs(saved, current) {
+        return Object.keys(saved).some(function (name) {
+            return JSON.stringify(saved[name]) !== JSON.stringify(current[name]);
+        });
+    }
+
+    function readDraft(key) {
+        var raw = storeGet(key);
+        if (!raw) {
+            return null;
+        }
+        try {
+            var parsed = JSON.parse(raw);
+            return parsed && typeof parsed.fields === 'object' && parsed.fields !== null ? parsed.fields : null;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function writeDraft(key, form) {
+        storeSet(key, JSON.stringify({fields: snapshot(form)}));
+    }
+
+    function draftKey(form) {
+        var path;
+        try {
+            path = new URL(form.getAttribute('action') || window.location.href, window.location.href).pathname;
+        } catch (e) {
+            path = window.location.pathname;
+        }
+        return DRAFT_PREFIX + OWNER + ':' + path + ':' + form.getAttribute('data-draft-id');
+    }
+
+    function focusFirstField(form) {
+        var first = draftFields(form).filter(function (element) {
+            return element.getClientRects().length > 0;
+        })[0];
+        if (first) {
+            first.focus();
+        }
+    }
+
+    // Read while the script runs (deferred: the page is parsed), before the flash re-announce empties it for a moment.
+    var RESULT_NOTICE_AT_LOAD = (function () {
+        var flash = document.querySelector('[data-js~="flash"]');
+        return !!(flash && flash.textContent.trim());
+    })();
+
+    // The draft of the form submitted on the previous page: saved -> forget it; shown again with errors -> keep it.
+    function settleSubmittedDraft() {
+        var pending = storeGet(PENDING_KEY);
+        if (!pending) {
+            return;
+        }
+        storeRemove(PENDING_KEY);
+        if (RESULT_NOTICE_AT_LOAD && !document.querySelector('[data-js~="error-summary"]')) {
+            storeRemove(pending);
+        }
+    }
+
+    function setUpDraft(form, shownAgain) {
+        var key = draftKey(form);
+        var id = form.getAttribute('data-draft-id');
+        var note = null;
+        document.querySelectorAll('[data-js~="draft-note"]').forEach(function (candidate) {
+            if (!note && candidate.getAttribute('data-draft-for') === id) {
+                note = candidate;
+            }
+        });
+        var saved = readDraft(key);
+        var choosing = !!(note && saved && !shownAgain && differs(saved, snapshot(form)));
+
+        function close() {
+            choosing = false;
+            note.hidden = true;
+            focusFirstField(form);
+        }
+
+        if (choosing) {
+            // Find the buttons before the note is re-announced (that takes its children out for a moment).
+            var continueButton = note.querySelector('[data-js~="draft-continue"]');
+            var discardButton = note.querySelector('[data-js~="draft-discard"]');
+            note.hidden = false;
+            reannounce(note);
+            if (continueButton) {
+                continueButton.addEventListener('click', function () {
+                    fill(form, saved);
+                    writeDraft(key, form);
+                    close();
+                });
+            }
+            if (discardButton) {
+                discardButton.addEventListener('click', function () {
+                    storeRemove(key);
+                    close();
+                });
+            }
+        }
+
+        function remember(event) {
+            if (!choosing && draftable(event.target)) {
+                writeDraft(key, form);
+            }
+        }
+
+        form.addEventListener('input', remember);
+        form.addEventListener('change', remember);
+        form.addEventListener('submit', function () {
+            storeSet(PENDING_KEY, key);
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        if (!OWNER || !tabStore()) {
+            return;
+        }
+        settleSubmittedDraft();
+        var shownAgain = !!document.querySelector('[data-js~="error-summary"]');
+        document.querySelectorAll('form[data-draft-id]').forEach(function (form) {
+            setUpDraft(form, shownAgain);
+        });
+    });
+
+    // Logout forgets every draft of this tab (the next person on this tab must not see them).
+    document.addEventListener('submit', function (event) {
+        var form = event.target;
+        if (form instanceof HTMLFormElement && form.matches('[data-js~="logout"]')) {
+            forgetAllDrafts();
+        }
+    });
+
+    // ---------- Keepalive while typing (ADR-38) ----------
+    // Typing in a POST form keeps the session alive: at most one GET to the keepalive address every 5 minutes, only
+    // after real input. No input, no request, so an unattended page still ends after 30 idle minutes. The answer is
+    // not shown (401 after the session ended changes nothing; the tab draft keeps the text).
+    var keepaliveMeta = document.querySelector('meta[name="pds-keepalive"]');
+    var KEEPALIVE_URL = keepaliveMeta ? keepaliveMeta.getAttribute('content') : null;
+    var KEEPALIVE_EVERY_MS = 5 * 60 * 1000;
+    var lastKeepalive = Date.now();
+
+    function keepAliveWhileTyping(event) {
+        if (!KEEPALIVE_URL || typeof window.fetch !== 'function') {
+            return;
+        }
+        var target = event.target;
+        var form = target instanceof Element ? target.closest('form') : null;
+        if (!form || (form.getAttribute('method') || 'get').toLowerCase() !== 'post') {
+            return;
+        }
+        var now = Date.now();
+        if (now - lastKeepalive < KEEPALIVE_EVERY_MS) {
+            return;
+        }
+        lastKeepalive = now;
+        window.fetch(KEEPALIVE_URL, {method: 'GET', credentials: 'same-origin', cache: 'no-store', redirect: 'manual'})
+            .catch(function () {
+                // Offline or refused: nothing to show.
+            });
+    }
+
+    document.addEventListener('input', keepAliveWhileTyping, true);
+    document.addEventListener('change', keepAliveWhileTyping, true);
 })();

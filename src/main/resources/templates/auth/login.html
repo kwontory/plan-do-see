@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<!--/* S06 login (no app shell). POST /login is Spring Security form login: fields loginId and password, the CSRF
+       token is added by th:action. A failed login comes back as flash flashKey = auth.login.failed (every reason) with
+       the typed loginId; it is shown as the one-line failure box, not as a flash. The password is never refilled. */-->
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:with="failed=${flashKey == 'auth.login.failed'}">
+<head th:replace="~{fragments/layout :: head(#{auth.login.pageTitle}, ${failed})}">
+    <meta charset="UTF-8">
+    <title>login</title>
+</head>
+<body class="auth-body">
+<th:block th:replace="~{fragments/auth :: top}"></th:block>
+
+<main id="main" tabindex="-1" class="auth-main">
+    <div class="auth-form-col">
+        <div class="page-head">
+            <th:block th:with="flashKey=${failed} ? null : ${flashKey}"><div
+                    th:replace="~{fragments/layout :: flash}"></div></th:block>
+            <h1 th:text="#{auth.login.heading}">login</h1>
+            <p class="subtitle" th:text="#{auth.login.intro}">intro</p>
+        </div>
+
+        <th:block th:if="${failed}"><div th:replace="~{fragments/auth :: failure('auth.login.failed')}"></div></th:block>
+
+        <form method="post" novalidate class="form-card" data-js="focus-first-invalid" data-test="login-form"
+              th:action="@{/login}" action="/login">
+            <div class="field">
+                <label for="loginId" th:text="#{auth.field.loginId.label}">id</label>
+                <input id="loginId" name="loginId" type="text" autocomplete="username" autocapitalize="none"
+                       spellcheck="false" required th:maxlength="${authRules?.loginIdMax}" th:value="${loginId}">
+            </div>
+            <div class="field">
+                <label for="password" th:text="#{auth.field.password.label}">password</label>
+                <input id="password" name="password" type="password" autocomplete="current-password" required
+                       th:maxlength="${authRules?.passwordMax}" value="">
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn--block" th:text="#{auth.login.submit}">login</button>
+            </div>
+        </form>
+
+        <p th:replace="~{fragments/auth :: switch('auth.login.toSignup.prompt', 'auth.login.toSignup.link', @{/signup})}"></p>
+    </div>
+
+    <section th:replace="~{fragments/auth :: about}"></section>
+</main>
+</body>
+</html>

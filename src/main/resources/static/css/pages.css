@@ -450,35 +450,13 @@ main > .section {
 /* ---------- Export ---------- */
 .export-download {
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
+    flex-wrap: wrap;
+    align-items: center;
     gap: var(--space-4);
-}
-
-.export-download__warning {
-    margin: 0;
-    padding: 14px 20px;
-    font-size: var(--font-size-sm);
-    line-height: 1.55;
-    text-align: center;
-    background: var(--color-notice-bg);
-    border: var(--border-width) solid var(--color-notice-line);
-    border-radius: var(--radius-sm);
 }
 
 .export-download .btn {
     margin: 0;
-}
-
-@container page (min-width: 720px) {
-    .export-download {
-        flex-direction: row;
-        align-items: center;
-    }
-
-    .export-download__warning {
-        flex: 1;
-    }
 }
 
 .card-grid--3 {
@@ -567,4 +545,218 @@ main > .section {
     .center-card__actions .btn {
         flex: 1;
     }
+}
+
+/* ---------- S06 login and sign-up: no shell, canvas page, form column | about column ---------- */
+body.auth-body {
+    display: block;
+    min-height: 100vh;
+    background: var(--color-canvas);
+}
+
+.auth-top {
+    max-width: calc(960px + 2 * var(--page-gutter));
+    margin-inline: auto;
+    padding: 14px var(--page-gutter) 0;
+}
+
+.auth-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+    max-width: calc(960px + 2 * var(--page-gutter));
+    margin-inline: auto;
+    padding: var(--space-5) var(--page-gutter) var(--space-7);
+}
+
+.auth-form-col {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 0;
+}
+
+.auth-form-col > * {
+    margin: 0;
+}
+
+.auth-form-col .page-head {
+    margin-bottom: var(--space-2);
+}
+
+.auth-switch {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    text-align: center;
+    color: var(--color-text-muted);
+}
+
+.auth-switch a {
+    margin-left: 6px;
+    font-weight: var(--font-weight-bold);
+}
+
+.auth-about {
+    min-width: 0;
+}
+
+.auth-about h2 {
+    margin-bottom: var(--space-2);
+}
+
+.auth-about > p {
+    color: var(--color-text-muted);
+}
+
+.auth-steps {
+    display: grid;
+    gap: var(--space-3);
+    margin: var(--space-5) 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.auth-steps li {
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr);
+    column-gap: var(--space-3);
+    align-items: start;
+}
+
+.auth-steps__num {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary);
+    background: var(--color-primary-bg);
+    border-radius: 50%;
+}
+
+.auth-steps h3 {
+    margin: 2px 0;
+}
+
+.auth-steps p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+@media (pointer: coarse), (max-width: 767px) {
+    .auth-switch a {
+        padding-block: 13px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .auth-top {
+        padding-top: var(--space-5);
+    }
+
+    .auth-main {
+        grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+        column-gap: 64px;
+        align-items: start;
+        padding-top: var(--space-7);
+    }
+
+    /* The about column starts on the h1 line of the form column. */
+    .auth-about {
+        padding-top: 4px;
+    }
+}
+
+/* ---------- S07 account settings: one column of cards (form-page width) ---------- */
+.account-page .card .form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.account-page .card .form .form-actions {
+    margin-top: 0;
+}
+
+.account-page .card h2 + .form,
+.account-page .card .dl-grid + .draft-note,
+.account-page .card .dl-grid + .form,
+.account-page .card .note + .form,
+.account-page .card .draft-note + .form,
+.account-page .card .error-alert + .form {
+    margin-top: 18px;
+}
+
+.account-page .card .dl-grid + .draft-note {
+    margin-bottom: 0;
+}
+
+.account-page .card .note {
+    margin: 0;
+    font-size: var(--font-size-sm);
+}
+
+.account-page .card .error-alert {
+    margin: 18px 0 0;
+}
+
+.card--danger {
+    border-color: var(--color-danger-line);
+}
+
+.danger-lead {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 0 0 var(--space-2);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-danger);
+}
+
+.danger-lead .icon {
+    flex: none;
+    margin-top: 3px;
+}
+
+/* Account delete confirmation (details): the summary is a danger line button, the open body a danger face. */
+.confirm {
+    margin-top: var(--space-4);
+}
+
+.confirm > summary {
+    width: max-content;
+    max-width: 100%;
+    list-style: none;
+}
+
+.confirm > summary::-webkit-details-marker {
+    display: none;
+}
+
+.confirm[open] > summary {
+    background: var(--color-danger-bg);
+}
+
+.confirm__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin-top: var(--space-3);
+    padding: var(--space-4);
+    background: var(--color-danger-bg);
+    border-radius: var(--radius-md);
+}
+
+.confirm__body > * {
+    margin: 0;
+}
+
+.confirm__question {
+    font-weight: var(--font-weight-bold);
+}
+
+.account-page .confirm__body .form {
+    margin-top: 0;
 }

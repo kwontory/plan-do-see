@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<!--/* S06 sign-up (no app shell). Model: signupForm (loginId, password, nickname), authRules (limits for the help text
+       and maxlength). Any failure (id taken, blocked, any rule) comes back with errors on signupForm; the page shows
+       only the one-line auth.signup.rejected box, never a field error or a reason (ADR-37). The rule help is always
+       visible. loginId and nickname are refilled (escaped), the password never. */-->
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:with="failed=${#fields.hasErrors('${signupForm.*}')}">
+<head th:replace="~{fragments/layout :: head(#{auth.signup.pageTitle}, ${failed})}">
+    <meta charset="UTF-8">
+    <title>sign up</title>
+</head>
+<body class="auth-body">
+<th:block th:replace="~{fragments/auth :: top}"></th:block>
+
+<main id="main" tabindex="-1" class="auth-main">
+    <div class="auth-form-col">
+        <div class="page-head">
+            <div th:replace="~{fragments/layout :: flash}"></div>
+            <h1 th:text="#{auth.signup.heading}">sign up</h1>
+            <p class="subtitle" th:text="#{auth.signup.intro}">intro</p>
+        </div>
+
+        <th:block th:if="${failed}"><div th:replace="~{fragments/auth :: failure('auth.signup.rejected')}"></div></th:block>
+
+        <form method="post" novalidate class="form-card" data-js="focus-first-invalid" data-test="signup-form"
+              th:action="@{/signup}" action="/signup" th:object="${signupForm}">
+            <div class="field">
+                <label for="loginId" th:text="#{auth.field.loginId.label}">id</label>
+                <input id="loginId" name="loginId" type="text" autocomplete="username" autocapitalize="none"
+                       spellcheck="false" required aria-describedby="loginId-help"
+                       th:maxlength="${authRules?.loginIdMax}" th:value="*{loginId}">
+                <p class="field-help" id="loginId-help"
+                   th:text="#{auth.field.loginId.help(${authRules?.loginIdMin}, ${authRules?.loginIdMax})}">help</p>
+            </div>
+            <div class="field">
+                <label for="password" th:text="#{auth.field.password.label}">password</label>
+                <input id="password" name="password" type="password" autocomplete="new-password" required
+                       aria-describedby="password-help" th:maxlength="${authRules?.passwordMax}" value="">
+                <p class="field-help" id="password-help"
+                   th:text="#{auth.field.password.help(${authRules?.passwordMin}, ${authRules?.passwordMax})}">help</p>
+            </div>
+            <div class="field">
+                <label for="nickname" th:text="#{auth.field.nickname.label}">nickname</label>
+                <input id="nickname" name="nickname" type="text" autocomplete="nickname" required
+                       aria-describedby="nickname-help" th:maxlength="${authRules?.nicknameMax}" th:value="*{nickname}">
+                <p class="field-help" id="nickname-help"
+                   th:text="#{auth.field.nickname.help(${authRules?.nicknameMax})}">help</p>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn--block" th:text="#{auth.signup.submit}">sign up</button>
+            </div>
+        </form>
+
+        <p th:replace="~{fragments/auth :: switch('auth.signup.toLogin.prompt', 'auth.signup.toLogin.link', @{/login})}"></p>
+    </div>
+
+    <section th:replace="~{fragments/auth :: about}"></section>
+</main>
+</body>
+</html>

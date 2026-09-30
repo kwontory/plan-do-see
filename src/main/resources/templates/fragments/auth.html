@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* Login and sign-up pages (S06) have no app shell: nothing else can be opened before logging in.
+       Skip link and the logo (not a link: this is the only place to go). */-->
+<th:block th:fragment="top">
+<a class="skip-link" href="#main" th:text="#{layout.skipLink}">skip</a>
+<header class="auth-top">
+    <span class="brand"><th:block th:replace="~{fragments/brand :: logo}"></th:block></span>
+</header>
+</th:block>
+
+<!--/* The one-line failure of login and sign-up (ADR-37): the error box look without heading or list, and never a
+       reason. Both pages use this same box so the two failures cannot be told apart by their look.
+       key: auth.login.failed | auth.signup.rejected. */-->
+<div th:fragment="failure(key)" class="error-alert error-alert--line" role="alert" tabindex="-1" id="error-summary"
+     data-js="error-summary"><p data-test="auth-error" th:text="${#messages.msg(key)}">failed</p></div>
+
+<!--/* Link to the other auth page under the form. promptKey, linkKey: message keys, href: target URL. */-->
+<p th:fragment="switch(promptKey, linkKey, href)" class="auth-switch"><th:block
+        th:text="${#messages.msg(promptKey)}">prompt</th:block><a th:href="${href}" href="#"
+        th:text="${#messages.msg(linkKey)}">link</a></p>
+
+<!--/* What the app does: the same words as the home page (home.intro, flow.step.*, home.steps.*). Numbers are
+       decorative. */-->
+<section th:fragment="about" class="auth-about" aria-labelledby="about-heading">
+    <h2 id="about-heading" th:text="#{auth.about.heading}">about</h2>
+    <p th:text="#{home.intro}">intro</p>
+    <p th:text="#{auth.about.private}">private</p>
+    <ol class="auth-steps">
+        <li th:each="s, st : ${#strings.arraySplit('plan,do,see,next', ',')}"><span class="auth-steps__num" aria-hidden="true"
+                th:text="${st.count}">1</span><div><h3 th:text="${#messages.msg('flow.step.' + s)}">step</h3><p
+                th:text="${#messages.msg('home.steps.' + s)}">description</p></div></li>
+    </ol>
+</section>
+
+</body>
+</html>

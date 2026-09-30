@@ -94,7 +94,9 @@
         <!--/* 3. Execution form */-->
         <section class="card" aria-labelledby="exec-form-heading">
             <h2 id="exec-form-heading" class="card__title" th:text="#{todos.detail.exec.heading}">record</h2>
+            <div th:replace="~{fragments/layout :: draftNote('execution-new')}"></div>
             <form method="post" novalidate class="form form--v2 exec-form" aria-describedby="exec-help" data-js="focus-first-invalid"
+                  data-draft-id="execution-new"
                   th:action="@{/todos/{id}/executions(id=${todo.id})}" th:object="${executionForm}">
                 <div th:replace="~{fragments/layout :: errorAlert}"></div>
                 <div id="exec-help" class="hint" role="note">

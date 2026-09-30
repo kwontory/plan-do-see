@@ -104,7 +104,9 @@
             <th:block th:if="${conflict}">
                 <th:block th:replace="~{fragments/layout :: conflictMineHead(3, true)}"></th:block>
             </th:block>
+            <div th:replace="~{fragments/layout :: draftNote('review-improvement')}"></div>
             <form method="post" novalidate class="form form--v2 improvement-form" data-js="focus-first-invalid"
+                  data-draft-id="review-improvement"
                   th:action="@{/reviews/{id}/improvement(id=${review.id})}" th:object="${improvementForm}">
                 <input type="hidden" name="_method" value="put">
                 <input type="hidden" th:field="*{version}">
