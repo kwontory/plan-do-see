@@ -8,7 +8,7 @@
  * data-js="error-summary", data-js="focus-first-invalid", data-js="busy-label", data-js="delete-confirm",
  * data-js="logout", data-js="draft-note" (+ data-draft-for), data-js="draft-continue", data-js="draft-discard",
  * form[data-draft-id], data-js="add-open", data-js="add-panel" (+ data-open), data-js="add-close",
- * data-js="filter-toggle", data-js="filter-panel" (+ data-open), data-no-lock, data-submitting. data-js may hold several space-separated names (matched with ~=).
+ * data-js="filter-toggle", data-js="filter-panel" (+ data-open), data-js="state-menu", data-no-lock, data-submitting. data-js may hold several space-separated names (matched with ~=).
  * Logged-in pages carry <meta name="pds-draft-owner"> and <meta name="pds-keepalive"> (ADR-38): the tab drafts and the
  * keepalive request below are off without them (login and sign-up pages).
  * State written here for CSS: aria-busy on a busy button, data-focus-origin="script" on an element focused by this file.
@@ -157,6 +157,31 @@
         if (summary) {
             summary.focus();
         }
+    });
+
+    // Todo state dropdown (<details data-js="state-menu">): Escape closes the open menu and puts focus back on its
+    // summary; a click outside closes it without moving focus. Opening, closing and submitting work without this.
+    document.addEventListener('keydown', function (event) {
+        if (event.key !== 'Escape') {
+            return;
+        }
+        var menu = event.target instanceof Element ? event.target.closest('[data-js~="state-menu"]') : null;
+        if (!menu || !menu.open) {
+            return;
+        }
+        menu.open = false;
+        var summary = menu.querySelector('summary');
+        if (summary) {
+            summary.focus();
+        }
+    });
+
+    document.addEventListener('click', function (event) {
+        document.querySelectorAll('[data-js~="state-menu"][open]').forEach(function (menu) {
+            if (!(event.target instanceof Node) || !menu.contains(event.target)) {
+                menu.open = false;
+            }
+        });
     });
 
     // ---------- Tab drafts (ADR-38, common-layout.md 11) ----------

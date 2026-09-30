@@ -25,24 +25,25 @@
         </nav>
         <div th:replace="~{fragments/layout :: flash}"></div>
         <h1 th:text="${unavailable} ? #{todos.detail.headingUnknown} : ${todo.title}">todo</h1>
-        <p class="status-row" th:unless="${unavailable}"><th:block th:replace="~{fragments/todo :: statusBadges(${todo})}"></th:block></p>
         <th:block th:unless="${unavailable}">
             <nav th:replace="~{fragments/layout :: flowSteps('do', ${plan.id})}"></nav>
         </th:block>
     </div>
     <p class="note" th:if="${unavailable}" data-test="snapshot-unavailable" th:text="#{conflict.latest.unavailable}">unavailable</p>
 
-    <!--/* Top: current values and completion (left column), execution form (right). Both columns end on the same line.
+    <!--/* Top: current values with the state (left column), execution form (right). Both columns end on the same line.
            Stand-in page: only the execution form can be drawn; the other sections need the database. */-->
     <div class="section two" th:classappend="${unavailable} ? 'two--single'">
         <div class="card-stack" th:unless="${unavailable}">
-            <!--/* 1. Current values: plan value (estimate) and Do value (sum of execution records, server value). */-->
+            <!--/* 1. Current values: state, plan value (estimate) and Do value (sum of execution records, server value). */-->
             <section class="card" aria-labelledby="info-heading">
                 <div class="card__head">
                     <h2 id="info-heading" th:text="#{todos.detail.info.heading}">info</h2>
                     <span class="badge badge--current" th:text="#{badge.current}">current value</span>
                 </div>
                 <dl class="dl-grid">
+                    <dt class="dt--control" th:text="#{todos.field.status}">status</dt>
+                    <dd><details th:replace="~{fragments/todo :: stateMenu(${todo}, ${completionKey})}"></details></dd>
                     <dt th:text="#{todos.field.dueDate}">due</dt>
                     <dd><span th:replace="~{fragments/todo :: dueChip(${todo}, false)}"></span></dd>
                     <dt th:text="#{todos.field.priority}">priority</dt>
@@ -67,28 +68,9 @@
                 <p class="card-actions"><a class="btn btn--line btn--sm" th:href="@{/todos/{id}/edit(id=${todo.id})}" href="#"><svg
                         th:replace="~{fragments/layout :: icon('edit')}"></svg><span th:text="#{common.edit}">edit</span></a></p>
             </section>
-
-            <!--/* 2. Completion */-->
-            <section class="card" aria-labelledby="completion-heading">
-                <h2 id="completion-heading" class="card__title" th:text="#{todos.detail.completion.heading}">completion</h2>
-                <form th:unless="${done}" method="post" class="completion-form"
-                      th:action="@{/todos/{id}/completion(id=${todo.id})}">
-                    <input type="hidden" name="idempotencyKey" th:value="${completionKey}">
-                    <input type="hidden" name="returnTo" value="detail">
-                    <button type="submit" class="btn" aria-describedby="completion-help"><svg
-                            th:replace="~{fragments/layout :: icon('check')}"></svg><span th:text="#{todos.action.complete}">complete</span></button>
-                </form>
-                <form th:if="${done}" method="post" class="completion-form"
-                      th:action="@{/todos/{id}/completion(id=${todo.id})}">
-                    <input type="hidden" name="_method" value="delete">
-                    <input type="hidden" name="returnTo" value="detail">
-                    <button type="submit" class="btn btn--line" aria-describedby="completion-help" th:text="#{todos.action.reopen}">reopen</button>
-                </form>
-                <p class="field-help" id="completion-help" th:text="#{todos.detail.completion.help}">help</p>
-            </section>
         </div>
 
-        <!--/* 3. Execution form */-->
+        <!--/* 2. Execution form */-->
         <section class="card" aria-labelledby="exec-form-heading">
             <h2 id="exec-form-heading" class="card__title" th:text="#{todos.detail.exec.heading}">record</h2>
             <div th:replace="~{fragments/layout :: draftNote('execution-new')}"></div>
@@ -111,7 +93,7 @@
 
     <th:block th:unless="${unavailable}">
 
-    <!--/* 4. Execution logs */-->
+    <!--/* 3. Execution logs */-->
     <section class="section" aria-labelledby="logs-heading">
         <h2 id="logs-heading" th:text="#{todos.detail.logs.heading}">logs</h2>
         <!--/* Count and total cover every record of this todo (server values), not only this page. */-->

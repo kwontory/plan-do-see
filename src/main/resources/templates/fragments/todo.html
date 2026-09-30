@@ -30,6 +30,46 @@
     <span th:if="${!todo.completed and todo.dueToday}" class="badge badge--today" th:text="#{badge.dueToday}">today</span>
 </th:block>
 
+<!--/* State dropdown of the todo detail ("상태" row of the info card). details/summary, no select or role=menu, no menu
+       heading. The summary shows the current state (enum.TodoStatus.*); its name adds the hidden
+       todos.detail.state.change. The panel lists both states in a fixed order (in progress, completed): the current
+       one is plain text with todos.detail.state.current, the other one is a POST form button (the completion
+       endpoint, same hidden fields as before: idempotencyKey + returnTo for completing, _method=delete + returnTo for
+       reopening; the CSRF field is added by Thymeleaf). Overdue / due today stay on the due date chip only.
+       todo: TodoRow (status, completed); completionKey: the server-issued idempotency key. app.js closes the menu on
+       Escape (focus back on the summary) and on a click outside (data-js="state-menu"). */-->
+<details th:fragment="stateMenu(todo, completionKey)" class="state-menu" data-js="state-menu"
+         th:classappend="${todo.completed} ? 'state-menu--done'">
+    <summary class="state-menu__button" data-test="completion-menu" th:data-value="${todo.status}"><span
+            class="state-menu__ring" aria-hidden="true"><svg th:replace="~{fragments/layout :: icon('check')}"></svg></span><th:block
+            th:replace="~{fragments/layout :: enumLabel('TodoStatus', ${todo.status})}">state</th:block><span class="visually-hidden"
+            th:text="${#messages.msg('common.srContext', #messages.msg('todos.detail.state.change'))}">: change</span><span
+            class="state-menu__chevron" aria-hidden="true"><svg th:replace="~{fragments/layout :: icon('chevron-down')}"></svg></span></summary>
+    <div class="state-menu__panel">
+        <ul class="state-menu__list" th:attr="aria-label=#{todos.detail.state.change}">
+            <li th:if="${todo.completed}"><form method="post" th:action="@{/todos/{id}/completion(id=${todo.id})}">
+                <input type="hidden" name="_method" value="delete">
+                <input type="hidden" name="returnTo" value="detail">
+                <button type="submit" class="state-menu__option" data-test="completion-reopen"><span class="state-menu__blank" aria-hidden="true"></span><span
+                        data-js="busy-label"><span aria-hidden="true" th:text="#{enum.TodoStatus.IN_PROGRESS}">in progress</span><span
+                        class="visually-hidden" th:text="#{todos.action.reopen}">reopen</span></span></button>
+            </form></li>
+            <li th:unless="${todo.completed}"><p class="state-menu__current"><svg th:replace="~{fragments/layout :: icon('check')}"></svg><span
+                    th:text="#{enum.TodoStatus.IN_PROGRESS}">in progress</span><span class="state-menu__now"
+                    th:text="#{todos.detail.state.current}">current</span></p></li>
+            <li th:unless="${todo.completed}"><form method="post" th:action="@{/todos/{id}/completion(id=${todo.id})}">
+                <input type="hidden" name="idempotencyKey" th:value="${completionKey}">
+                <input type="hidden" name="returnTo" value="detail">
+                <button type="submit" class="state-menu__option" data-test="completion-complete"><span class="state-menu__blank" aria-hidden="true"></span><span
+                        data-js="busy-label" th:text="#{todos.action.complete}">complete</span></button>
+            </form></li>
+            <li th:if="${todo.completed}"><p class="state-menu__current"><svg th:replace="~{fragments/layout :: icon('check')}"></svg><span
+                    th:text="#{enum.TodoStatus.COMPLETED}">completed</span><span class="state-menu__now"
+                    th:text="#{todos.detail.state.current}">current</span></p></li>
+        </ul>
+    </div>
+</details>
+
 <!--/* Due date chip (list row and detail): calendar icon, the date, and " · overdue" / " · due today" from the server
        flags (overdue, dueToday; the template does not compare dates). withLabel=true adds a hidden "due date" word for
        rows where no label names the value (list); the detail page has its own dt. */-->
