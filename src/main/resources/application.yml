@@ -42,6 +42,14 @@ spring:
     password: ${DB_PASSWORD}
     hikari:
       maximum-pool-size: ${DB_POOL_SIZE:5}
+      # Connection budget (ADR-39): a shared pooler (Supabase Session pooler: 15 clients) serves every container and
+      # every local app. Keep no idle connection by default, give an idle one back after 60 s, renew each after
+      # 10 min, and never fail the start-up because no connection could be made (a request then gets the busy
+      # notice). The session pool (app.session-pool) uses the same values.
+      minimum-idle: ${DB_POOL_MIN_IDLE:0}
+      idle-timeout: ${DB_POOL_IDLE_TIMEOUT_MS:60000}
+      max-lifetime: ${DB_POOL_MAX_LIFETIME_MS:600000}
+      initialization-fail-timeout: -1
       # Wait at most this many milliseconds for a pooled connection (Hikari default is 30 seconds); after
       # that the request gets the "busy" notice instead of hanging.
       connection-timeout: ${DB_POOL_CONNECTION_TIMEOUT:500}
@@ -61,6 +69,10 @@ spring:
     # Migrations run on their own connection, outside the pool, so the 1s statement_timeout and 100ms
     # lock_timeout of pooled sessions never cut a schema change short. Same URL and credentials as the app.
     user: ${spring.datasource.username}
+    # A full pooler at start-up (max clients reached) is retried a few times (1 s, 2 s, 4 s) before the start fails;
+    # without a checked schema the app must not serve (ADR-39).
+    connect-retries: ${FLYWAY_CONNECT_RETRIES:3}
+    connect-retries-interval: 4s
   session:
     jdbc:
       # SPRING_SESSION tables come from Flyway (V6), never from Spring Session itself.

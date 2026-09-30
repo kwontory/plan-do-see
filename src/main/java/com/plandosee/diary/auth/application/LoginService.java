@@ -4,7 +4,6 @@ import java.time.Clock;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,13 +36,18 @@ public class LoginService {
 
     private static final Logger log = LoggerFactory.getLogger(LoginService.class);
     private static final String TIMING_INPUT = "fixed-input-for-equal-timing";
+    /**
+     * A bcrypt hash with the same cost as real ones (AuthRules.BCRYPT_STRENGTH) of a random value nobody knows; only
+     * compared against, so a missing login id costs as much time as a wrong password. Fixed here instead of hashed at
+     * start-up, which took about 0.3 s of a one-CPU container's start (ADR-39).
+     */
+    static final String TIMING_HASH = "$2a$12$UORL/mVEiGNYb40xejfHgep7iBWgWt3LPF/vr698Vk4D370N3O9WW";
 
     private final AuthIdentityMapper identities;
     private final LoginThrottle throttle;
     private final PasswordEncoder passwordEncoder;
     private final Clock clock;
     private final TransactionTemplate transaction;
-    private final String timingHash;
 
     public LoginService(AuthIdentityMapper identities, LoginThrottle throttle, PasswordEncoder passwordEncoder,
                         Clock clock, PlatformTransactionManager transactionManager) {
@@ -52,7 +56,6 @@ public class LoginService {
         this.passwordEncoder = passwordEncoder;
         this.clock = clock;
         this.transaction = new TransactionTemplate(transactionManager);
-        this.timingHash = passwordEncoder.encode(UUID.randomUUID().toString());
     }
 
     /** The person when the login id and password match and nothing blocks the try; empty otherwise. */
@@ -68,7 +71,7 @@ public class LoginService {
                 : transaction.execute(status -> identities.findLocalCredentialByLoginId(loginId));
         boolean matches;
         if (credential == null || AuthRules.passwordCode(password) != null) {
-            passwordEncoder.matches(TIMING_INPUT, timingHash);
+            passwordEncoder.matches(TIMING_INPUT, TIMING_HASH);
             matches = false;
         } else {
             matches = passwordEncoder.matches(password, credential.getPasswordHash());
@@ -90,7 +93,7 @@ public class LoginService {
     /** True when the password is the person's current password (bcrypt check). */
     boolean matchesCurrent(LocalCredentialRow credential, String password) {
         if (AuthRules.passwordCode(password) != null) {
-            passwordEncoder.matches(TIMING_INPUT, timingHash);
+            passwordEncoder.matches(TIMING_INPUT, TIMING_HASH);
             return false;
         }
         return passwordEncoder.matches(password, credential.getPasswordHash());

@@ -5,13 +5,25 @@ COPY .mvn .mvn
 COPY mvnw pom.xml ./
 RUN chmod +x mvnw && ./mvnw -q -B dependency:go-offline
 COPY src src
-RUN ./mvnw -q -B -DskipTests package
+RUN ./mvnw -q -B -DskipTests package \
+ && java -Djarmode=tools -jar target/plandosee-diary.jar extract --destination /workspace/extracted
 
 FROM eclipse-temurin:25-jre
 WORKDIR /app
 RUN useradd --system --uid 10001 app
-COPY --from=build /workspace/target/plandosee-diary.jar app.jar
+# Extracted layout (application jar + lib/): faster class loading than the nested fat jar, and a fixed class path
+# for the AOT cache.
+COPY --from=build /workspace/extracted/ /app/
+# Start-up options for a one-vCPU container (ADR-39): C1 only (no C2 compile work competing with start-up and the
+# first requests on the single CPU), Serial GC (the one-CPU default, fixed so the AOT cache and the run agree).
+ENV JAVA_OPTS="-XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:MaxRAMPercentage=75 -Duser.timezone=UTC"
+# AOT cache (JDK 25, JEP 483/514/515): one training start without a database. It stops right after the context
+# refresh (no port is opened) and skips Flyway; no bean connects to the database at start-up. The DB_* values are
+# empty placeholders, no secret enters the image. If this step fails the build stops: the start-up is broken.
+RUN DB_URL=jdbc:postgresql://127.0.0.1:1/aot-training DB_USERNAME="" DB_PASSWORD="" \
+    java $JAVA_OPTS -XX:AOTCacheOutput=/app/app.aot -Dspring.context.exit=onRefresh \
+         -jar /app/plandosee-diary.jar --spring.flyway.enabled=false \
+ && test -s /app/app.aot
 USER app
-ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -Duser.timezone=UTC"
 EXPOSE 8080
-ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -XX:AOTCache=/app/app.aot -jar /app/plandosee-diary.jar"]
