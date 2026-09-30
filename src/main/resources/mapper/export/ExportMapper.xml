@@ -1,10 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <!--
-  Export: owned by #{userId}, soft-deleted rows and children of soft-deleted parents
-  excluded, every collection ordered by its unique key. Credential and email columns are never selected.
+  Export: owned by #{userId}, plans overlapping the chosen range [#{from}, #{to}] and their data (ADR-44),
+  soft-deleted rows and children of soft-deleted parents excluded, every collection ordered by its unique key. Credential and email columns are never selected.
 -->
 <mapper namespace="com.plandosee.diary.export.application.port.ExportMapper">
+
+    <!--
+      ADR-44: only plans whose period [start_date, end_date] overlaps the chosen range [from, to] (both inclusive),
+      with everything that belongs to them; execution times are not cut. Every data query below adds this after its
+      owner and soft-delete conditions (the plan alias is p).
+    -->
+    <sql id="planInRange">
+          AND p.start_date &lt;= #{to}
+          AND p.end_date &gt;= #{from}
+    </sql>
 
     <resultMap id="exportTagRow" type="com.plandosee.diary.export.domain.ExportTagRow">
         <id property="id" column="id"/>
@@ -54,6 +64,7 @@
         FROM plans p
         WHERE p.user_id = #{userId}
           AND p.deleted_at IS NULL
+          <include refid="planInRange"/>
         ORDER BY p.id ASC
     </select>
 
@@ -73,6 +84,7 @@
         JOIN plans p ON p.id = r.plan_id
         WHERE p.user_id = #{userId}
           AND p.deleted_at IS NULL
+          <include refid="planInRange"/>
         ORDER BY r.id ASC
     </select>
 
@@ -91,6 +103,7 @@
         FROM todos t
         JOIN plans p ON p.id = t.plan_id
         WHERE <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+          <include refid="planInRange"/>
         ORDER BY t.id ASC
     </select>
 
@@ -104,6 +117,13 @@
         FROM tags g
         WHERE g.user_id = #{userId}
           AND g.deleted_at IS NULL
+          AND EXISTS (SELECT tt.tag_id
+                      FROM todo_tags tt
+                      JOIN todos t ON t.id = tt.todo_id
+                      JOIN plans p ON p.id = t.plan_id
+                      WHERE tt.tag_id = g.id
+                        AND <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+                        <include refid="planInRange"/>)
         ORDER BY g.id ASC
     </select>
 
@@ -118,6 +138,7 @@
         WHERE <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
           AND g.user_id = #{userId}
           AND g.deleted_at IS NULL
+          <include refid="planInRange"/>
         ORDER BY tt.todo_id ASC, tt.tag_id ASC
     </select>
 
@@ -134,6 +155,7 @@
         JOIN todos t ON t.id = e.todo_id
         JOIN plans p ON p.id = t.plan_id
         WHERE <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+          <include refid="planInRange"/>
         ORDER BY e.id ASC
     </select>
 
@@ -163,6 +185,7 @@
         JOIN todos t ON t.id = e.todo_id
         JOIN plans p ON p.id = t.plan_id
         WHERE <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+          <include refid="planInRange"/>
         ORDER BY r.id ASC
     </select>
 
@@ -177,6 +200,7 @@
         JOIN todos t ON t.id = c.todo_id
         JOIN plans p ON p.id = t.plan_id
         WHERE <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+          <include refid="planInRange"/>
         ORDER BY c.id ASC
     </select>
 
@@ -195,6 +219,7 @@
         JOIN todos t ON t.id = r.todo_id
         JOIN plans p ON p.id = t.plan_id
         WHERE <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+          <include refid="planInRange"/>
         ORDER BY r.id ASC
     </select>
 
@@ -208,6 +233,7 @@
         JOIN todos t ON t.id = e.todo_id
         JOIN plans p ON p.id = t.plan_id
         WHERE <include refid="com.plandosee.diary.common.sql.TodoPredicates.activeOwnedTodo"/>
+          <include refid="planInRange"/>
         ORDER BY e.id ASC
     </select>
 
@@ -228,6 +254,7 @@
           AND r.deleted_at IS NULL
           AND p.user_id = #{userId}
           AND p.deleted_at IS NULL
+          <include refid="planInRange"/>
         ORDER BY r.id ASC
     </select>
 </mapper>

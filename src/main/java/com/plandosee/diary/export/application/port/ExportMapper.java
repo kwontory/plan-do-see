@@ -1,5 +1,6 @@
 package com.plandosee.diary.export.application.port;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,26 +29,37 @@ public interface ExportMapper {
 
     ExportOwnerRow owner(@Param("userId") UUID userId);
 
-    List<PlanRow> plans(@Param("userId") UUID userId);
+    List<PlanRow> plans(@Param("userId") UUID userId, @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 
-    List<PlanRevisionRow> planRevisions(@Param("userId") UUID userId);
+    List<PlanRevisionRow> planRevisions(@Param("userId") UUID userId, @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 
-    List<TodoRow> todos(@Param("userId") UUID userId);
+    List<TodoRow> todos(@Param("userId") UUID userId, @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 
-    List<ExportTagRow> tags(@Param("userId") UUID userId);
+    List<ExportTagRow> tags(@Param("userId") UUID userId, @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 
-    List<ExportTodoTagRow> todoTags(@Param("userId") UUID userId);
+    List<ExportTodoTagRow> todoTags(@Param("userId") UUID userId, @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 
-    List<ExecutionLogRow> executionLogs(@Param("userId") UUID userId);
+    List<ExecutionLogRow> executionLogs(@Param("userId") UUID userId, @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 
     /** Edit revisions of the exported execution records (ADR-40), by id. */
-    List<ExecutionLogRevisionRow> executionLogRevisions(@Param("userId") UUID userId);
+    List<ExecutionLogRevisionRow> executionLogRevisions(@Param("userId") UUID userId, @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 
-    List<CompletionEventRow> completionEvents(@Param("userId") UUID userId);
+    List<CompletionEventRow> completionEvents(@Param("userId") UUID userId, @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 
-    List<TodoRevisionRow> todoRevisions(@Param("userId") UUID userId);
+    List<TodoRevisionRow> todoRevisions(@Param("userId") UUID userId, @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 
-    List<ReopenEventRow> reopenEvents(@Param("userId") UUID userId);
+    List<ReopenEventRow> reopenEvents(@Param("userId") UUID userId, @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 
-    List<ReviewRow> reviews(@Param("userId") UUID userId);
+    List<ReviewRow> reviews(@Param("userId") UUID userId, @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
 }

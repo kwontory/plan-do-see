@@ -1,6 +1,10 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head(#{export.title}, false)}">
+<!--/* S05 export (ADR-44). Model: exportForm (from, to: the default range or the values typed), exportRangeMaxMonths
+       (the longest range in months, for the help text). The download is a GET form (no state change, no CSRF token);
+       a rejected range comes back to this page with field errors on from / to and no file. */-->
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:with="rangeError=${#fields.hasErrors('${exportForm.*}')}">
+<head th:replace="~{fragments/layout :: head(#{export.title}, ${rangeError})}">
     <meta charset="UTF-8">
     <title>export</title>
 </head>
@@ -19,9 +23,30 @@
         <p class="subtitle" th:text="#{export.intro}">intro</p>
     </div>
 
-    <section class="section card export-download" th:attr="aria-label=#{export.download}">
-        <a class="btn" th:href="@{/export/download}" href="/export/download"><svg
-                th:replace="~{fragments/layout :: icon('download')}"></svg><span th:text="#{export.download}">download</span></a>
+    <section class="section card form-page export-download" aria-labelledby="range-heading" th:object="${exportForm}">
+        <h2 id="range-heading" class="card__title" th:text="#{export.range.heading}">range</h2>
+        <th:block th:with="nestedSummary=true"><div th:replace="~{fragments/layout :: errorAlert}"></div></th:block>
+        <form method="get" novalidate class="form" data-js="focus-first-invalid" data-test="export-form"
+              th:action="@{/export/download}" action="/export/download">
+            <div class="field-group--pair">
+                <div class="field" data-test="export-from" th:with="err=${#fields.hasErrors('from')}">
+                    <label for="from" th:text="#{export.range.from.label}">from</label>
+                    <input th:replace="~{fragments/layout :: dateInput('date', 'from', true, ${(err ? 'from-error ' : '') + 'range-help'})}">
+                    <p th:replace="~{fragments/layout :: fieldMessage('from')}"></p>
+                </div>
+                <div class="field" data-test="export-to" th:with="err=${#fields.hasErrors('to')}">
+                    <label for="to" th:text="#{export.range.to.label}">to</label>
+                    <input th:replace="~{fragments/layout :: dateInput('date', 'to', true, ${(err ? 'to-error ' : '') + 'range-help'})}">
+                    <p th:replace="~{fragments/layout :: fieldMessage('to')}"></p>
+                </div>
+            </div>
+            <p class="field-help" id="range-help" data-test="export-range-help"
+               th:text="#{export.range.help(${exportRangeMaxMonths})}">help</p>
+            <div class="form-actions">
+                <button type="submit" class="btn" data-test="export-submit"><svg
+                        th:replace="~{fragments/layout :: icon('download')}"></svg><span th:text="#{export.download}">download</span></button>
+            </div>
+        </form>
     </section>
 
     <div class="section card-grid card-grid--3">
@@ -48,6 +73,7 @@
         <section class="card" aria-labelledby="excluded-heading">
             <h2 id="excluded-heading" class="card__title" th:text="#{export.excluded.heading}">excluded</h2>
             <ul class="plain-bullets">
+                <li th:text="#{export.excluded.outOfRange}">out of range</li>
                 <li th:text="#{export.excluded.deleted}">deleted</li>
                 <li th:text="#{export.excluded.secrets}">secrets</li>
             </ul>

@@ -448,11 +448,9 @@ main > .section {
 }
 
 /* ---------- Export ---------- */
-.export-download {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-4);
+/* Range card: heading, the two date fields side by side (stacked when narrow), the rule, then the download button. */
+.export-download .form-actions {
+    margin-top: var(--space-4);
 }
 
 .export-download .btn {

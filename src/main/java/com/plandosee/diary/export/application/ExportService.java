@@ -22,6 +22,7 @@ import com.plandosee.diary.execution.domain.ExecutionLogRevisionRow;
 import com.plandosee.diary.execution.domain.ExecutionLogRow;
 import com.plandosee.diary.export.application.port.ExportMapper;
 import com.plandosee.diary.export.domain.ExportOwnerRow;
+import com.plandosee.diary.export.domain.ExportRange;
 import com.plandosee.diary.export.domain.ExportTagRow;
 import com.plandosee.diary.export.domain.ExportTodoTagRow;
 import com.plandosee.diary.plan.domain.PlanRevisionRow;
@@ -43,7 +44,7 @@ import com.plandosee.diary.todo.domain.TodoRow;
 public class ExportService {
 
     /** 2.1.0: todoRevisions and reopenEvents added; every 2.0.0 field is unchanged. */
-    public static final String SCHEMA_VERSION = "2.3.0";
+    public static final String SCHEMA_VERSION = "2.4.0";
 
     private final ExportMapper exportMapper;
     private final CurrentUserProvider currentUserProvider;
@@ -59,7 +60,17 @@ public class ExportService {
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
-    public Map<String, Object> export() {
+    public Map<String, Object> export(LocalDate from, LocalDate to) {
+        return export(new ExportRange(from, to));
+    }
+
+    /**
+     * The plans of the logged-in person whose period overlaps the range, with everything that belongs to them
+     * (ADR-44). The range is checked again here whatever the caller did (ExportRange).
+     */
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public Map<String, Object> export(ExportRange range) {
+        java.util.Objects.requireNonNull(range, "export range");
         statementBudget.useAggregateTimeout();
         UUID userId = currentUserProvider.currentUserId();
         ExportOwnerRow owner = exportMapper.owner(userId);
@@ -70,25 +81,35 @@ public class ExportService {
         document.put("schemaVersion", SCHEMA_VERSION);
         document.put("exportedAt", time(seoulDates.now().atOffset(ZoneOffset.UTC)));
         document.put("timezone", TimeConfig.SEOUL.getId());
+        Map<String, Object> exportRange = new LinkedHashMap<>();
+        exportRange.put("from", range.from().toString());
+        exportRange.put("to", range.to().toString());
+        document.put("exportRange", exportRange);
         document.put("owner", owner(owner));
-        document.put("plans", map(exportMapper.plans(userId), ExportService::plan));
-        document.put("planRevisions", map(exportMapper.planRevisions(userId), ExportService::planRevision));
-        document.put("todos", map(exportMapper.todos(userId), ExportService::todo));
-        document.put("todoRevisions", map(exportMapper.todoRevisions(userId), ExportService::todoRevision));
-        document.put("tags", map(exportMapper.tags(userId), ExportService::tag));
-        document.put("todoTags", map(exportMapper.todoTags(userId), ExportService::todoTag));
-        document.put("executionLogs", map(exportMapper.executionLogs(userId), ExportService::executionLog));
+        document.put("plans", map(exportMapper.plans(userId, range.from(), range.to()), ExportService::plan));
+        document.put("planRevisions", map(exportMapper.planRevisions(userId, range.from(), range.to()), ExportService::planRevision));
+        document.put("todos", map(exportMapper.todos(userId, range.from(), range.to()), ExportService::todo));
+        document.put("todoRevisions", map(exportMapper.todoRevisions(userId, range.from(), range.to()), ExportService::todoRevision));
+        document.put("tags", map(exportMapper.tags(userId, range.from(), range.to()), ExportService::tag));
+        document.put("todoTags", map(exportMapper.todoTags(userId, range.from(), range.to()), ExportService::todoTag));
+        document.put("executionLogs", map(exportMapper.executionLogs(userId, range.from(), range.to()), ExportService::executionLog));
         document.put("executionLogRevisions",
-                map(exportMapper.executionLogRevisions(userId), ExportService::executionLogRevision));
-        document.put("completionEvents", map(exportMapper.completionEvents(userId), ExportService::completionEvent));
-        document.put("reopenEvents", map(exportMapper.reopenEvents(userId), ExportService::reopenEvent));
-        document.put("reviews", map(exportMapper.reviews(userId), ExportService::review));
+                map(exportMapper.executionLogRevisions(userId, range.from(), range.to()), ExportService::executionLogRevision));
+        document.put("completionEvents", map(exportMapper.completionEvents(userId, range.from(), range.to()), ExportService::completionEvent));
+        document.put("reopenEvents", map(exportMapper.reopenEvents(userId, range.from(), range.to()), ExportService::reopenEvent));
+        document.put("reviews", map(exportMapper.reviews(userId, range.from(), range.to()), ExportService::review));
         return document;
     }
 
-    /** File name date is the Seoul calendar date of the export. */
-    public String fileName() {
-        return "plandosee-export-" + seoulDates.today().format(DateTimeFormatter.BASIC_ISO_DATE) + ".json";
+    /** File name with the range: plandosee-export-&lt;from yyyyMMdd&gt;-&lt;to yyyyMMdd&gt;.json. */
+    public static String fileName(ExportRange range) {
+        return "plandosee-export-" + range.from().format(DateTimeFormatter.BASIC_ISO_DATE) + "-"
+                + range.to().format(DateTimeFormatter.BASIC_ISO_DATE) + ".json";
+    }
+
+    /** The export form's default range: about the last month up to today in Asia/Seoul (ExportRange.endingOn). */
+    public ExportRange defaultRange() {
+        return ExportRange.endingOn(seoulDates.today());
     }
 
     private static Map<String, Object> owner(ExportOwnerRow user) {
