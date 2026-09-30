@@ -11,6 +11,10 @@
         SELECT set_config('statement_timeout', #{value}, true) AS statement_timeout
     </select>
 
+    <select id="setLocalLockTimeout" resultType="java.lang.String">
+        SELECT set_config('lock_timeout', #{value}, true) AS lock_timeout
+    </select>
+
     <select id="showStatementTimeout" resultType="java.lang.String">
         SELECT current_setting('statement_timeout') AS statement_timeout
     </select>

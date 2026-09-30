@@ -284,4 +284,9 @@
         JOIN scope_todos t ON t.id = e.todo_id
         <include refid="evidenceLogFilter"/>
     </select>
+
+    <delete id="deleteAllOwnedBy">
+        DELETE FROM reviews
+        WHERE user_id = #{userId}
+    </delete>
 </mapper>

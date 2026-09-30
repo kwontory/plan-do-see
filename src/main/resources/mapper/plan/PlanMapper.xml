@@ -148,4 +148,16 @@
           AND p.deleted_at IS NULL
         ORDER BY r.revision_no DESC, r.id ASC
     </select>
+
+    <delete id="deleteRevisionsOwnedBy">
+        DELETE FROM plan_revisions r
+        USING plans p
+        WHERE r.plan_id = p.id
+          AND p.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteAllOwnedBy">
+        DELETE FROM plans
+        WHERE user_id = #{userId}
+    </delete>
 </mapper>

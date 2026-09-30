@@ -12,7 +12,7 @@ import com.plandosee.diary.plan.application.PlanService;
 import com.plandosee.diary.plan.domain.PlanRow;
 
 /**
- * Home page. The public warning comes from GlobalModelAdvice (publicNotice). The plan list is paged:
+ * Home page (login required). The plan list is paged:
  * {@code plans} holds the rows of the page, {@code page} the page position (PageInfo), {@code pageNav} the page
  * links to show (PageNavigation).
  */

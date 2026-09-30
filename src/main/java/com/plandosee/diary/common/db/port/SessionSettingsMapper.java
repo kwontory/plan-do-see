@@ -12,6 +12,9 @@ public interface SessionSettingsMapper {
     /** SET LOCAL statement_timeout for the current transaction only; returns the value now in effect. */
     String setLocalStatementTimeout(@Param("value") String value);
 
+    /** SET LOCAL lock_timeout for the current transaction only; returns the value now in effect. */
+    String setLocalLockTimeout(@Param("value") String value);
+
     /** Current statement_timeout of this session (tests and diagnostics). */
     String showStatementTimeout();
 }

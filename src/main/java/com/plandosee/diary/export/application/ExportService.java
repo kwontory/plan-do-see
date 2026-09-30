@@ -20,6 +20,7 @@ import com.plandosee.diary.common.time.SeoulDates;
 import com.plandosee.diary.common.time.TimeConfig;
 import com.plandosee.diary.execution.domain.ExecutionLogRow;
 import com.plandosee.diary.export.application.port.ExportMapper;
+import com.plandosee.diary.export.domain.ExportOwnerRow;
 import com.plandosee.diary.export.domain.ExportTagRow;
 import com.plandosee.diary.export.domain.ExportTodoTagRow;
 import com.plandosee.diary.plan.domain.PlanRevisionRow;
@@ -29,19 +30,19 @@ import com.plandosee.diary.todo.domain.CompletionEventRow;
 import com.plandosee.diary.todo.domain.ReopenEventRow;
 import com.plandosee.diary.todo.domain.TodoRevisionRow;
 import com.plandosee.diary.todo.domain.TodoRow;
-import com.plandosee.diary.user.domain.UserRow;
 
 /**
  * One UTF-8 JSON document of every active owned record.
  * All reads share one read-only repeatable-read snapshot under the aggregate statement timeout. Field order follows exportContract.topLevelFields.
  * Dates are YYYY-MM-DD; timestamps are ISO-8601 with the Asia/Seoul offset (same instant as stored).
- * The owner carries id and nickname only; email and credential data are never read.
+ * The owner carries id, login id (null for the demo owner) and nickname; email, password hash, sessions and login
+ * attempts are never read.
  */
 @Service
 public class ExportService {
 
     /** 2.1.0: todoRevisions and reopenEvents added; every 2.0.0 field is unchanged. */
-    public static final String SCHEMA_VERSION = "2.1.0";
+    public static final String SCHEMA_VERSION = "2.2.0";
 
     private final ExportMapper exportMapper;
     private final CurrentUserProvider currentUserProvider;
@@ -60,7 +61,7 @@ public class ExportService {
     public Map<String, Object> export() {
         statementBudget.useAggregateTimeout();
         UUID userId = currentUserProvider.currentUserId();
-        UserRow owner = exportMapper.owner(userId);
+        ExportOwnerRow owner = exportMapper.owner(userId);
         if (owner == null) {
             throw new IllegalStateException("export owner is not an active user");
         }
@@ -87,9 +88,10 @@ public class ExportService {
         return "plandosee-export-" + seoulDates.today().format(DateTimeFormatter.BASIC_ISO_DATE) + ".json";
     }
 
-    private static Map<String, Object> owner(UserRow user) {
+    private static Map<String, Object> owner(ExportOwnerRow user) {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("id", id(user.getId()));
+        m.put("loginId", user.getLoginId());
         m.put("nickname", user.getNickname());
         return m;
     }

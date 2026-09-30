@@ -12,8 +12,8 @@ import com.plandosee.diary.common.time.SeoulDates;
 import com.plandosee.diary.common.time.TimeConfig;
 
 /**
- * Common model attributes for every page: the public warning, today in Asia/Seoul, and the
- * display zone so templates convert instants without calling Java classes directly.
+ * Common model attributes for every page: today in Asia/Seoul and the display zone so templates convert instants
+ * without calling Java classes directly.
  * The accepted date range for the {@code min}/{@code max} attributes of every date and datetime-local box
  * ({@code dateInputMin}, {@code dateInputMax}: yyyy-MM-dd, four-digit years; the template adds the time part), and
  * the box limits of the estimated-time input ({@code durationInputLimits}). Browser attributes are a convenience;
@@ -26,11 +26,6 @@ public class GlobalModelAdvice {
 
     public GlobalModelAdvice(SeoulDates seoulDates) {
         this.seoulDates = seoulDates;
-    }
-
-    @ModelAttribute("publicNotice")
-    public String publicNotice() {
-        return PublicNotice.TEXT;
     }
 
     @ModelAttribute("today")

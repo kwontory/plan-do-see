@@ -21,11 +21,20 @@
         <result property="createdAt" column="created_at"/>
     </resultMap>
 
-    <!-- Owner card: id and nickname only; email and credential columns are never selected. -->
-    <select id="owner" resultMap="com.plandosee.diary.user.application.port.UserMapper.userRow">
+    <resultMap id="exportOwnerRow" type="com.plandosee.diary.export.domain.ExportOwnerRow">
+        <id property="id" column="id"/>
+        <result property="loginId" column="login_id"/>
+        <result property="nickname" column="nickname"/>
+    </resultMap>
+
+    <!-- Owner card: id, LOCAL login id (none for the demo owner) and nickname; email, password hash, sessions and
+         login attempts are never selected. -->
+    <select id="owner" resultMap="exportOwnerRow">
         SELECT u.id,
+               i.provider_user_id AS login_id,
                u.nickname
         FROM users u
+        LEFT JOIN auth_identities i ON i.user_id = u.id AND i.provider = 'LOCAL'
         WHERE u.id = #{userId}
           AND u.deleted_at IS NULL
     </select>

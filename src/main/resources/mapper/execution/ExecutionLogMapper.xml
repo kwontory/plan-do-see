@@ -63,4 +63,12 @@
                COALESCE(SUM(e.actual_minutes), 0) AS actual_minutes
         <include refid="todoLogsFromWhere"/>
     </select>
+
+    <delete id="deleteAllOwnedBy">
+        DELETE FROM execution_logs e
+        USING todos t, plans p
+        WHERE e.todo_id = t.id
+          AND t.plan_id = p.id
+          AND p.user_id = #{userId}
+    </delete>
 </mapper>

@@ -44,4 +44,7 @@ public interface ReviewMapper {
     List<ExecutionLogRow> evidenceLogs(EvidenceQuery query);
 
     EvidenceTotals evidenceLogTotals(EvidenceQuery query);
+
+    /** Physically deletes the owner's reviews (account deletion, ADR-35: every row, soft-deleted or not). */
+    int deleteAllOwnedBy(@Param("userId") UUID userId);
 }

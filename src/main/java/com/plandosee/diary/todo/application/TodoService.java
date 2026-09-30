@@ -410,4 +410,20 @@ public class TodoService {
     private OffsetDateTime now() {
         return seoulDates.now().atOffset(ZoneOffset.UTC);
     }
+
+    /**
+     * Account deletion only (ADR-35): physically deletes every todo with its completion and reopen events, revisions and tag links, and every tag of the logged-in person, soft-deleted rows included.
+     * Joins the caller's transaction; the caller (AccountService) deletes in foreign-key order: execution, todo,
+     * review, plan, then the person.
+     */
+    @Transactional
+    public void deleteAllOfCurrentUser() {
+        UUID userId = currentUserProvider.currentUserId();
+        todoMapper.deleteReopenEventsOwnedBy(userId);
+        todoMapper.deleteCompletionEventsOwnedBy(userId);
+        todoMapper.deleteRevisionsOwnedBy(userId);
+        todoMapper.deleteTodoTagsOwnedBy(userId);
+        todoMapper.deleteAllOwnedBy(userId);
+        tagMapper.deleteAllOwnedBy(userId);
+    }
 }

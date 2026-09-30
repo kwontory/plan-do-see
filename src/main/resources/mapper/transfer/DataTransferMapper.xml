@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!-- One-time T06 data transfer (ADR-35). Counts include soft-deleted rows: everything moves. -->
+<mapper namespace="com.plandosee.diary.transfer.application.port.DataTransferMapper">
+
+    <resultMap id="ownedCounts" type="com.plandosee.diary.transfer.domain.OwnedCounts">
+        <result property="plans" column="plans"/>
+        <result property="planRevisions" column="plan_revisions"/>
+        <result property="todos" column="todos"/>
+        <result property="todoRevisions" column="todo_revisions"/>
+        <result property="todoTags" column="todo_tags"/>
+        <result property="tags" column="tags"/>
+        <result property="executionLogs" column="execution_logs"/>
+        <result property="completionEvents" column="completion_events"/>
+        <result property="reopenEvents" column="reopen_events"/>
+        <result property="reviews" column="reviews"/>
+    </resultMap>
+
+    <select id="findActiveLocalUserId" resultType="java.util.UUID">
+        SELECT i.user_id
+        FROM auth_identities i
+        JOIN users u ON u.id = i.user_id
+        WHERE i.provider = 'LOCAL'
+          AND i.provider_user_id = #{loginId}
+          AND u.deleted_at IS NULL
+    </select>
+
+    <select id="lockUsers" resultType="java.util.UUID">
+        SELECT u.id
+        FROM users u
+        WHERE u.id IN (#{from}, #{to})
+          AND u.deleted_at IS NULL
+        ORDER BY u.id
+        FOR UPDATE
+    </select>
+
+    <select id="countOwned" resultMap="ownedCounts">
+        SELECT (SELECT COUNT(p.id) FROM plans p WHERE p.user_id = #{userId}) AS plans,
+               (SELECT COUNT(r.id) FROM plan_revisions r JOIN plans p ON p.id = r.plan_id
+                 WHERE p.user_id = #{userId}) AS plan_revisions,
+               (SELECT COUNT(t.id) FROM todos t JOIN plans p ON p.id = t.plan_id
+                 WHERE p.user_id = #{userId}) AS todos,
+               (SELECT COUNT(r.id) FROM todo_revisions r JOIN todos t ON t.id = r.todo_id JOIN plans p ON p.id = t.plan_id
+                 WHERE p.user_id = #{userId}) AS todo_revisions,
+               (SELECT COUNT(tt.todo_id) FROM todo_tags tt JOIN todos t ON t.id = tt.todo_id JOIN plans p ON p.id = t.plan_id
+                 WHERE p.user_id = #{userId}) AS todo_tags,
+               (SELECT COUNT(g.id) FROM tags g WHERE g.user_id = #{userId}) AS tags,
+               (SELECT COUNT(e.id) FROM execution_logs e JOIN todos t ON t.id = e.todo_id JOIN plans p ON p.id = t.plan_id
+                 WHERE p.user_id = #{userId}) AS execution_logs,
+               (SELECT COUNT(c.id) FROM completion_events c JOIN todos t ON t.id = c.todo_id JOIN plans p ON p.id = t.plan_id
+                 WHERE p.user_id = #{userId}) AS completion_events,
+               (SELECT COUNT(o.id) FROM reopen_events o JOIN todos t ON t.id = o.todo_id JOIN plans p ON p.id = t.plan_id
+                 WHERE p.user_id = #{userId}) AS reopen_events,
+               (SELECT COUNT(v.id) FROM reviews v WHERE v.user_id = #{userId}) AS reviews
+    </select>
+
+    <update id="reassignPlans">
+        UPDATE plans
+        SET user_id = #{to}
+        WHERE user_id = #{from}
+    </update>
+
+    <update id="reassignTags">
+        UPDATE tags
+        SET user_id = #{to}
+        WHERE user_id = #{from}
+    </update>
+
+    <update id="reassignReviews">
+        UPDATE reviews
+        SET user_id = #{to}
+        WHERE user_id = #{from}
+    </update>
+</mapper>

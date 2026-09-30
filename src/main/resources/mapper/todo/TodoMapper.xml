@@ -367,4 +367,43 @@
                COUNT(h.id) FILTER (WHERE h.kind = 'REOPENED') AS reopen_count
         FROM history h
     </select>
+
+    <delete id="deleteReopenEventsOwnedBy">
+        DELETE FROM reopen_events r
+        USING todos t, plans p
+        WHERE r.todo_id = t.id
+          AND t.plan_id = p.id
+          AND p.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteCompletionEventsOwnedBy">
+        DELETE FROM completion_events c
+        USING todos t, plans p
+        WHERE c.todo_id = t.id
+          AND t.plan_id = p.id
+          AND p.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteRevisionsOwnedBy">
+        DELETE FROM todo_revisions r
+        USING todos t, plans p
+        WHERE r.todo_id = t.id
+          AND t.plan_id = p.id
+          AND p.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteTodoTagsOwnedBy">
+        DELETE FROM todo_tags tt
+        USING todos t, plans p
+        WHERE tt.todo_id = t.id
+          AND t.plan_id = p.id
+          AND p.user_id = #{userId}
+    </delete>
+
+    <delete id="deleteAllOwnedBy">
+        DELETE FROM todos t
+        USING plans p
+        WHERE t.plan_id = p.id
+          AND p.user_id = #{userId}
+    </delete>
 </mapper>

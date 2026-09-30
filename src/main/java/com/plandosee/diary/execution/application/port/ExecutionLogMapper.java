@@ -20,4 +20,7 @@ public interface ExecutionLogMapper {
                                                @Param("limit") int limit, @Param("offset") long offset);
 
     ExecutionLogTotals totalsForTodoOwned(@Param("userId") UUID userId, @Param("todoId") UUID todoId);
+
+    /** Physically deletes every execution log of the owner's todos (account deletion, ADR-35: every row, soft-deleted or not). */
+    int deleteAllOwnedBy(@Param("userId") UUID userId);
 }

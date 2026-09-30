@@ -307,4 +307,14 @@ public class ReviewService {
     private OffsetDateTime now() {
         return seoulDates.now().atOffset(ZoneOffset.UTC);
     }
+
+    /**
+     * Account deletion only (ADR-35): physically deletes every review of the logged-in person, soft-deleted rows included.
+     * Joins the caller's transaction; the caller (AccountService) deletes in foreign-key order: execution, todo,
+     * review, plan, then the person.
+     */
+    @Transactional
+    public void deleteAllOfCurrentUser() {
+        reviewMapper.deleteAllOwnedBy(currentUserProvider.currentUserId());
+    }
 }

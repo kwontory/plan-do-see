@@ -25,6 +25,19 @@ public class StatementBudget {
                 aggregateTimeout);
     }
 
+    /** Statement and lock limits of a one-time maintenance command (data transfer), not of web requests. */
+    public static final String MAINTENANCE_TIMEOUT = "30s";
+
+    /**
+     * Must be called inside the maintenance transaction (never a web request); both settings end with it, so the
+     * pooled connection returns with the request limits.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void useMaintenanceTimeouts() {
+        settings.setLocalStatementTimeout(MAINTENANCE_TIMEOUT);
+        settings.setLocalLockTimeout(MAINTENANCE_TIMEOUT);
+    }
+
     /** Must be called inside the aggregate read transaction; the setting ends with that transaction. */
     @Transactional(propagation = Propagation.MANDATORY)
     public void useAggregateTimeout() {

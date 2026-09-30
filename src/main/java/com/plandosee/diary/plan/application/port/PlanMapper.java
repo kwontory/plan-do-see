@@ -32,4 +32,10 @@ public interface PlanMapper {
     int insertRevision(PlanRevisionRow revision);
 
     List<PlanRevisionRow> listRevisionsOwned(@Param("userId") UUID userId, @Param("planId") UUID planId);
+
+    /** Physically deletes the revisions of the owner's plans (account deletion, ADR-35: every row, soft-deleted or not). */
+    int deleteRevisionsOwnedBy(@Param("userId") UUID userId);
+
+    /** Physically deletes the owner's plans (after todos, reviews and revisions). */
+    int deleteAllOwnedBy(@Param("userId") UUID userId);
 }

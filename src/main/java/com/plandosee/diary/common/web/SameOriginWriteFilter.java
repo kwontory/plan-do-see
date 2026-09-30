@@ -24,12 +24,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * origin: a page with {@code Referrer-Policy: no-referrer}, a sandboxed frame, a {@code data:} or file page), a blank
  * value, or anything unparsable is rejected.</li>
  * <li>{@code Origin} absent: the {@code Referer} decides the same way.</li>
- * <li>Both absent: allowed (non-browser clients; only while the app has no login).</li>
+ * <li>Both absent: allowed here (non-browser clients); the Spring Security CSRF token is still required.</li>
  * </ul>
  * The server's origin is {@code request.getScheme()/getServerName()/getServerPort()} only. This filter never reads
  * {@code X-Forwarded-*} itself; behind a proxy those values come from the container's standard forwarded-header
  * handling ({@code server.forward-headers-strategy=native}, Tomcat RemoteIpValve), which applies them only when the
- * connection comes from a trusted internal proxy. Spring Security CSRF tokens replace this once login exists.
+ * connection comes from a trusted internal proxy. Runs before the Spring Security chain, whose session-stored CSRF
+ * token is the second check on the same requests.
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 1)
@@ -60,7 +61,7 @@ public class SameOriginWriteFilter extends OncePerRequestFilter {
     }
 
     /** True only for an absolute http(s) URL whose scheme, host, and effective port equal the server's. */
-    static boolean matchesServer(String source, HttpServletRequest request) {
+    public static boolean matchesServer(String source, HttpServletRequest request) {
         URI uri;
         try {
             uri = new URI(source.strip());

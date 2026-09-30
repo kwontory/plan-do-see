@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.plandosee.diary.auth.application.port.LoginAttemptMapper">
+
+    <insert id="insert" parameterType="com.plandosee.diary.auth.domain.LoginAttemptRow">
+        INSERT INTO login_attempts (id, kind, login_key_hash, client_ip, result, attempted_at)
+        VALUES (#{id}, #{kind}, #{loginKeyHash}, #{clientIp}, #{result}, #{attemptedAt})
+    </insert>
+
+    <select id="countLoginFailuresByKeyAndIp" resultType="int">
+        SELECT COUNT(recent.id)
+        FROM (SELECT a.id
+              FROM login_attempts a
+              WHERE a.kind = 'LOGIN'
+                AND a.result = 'FAILURE'
+                AND a.login_key_hash = #{loginKeyHash}
+                AND a.client_ip = #{clientIp}
+                AND a.attempted_at &gt; #{since}
+              ORDER BY a.attempted_at DESC, a.id DESC
+              LIMIT #{cap}) recent
+    </select>
+
+    <select id="countLoginFailuresByIp" resultType="int">
+        SELECT COUNT(recent.id)
+        FROM (SELECT a.id
+              FROM login_attempts a
+              WHERE a.kind = 'LOGIN'
+                AND a.result = 'FAILURE'
+                AND a.client_ip = #{clientIp}
+                AND a.attempted_at &gt; #{since}
+              ORDER BY a.attempted_at DESC, a.id DESC
+              LIMIT #{cap}) recent
+    </select>
+
+    <select id="countSignupsByIp" resultType="int">
+        SELECT COUNT(recent.id)
+        FROM (SELECT a.id
+              FROM login_attempts a
+              WHERE a.kind = 'SIGNUP'
+                AND a.client_ip = #{clientIp}
+                AND a.attempted_at &gt; #{since}
+              ORDER BY a.attempted_at DESC, a.id DESC
+              LIMIT #{cap}) recent
+    </select>
+
+    <delete id="deleteLoginFailures">
+        DELETE FROM login_attempts
+        WHERE kind = 'LOGIN'
+          AND result = 'FAILURE'
+          AND login_key_hash = #{loginKeyHash}
+          AND client_ip = #{clientIp}
+    </delete>
+
+    <delete id="deleteOlderThan">
+        DELETE FROM login_attempts
+        WHERE id IN (SELECT old.id
+                     FROM login_attempts old
+                     WHERE old.attempted_at &lt; #{before}
+                     ORDER BY old.attempted_at ASC, old.id ASC
+                     LIMIT #{limit}
+                     FOR UPDATE SKIP LOCKED)
+    </delete>
+
+    <delete id="deleteByLoginKey">
+        DELETE FROM login_attempts
+        WHERE kind = 'LOGIN'
+          AND login_key_hash = #{loginKeyHash}
+    </delete>
+</mapper>

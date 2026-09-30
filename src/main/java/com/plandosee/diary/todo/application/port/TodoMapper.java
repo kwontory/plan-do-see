@@ -63,4 +63,19 @@ public interface TodoMapper {
                                                             @Param("limit") int limit, @Param("offset") long offset);
 
     CompletionHistoryCounts countCompletionHistoryOwned(@Param("userId") UUID userId, @Param("todoId") UUID todoId);
+
+    /** Physically deletes the owner's reopen events (account deletion, ADR-35: every row, soft-deleted or not). */
+    int deleteReopenEventsOwnedBy(@Param("userId") UUID userId);
+
+    /** Physically deletes the owner's completion events (after their reopen events). */
+    int deleteCompletionEventsOwnedBy(@Param("userId") UUID userId);
+
+    /** Physically deletes the owner's todo revisions. */
+    int deleteRevisionsOwnedBy(@Param("userId") UUID userId);
+
+    /** Physically deletes the tag links of the owner's todos. */
+    int deleteTodoTagsOwnedBy(@Param("userId") UUID userId);
+
+    /** Physically deletes the owner's todos (after every child row). */
+    int deleteAllOwnedBy(@Param("userId") UUID userId);
 }

@@ -59,4 +59,9 @@
         VALUES (#{todoId}, #{tagId}, #{now})
         ON CONFLICT (todo_id, tag_id) DO NOTHING
     </insert>
+
+    <delete id="deleteAllOwnedBy">
+        DELETE FROM tags
+        WHERE user_id = #{userId}
+    </delete>
 </mapper>

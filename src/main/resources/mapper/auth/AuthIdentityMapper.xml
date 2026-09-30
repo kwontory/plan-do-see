@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.plandosee.diary.auth.application.port.AuthIdentityMapper">
+
+    <resultMap id="localCredential" type="com.plandosee.diary.auth.domain.LocalCredentialRow">
+        <result property="userId" column="user_id"/>
+        <result property="identityId" column="identity_id"/>
+        <result property="loginId" column="login_id"/>
+        <result property="passwordHash" column="password_hash"/>
+    </resultMap>
+
+    <insert id="insert" parameterType="com.plandosee.diary.auth.domain.AuthIdentityRow">
+        INSERT INTO auth_identities (id, user_id, provider, provider_user_id, provider_email, provider_email_verified,
+                                     linked_at, last_login_at)
+        VALUES (#{id}, #{userId}, #{provider}, #{providerUserId}, NULL, FALSE, #{linkedAt}, NULL)
+    </insert>
+
+    <sql id="localCredentialColumns">
+        SELECT i.user_id,
+               i.id AS identity_id,
+               i.provider_user_id AS login_id,
+               c.password_hash
+        FROM auth_identities i
+        JOIN users u ON u.id = i.user_id
+        JOIN password_credentials c ON c.user_id = i.user_id
+    </sql>
+
+    <select id="findLocalCredentialByLoginId" resultMap="localCredential">
+        <include refid="localCredentialColumns"/>
+        WHERE i.provider = 'LOCAL'
+          AND i.provider_user_id = #{loginId}
+          AND u.deleted_at IS NULL
+    </select>
+
+    <select id="findLocalCredentialByUserId" resultMap="localCredential">
+        <include refid="localCredentialColumns"/>
+        WHERE i.provider = 'LOCAL'
+          AND i.user_id = #{userId}
+          AND u.deleted_at IS NULL
+    </select>
+
+    <update id="touchLastLogin">
+        UPDATE auth_identities
+        SET last_login_at = #{at}
+        WHERE id = #{identityId}
+    </update>
+
+    <delete id="deleteByUserId">
+        DELETE FROM auth_identities
+        WHERE user_id = #{userId}
+    </delete>
+</mapper>

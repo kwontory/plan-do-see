@@ -8,8 +8,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Removes database connection details (JDBC URL, host, port, user name, password) from every rendered log line,
- * including exception messages and cause chains. Two layers:
+ * Removes database connection details (JDBC URL, host, port, user name, password) and request secrets (password form
+ * fields, the session cookie, CSRF tokens) from every rendered log line, including exception messages and cause
+ * chains. Two layers:
  * <ol>
  * <li>exact values the application was configured with ({@link #registerDatasource}), and</li>
  * <li>generic shapes that drivers and pools write (JDBC URLs, {@code Connection to host:port refused},
@@ -25,6 +26,11 @@ public final class LogSecretMasker {
     static final String PORT_TOKEN = "<db-port>";
     static final String USER_TOKEN = "<db-user>";
     static final String PASSWORD_TOKEN = "<db-password>";
+    static final String SECRET_TOKEN = "<masked>";
+
+    /** Request fields and cookies whose value is a secret: passwords, the session id, the CSRF token. */
+    private static final String SECRET_NAMES =
+            "password|currentPassword|newPassword|_csrf|SESSION|JSESSIONID|X-CSRF-TOKEN|X-XSRF-TOKEN|XSRF-TOKEN";
 
     private static final int MIN_USER_LENGTH = 3;
     private static final int MIN_BARE_PORT_DIGITS = 4;
@@ -42,7 +48,14 @@ public final class LogSecretMasker {
             new Rule(Pattern.compile("(?i)[A-Za-z0-9.-]*\\.supabase\\.(?:com|co|net)\\b"), HOST_TOKEN),
             new Rule(Pattern.compile("(?<![0-9.])\\d{1,3}(?:\\.\\d{1,3}){3}:\\d{1,5}(?![0-9])"),
                     HOST_TOKEN + ":" + PORT_TOKEN),
-            new Rule(Pattern.compile(Pattern.quote(HOST_TOKEN) + ":\\d{1,5}(?![0-9])"), HOST_TOKEN + ":" + PORT_TOKEN));
+            new Rule(Pattern.compile(Pattern.quote(HOST_TOKEN) + ":\\d{1,5}(?![0-9])"), HOST_TOKEN + ":" + PORT_TOKEN),
+            // name=value in query strings, form bodies and Cookie headers (password=..., SESSION=..., _csrf=...).
+            new Rule(Pattern.compile("(?i)(?<![A-Za-z0-9_-])(" + SECRET_NAMES + ")=[^&;,\\s\"'<>\\]\\[)(}{]+"),
+                    "$1=" + SECRET_TOKEN),
+            // "password":"..." in JSON-like text, and header lines such as X-CSRF-TOKEN: value.
+            new Rule(Pattern.compile("(?i)(\"(?:" + SECRET_NAMES + ")\"\\s*:\\s*\")[^\"]*\""), "$1" + SECRET_TOKEN + "\""),
+            new Rule(Pattern.compile("(?i)(?<![A-Za-z0-9_-])((?:" + SECRET_NAMES + ")\\s*:\\s*)[^\\s,;]+"),
+                    "$1" + SECRET_TOKEN));
 
     private static final Set<String> urls = new LinkedHashSet<>();
     private static final Set<String> hosts = new LinkedHashSet<>();

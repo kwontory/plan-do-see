@@ -5,13 +5,35 @@
     <resultMap id="userRow" type="com.plandosee.diary.user.domain.UserRow">
         <id property="id" column="id"/>
         <result property="nickname" column="nickname"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
     <select id="findActiveById" resultMap="userRow">
         SELECT u.id,
-               u.nickname
+               u.nickname,
+               u.created_at,
+               u.updated_at
         FROM users u
         WHERE u.id = #{userId}
           AND u.deleted_at IS NULL
     </select>
+
+    <insert id="insert" parameterType="com.plandosee.diary.user.domain.UserRow">
+        INSERT INTO users (id, email, normalized_email, nickname, email_verified_at, created_at, updated_at)
+        VALUES (#{id}, NULL, NULL, #{nickname}, NULL, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <update id="updateNickname">
+        UPDATE users
+        SET nickname = #{nickname},
+            updated_at = #{updatedAt}
+        WHERE id = #{userId}
+          AND deleted_at IS NULL
+    </update>
+
+    <delete id="delete">
+        DELETE FROM users
+        WHERE id = #{userId}
+    </delete>
 </mapper>

@@ -103,4 +103,14 @@ public class ExecutionService {
                 : executionLogMapper.listForTodoOwnedPage(userId, todoId, info.limit(), info.offset());
         return new TodoExecutionLogs(logs, totals.getActualMinutes(), info);
     }
+
+    /**
+     * Account deletion only (ADR-35): physically deletes every execution log of the logged-in person, soft-deleted rows included.
+     * Joins the caller's transaction; the caller (AccountService) deletes in foreign-key order: execution, todo,
+     * review, plan, then the person.
+     */
+    @Transactional
+    public void deleteAllOfCurrentUser() {
+        executionLogMapper.deleteAllOwnedBy(currentUserProvider.currentUserId());
+    }
 }

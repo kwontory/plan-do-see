@@ -17,11 +17,14 @@ server:
       charset: UTF-8
       force: true
     session:
-      # Flash attributes use the HTTP session; never expose its id in URLs.
+      # Login sessions live in PostgreSQL (Spring Session JDBC, cookie SESSION). A session ends after this much
+      # time without a request; logout and a password change delete it at once.
+      timeout: ${SESSION_TIMEOUT:30m}
+      # The session id travels only in the cookie, never in URLs.
       tracking-modes: cookie
       cookie:
         http-only: true
-        # true on HTTPS deployments (Render sets SESSION_COOKIE_SECURE=true).
+        # true on HTTPS deployments (SESSION_COOKIE_SECURE=true).
         secure: ${SESSION_COOKIE_SECURE:false}
         same-site: lax
 
@@ -58,6 +61,10 @@ spring:
     # Migrations run on their own connection, outside the pool, so the 1s statement_timeout and 100ms
     # lock_timeout of pooled sessions never cut a schema change short. Same URL and credentials as the app.
     user: ${spring.datasource.username}
+  session:
+    jdbc:
+      # SPRING_SESSION tables come from Flyway (V6), never from Spring Session itself.
+      initialize-schema: never
   mvc:
     hiddenmethod:
       filter:
@@ -91,7 +98,12 @@ mybatis:
     default-statement-timeout: 30
 
 app:
+  # Owner of the data entered before login existed (T06). Used only to move that data to an account; never the
+  # owner of a request.
   demo-user-id: ${APP_DEMO_USER_ID:00000000-0000-4000-8000-000000000001}
+  session-pool:
+    # Connections of the separate Spring Session pool (login sessions), on top of DB_POOL_SIZE.
+    size: ${DB_SESSION_POOL_SIZE:2}
   # Rows per page of every paged list (plans, todos, evidence, a todo's records). 1 to 200.
   page-size: ${APP_PAGE_SIZE:50}
   db:

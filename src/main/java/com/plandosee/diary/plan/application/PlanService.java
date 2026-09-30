@@ -245,4 +245,16 @@ public class PlanService {
     private OffsetDateTime now() {
         return seoulDates.now().atOffset(ZoneOffset.UTC);
     }
+
+    /**
+     * Account deletion only (ADR-35): physically deletes every plan and plan revision of the logged-in person, soft-deleted rows included.
+     * Joins the caller's transaction; the caller (AccountService) deletes in foreign-key order: execution, todo,
+     * review, plan, then the person.
+     */
+    @Transactional
+    public void deleteAllOfCurrentUser() {
+        UUID userId = currentUserProvider.currentUserId();
+        planMapper.deleteRevisionsOwnedBy(userId);
+        planMapper.deleteAllOwnedBy(userId);
+    }
 }

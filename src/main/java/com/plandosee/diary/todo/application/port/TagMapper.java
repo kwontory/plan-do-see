@@ -24,4 +24,7 @@ public interface TagMapper {
     int deleteTodoLinks(@Param("todoId") UUID todoId);
 
     int insertTodoLink(@Param("todoId") UUID todoId, @Param("tagId") UUID tagId, @Param("now") OffsetDateTime now);
+
+    /** Physically deletes the owner's tags (account deletion, ADR-35: every row, soft-deleted or not); their todo links must be gone first. */
+    int deleteAllOwnedBy(@Param("userId") UUID userId);
 }
