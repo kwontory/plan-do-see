@@ -2129,6 +2129,16 @@ fieldset.field-group {
     margin: 0;
 }
 
+/* Folded, the bar is a single 48px line with its own inner space, so the section gaps above and below it are
+   tightened (user feedback); open, the card keeps the normal section gaps. */
+.add-area:has(> .add-bar:not([hidden])) {
+    margin-top: var(--space-4);
+}
+
+.add-area:has(> .add-bar:not([hidden])) + .section {
+    margin-top: var(--space-5);
+}
+
 /* Borderless fold bar (the folded "+ 할 일 추가" and the narrow "필터 보기"): white face, primary text and icon,
    primary-bg face on hover, 44px or more to press, the global focus ring. Its side padding is pulled back with the same
    negative margin, so the icon starts on the page text line (left bar) or ends on it (right toggle). */
