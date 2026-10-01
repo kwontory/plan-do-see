@@ -1,0 +1,11 @@
+# Vercel CLI upload allowlist: only what Dockerfile.vercel needs to build and run the service.
+# Everything else (.env, docs, tests, scripts, build output, local tool settings) stays local.
+/*
+!/Dockerfile.vercel
+!/vercel.json
+!/pom.xml
+!/mvnw
+!/.mvn
+!/src
+/src/*
+!/src/main
