@@ -2817,13 +2817,6 @@ button.check:hover .icon {
     }
 }
 
-/* The execution table (S03) fits at 360px and wider, so its hint shows only below that. */
-@media (min-width: 360px) {
-    .table-hint--narrow {
-        display: none;
-    }
-}
-
 /* Table area: a bordered box that scrolls sideways inside when the table is wider. It can take keyboard focus
    (tabindex=0, so it can be scrolled with the arrow keys): the focus ring is the usual 3px blue outline outside the
    box, which neither the sticky first column nor the head row can cover. */
@@ -2942,14 +2935,6 @@ tfoot td {
         padding-right: 14px;
     }
 
-    .table--fit time {
-        display: inline-block;
-        min-width: 10ch;
-        white-space: normal;
-        word-break: normal;
-        overflow-wrap: normal;
-    }
-
     /* The text column (blocker reason) keeps room for whole words: at least 5em, and a word is never split into
        letters (break-word does not lower the column's minimum like the page-wide "anywhere" does; a longer word
        widens the column and the table scrolls inside its area). The narrow action column does not take this room. */
@@ -2981,29 +2966,47 @@ tfoot td {
     }
 }
 
-/* Execution records (S03) below 480px: four columns and the icon action fit a 360px screen without scrolling.
-   13px text; start/end times 12px (each date is one 10ch line, time on the next); 4px side padding between columns
-   and 10px before the first; the actual time breaks only between its parts ("1시간 / 15분", keep-all keeps "15분"
-   whole); the blocker reason keeps 4em and its own longest word no longer sets the column: Korean still wraps between
-   words, and only a word longer than the column breaks inside (anywhere); the 44px action keeps 4px on its right.
-   Widths at 360 (area 326): about 88 + 82 + 40 + 52 + 48 = 310. */
+/* Execution records (S03): one tbody per record (.logs-record). The line sits between records only, so a record's
+   two rows below 480px read as one block. The second row (.logs-blocker-row, only when there is a reason) shows from
+   480px down only; from 480px up the reason is the fourth column (.logs-blocker). Only one is displayed, so a screen
+   reader reads it once. */
+.table--fit tbody td {
+    border-bottom: 0;
+}
+
+.table--fit tbody + tbody > tr:first-child > td {
+    border-top: var(--border-width) solid var(--color-border);
+}
+
+.logs-blocker-row {
+    display: none;
+}
+
+/* The blocker reason column (480px and up): a long unbroken word breaks inside instead of widening the table (it
+   would push the edit button out of view). Korean still wraps between words (body keep-all). */
+.table--fit td.logs-blocker {
+    overflow-wrap: anywhere;
+}
+
+/* Start and end times, every width: the date stays one piece ("2026-09-10", 10ch), and the time may go to the next
+   line only at the space. A long blocker reason can narrow these columns but never splits the date at a hyphen. */
+.table--fit time {
+    display: inline-block;
+    min-width: 10ch;
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: normal;
+}
+
+/* Below 480px: four columns (start, end, actual, edit). Dates keep one 10ch line with the time on the next, 4px side
+   padding between columns (14 outside), the actual time breaks only between its parts ("1시간 / 15분", keep-all
+   keeps "15분" whole), and the 44px action keeps 4px on its right. Widths: about 98 + 88 + 40~48 + 48 = 274~282,
+   inside 326 (360) and 286 (320). The reason row spans the table: a small muted label line, then the full text
+   (wraps between words; only a word longer than the line breaks inside). */
 @media (max-width: 479px) {
-    .table--fit {
-        font-size: var(--font-size-xs);
-    }
-
-    .table--fit time {
-        font-size: var(--font-size-2xs);
-    }
-
     .table--fit th,
     .table--fit td {
         padding-inline: 4px;
-    }
-
-    .table--fit th:first-child,
-    .table--fit td:first-child {
-        padding-left: 10px;
     }
 
     .table--fit td.num {
@@ -3012,23 +3015,37 @@ tfoot td {
         overflow-wrap: normal;
     }
 
-    .table--fit .table__wide {
-        min-width: 4em;
-        overflow-wrap: anywhere;
-    }
-
     .table--fit th.logs-actions,
     .table--fit td.logs-actions {
         padding-right: 4px;
     }
-}
 
-/* Below 360 the table scrolls inside its area anyway (the hint shows), so the blocker reason keeps a readable
-   8em (about 8 Korean letters a line) and words are never split, as from 480 up. */
-@media (max-width: 359px) {
-    .table--fit .table__wide {
-        min-width: 8em;
-        overflow-wrap: break-word;
+    .table--fit .logs-blocker {
+        display: none;
+    }
+
+    .table--fit .logs-blocker-row {
+        display: table-row;
+    }
+
+    .table--fit .logs-blocker-row > td {
+        padding-top: 0;
+        padding-right: 14px;
+    }
+
+    .logs-blocker-row__label {
+        display: block;
+        font-size: 0.78125rem;
+        font-weight: var(--font-weight-bold);
+        line-height: 18px;
+        color: var(--color-text-muted);
+    }
+
+    /* anywhere (not break-word): a long unbroken word must not raise the cell's min-content and widen the table.
+       Korean still wraps between words (body keep-all); a word breaks inside only when longer than the line. */
+    .logs-blocker-row__text {
+        display: block;
+        overflow-wrap: anywhere;
     }
 }
 

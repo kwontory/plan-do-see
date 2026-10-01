@@ -101,8 +101,9 @@
         <p class="sort-note" th:text="#{todos.detail.logs.sortNote}">sort</p>
         <p class="empty" th:if="${logs.isEmpty()}" th:text="#{todos.detail.logs.empty}">empty</p>
         <th:block th:unless="${logs.isEmpty()}">
-        <!--/* This table fits from 360px; below that (or with a very long word) it scrolls inside its area. */-->
-        <p class="table-hint table-hint--narrow" th:text="#{common.table.scrollHint}">scroll</p>
+        <!--/* One tbody per record. From 480px the blocker reason is the fourth column; below 480px that column is hidden
+               (display:none) and the reason shows on the record's second row across the table, only when there is one.
+               Only one of the two is ever rendered, so it is read once. The four columns fit 320px, so no scroll hint. */-->
         <div class="table-wrap" tabindex="0" role="region" th:attr="aria-label=#{todos.detail.logs.heading}">
             <table class="table--fit">
                 <caption class="visually-hidden" th:text="#{todos.detail.logs.heading}">logs</caption>
@@ -111,24 +112,28 @@
                     <th scope="col" th:text="#{todos.detail.logs.col.start}">start</th>
                     <th scope="col" th:text="#{todos.detail.logs.col.end}">end</th>
                     <th scope="col" class="num" th:text="#{todos.detail.logs.col.actual}">actual</th>
-                    <th scope="col" class="table__wide" th:text="#{todos.detail.logs.col.blocker}">blocker</th>
+                    <th scope="col" class="table__wide logs-blocker" th:text="#{todos.detail.logs.col.blocker}">blocker</th>
                     <th scope="col" class="logs-actions"><span class="visually-hidden" th:text="#{todos.detail.logs.col.actions}">actions</span></th>
                 </tr>
                 </thead>
-                <tbody>
-                <tr th:each="log : ${logs}">
+                <tbody class="logs-record" th:each="log : ${logs}">
+                <tr>
                     <td><time th:replace="~{fragments/layout :: datetimeOrUnknown(${log.startedAt})}"></time></td>
                     <td><time th:replace="~{fragments/layout :: datetimeOrUnknown(${log.endedAt})}"></time></td>
                     <td class="num" data-test="execution-actual-minutes" th:data-value="${log.actualMinutes}"><th:block th:replace="~{fragments/layout :: duration(${log.actualDuration})}">0</th:block></td>
-                    <td class="pre-wrap table__wide" th:text="${log.blockerReason != null} ? ${log.blockerReason} : #{common.none}">none</td>
+                    <td class="pre-wrap table__wide logs-blocker" th:text="${log.blockerReason != null} ? ${log.blockerReason} : #{common.none}">none</td>
                     <td class="logs-actions"><a th:replace="~{fragments/execution :: editLink(${log})}"></a></td>
+                </tr>
+                <tr class="logs-blocker-row" th:if="${log.blockerReason != null}" data-test="execution-blocker-row">
+                    <td colspan="4"><span class="logs-blocker-row__label" th:text="#{todos.detail.logs.col.blocker}">blocker</span><span
+                            class="pre-wrap logs-blocker-row__text" th:text="${log.blockerReason}">reason</span></td>
                 </tr>
                 </tbody>
                 <tfoot>
                 <tr>
                     <th scope="row" colspan="2" th:text="#{common.total}">total</th>
                     <td class="num"><th:block th:replace="~{fragments/layout :: duration(${logsActualDuration})}">0</th:block></td>
-                    <td></td>
+                    <td class="logs-blocker"></td>
                     <td></td>
                 </tr>
                 </tfoot>
