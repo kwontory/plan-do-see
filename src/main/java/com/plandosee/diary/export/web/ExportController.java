@@ -26,7 +26,7 @@ import com.plandosee.diary.export.domain.ExportRange;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
- * JSON export of a chosen range (ADR-44).
+ * JSON export of a chosen range.
  * <ul>
  *   <li>GET /export: view {@value #VIEW} with {@code exportForm} (from, to: the default range, about the last month up
  *       to today in Asia/Seoul) and {@code exportRangeMaxMonths} (1).</li>

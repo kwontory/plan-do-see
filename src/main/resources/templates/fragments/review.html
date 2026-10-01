@@ -40,7 +40,7 @@
             th:text="#{reviews.detail.metrics.cta}">evidence</th:block><span aria-hidden="true"> →</span></span>
 </a>
 
-<!--/* Difference between actual and estimated as one sentence (ADR-42). parts: DurationParts of "actual - estimated"
+<!--/* Difference between actual and estimated as one sentence. parts: DurationParts of "actual - estimated"
        from the server (metricDurations.variance, summary.varianceDuration, evidenceVarianceDuration): negative = took
        less than the estimate, positive = took more, neither = the same. The template only picks the sentence; the
        duration prints without a sign (layout :: duration, "1일 2시간 30분") inside one unbreakable chunk. Fixed word
@@ -51,7 +51,7 @@
         th:text="${parts.negative} ? #{review.variance.faster} : #{review.variance.slower}">faster</th:block></th:block><th:block
         th:unless="${parts.negative or parts.positive}" th:text="#{review.variance.same}">same</th:block></th:block>
 
-<!--/* Variance card: no heading, one sentence, then the evidence link (T06-C83). v: the signed minutes (metricValues,
+<!--/* Variance card: no heading, one sentence, then the evidence link. v: the signed minutes (metricValues,
        kept in data-value for tests). Without metricDurations (stand-in page) the minutes and unit are printed. */-->
 <a th:fragment="varianceCard(v, reviewId)" class="stat stat--variance"
    th:href="@{/reviews/{id}/evidence(id=${reviewId},metric='variance')}" href="#">

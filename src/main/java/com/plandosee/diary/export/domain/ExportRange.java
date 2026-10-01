@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import com.plandosee.diary.common.domain.InputCheck;
 
 /**
- * The chosen export range (ADR-44), self-validating: both Seoul dates required and within DateBounds, {@code to} not
+ * The chosen export range, self-validating: both Seoul dates required and within DateBounds, {@code to} not
  * before {@code from}, and {@code to} at most {@link #MAX_MONTHS} calendar month after {@code from} (month arithmetic
  * with month-end adjustment: 01-31 + 1 month = 02-28/29). Violations are field codes on {@code from} / {@code to}.
  * An invalid range cannot be built, so no file is made from one.

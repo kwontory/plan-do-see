@@ -7,8 +7,8 @@ import com.plandosee.diary.common.domain.DurationParts;
 
 /**
  * An execution record. Start, end (with the recomputed actual minutes) and the blocker reason can be edited; the
- * previous values go to execution_log_revisions (ADR-40). todoTitle is a joined display column and is never written.
- * version counts saved edits (edit-conflict detection, ADR-18).
+ * previous values go to execution_log_revisions. todoTitle is a joined display column and is never written.
+ * version counts saved edits (edit-conflict detection).
  */
 public class ExecutionLogRow {
 

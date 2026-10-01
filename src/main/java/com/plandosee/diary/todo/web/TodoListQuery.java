@@ -101,7 +101,7 @@ public class TodoListQuery {
     }
 
     /**
-     * How many search and filter conditions are in use (ADR-41): the search text (only when the list was searched with
+     * How many search and filter conditions are in use: the search text (only when the list was searched with
      * it, so a rejected text does not count), status, priority, tag and due filter, each when set to something other
      * than "all". The sort is not a filter and is never counted. Read from the allowlisted values, the same ones the
      * list query uses.

@@ -80,9 +80,9 @@ public class UserService {
     }
 
     /**
-     * Per-person write lock for rules that compare a new row with the person's other rows (ADR-40: execution records
+     * Per-person write lock for rules that compare a new row with the person's other rows (execution records
      * must not overlap). Must run inside the caller's write transaction and before any other row lock of that
-     * transaction; held until it ends. A concurrent holder fails at once (no waiting, ADR-19) and becomes the usual
+     * transaction; held until it ends. A concurrent holder fails at once (no waiting) and becomes the usual
      * "try again" notice. NotFoundException when the person is not active.
      */
     @Transactional(propagation = org.springframework.transaction.annotation.Propagation.MANDATORY)

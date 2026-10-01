@@ -478,7 +478,7 @@ main > .section {
     font-size: var(--font-size-base);
 }
 
-/* Variance check (ADR-42): the sums, then the evidence sentence and the review sentence, each on its own line (they
+/* Variance check: the sums, then the evidence sentence and the review sentence, each on its own line (they
    wrap between words; the duration chunk never splits), then the verdict. */
 .evidence-check__line {
     flex: 1 1 100%;

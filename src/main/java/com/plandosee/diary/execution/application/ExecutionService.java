@@ -30,7 +30,7 @@ import com.plandosee.diary.user.application.UserService;
 
 /**
  * Execution records are stored separately from the plan. Recording one never changes plan or todo estimates.
- * Records of one person never overlap (half-open periods, ADR-40): adding and editing check the person's other
+ * Records of one person never overlap (half-open periods): adding and editing check the person's other
  * records under a per-person lock (UserService.lockForOwnedWrites, no waiting), taken before any other row lock.
  * An edit keeps the previous values in execution_log_revisions (not shown on screen, exported).
  */
@@ -113,7 +113,7 @@ public class ExecutionService {
     }
 
     /**
-     * Edits start, end and blocker reason of an owned record (ADR-40); the actual minutes are computed again.
+     * Edits start, end and blocker reason of an owned record; the actual minutes are computed again.
      * expectedVersion is the version the form was opened with (null: no check). Under the per-person lock and then
      * the record row lock, in this order:
      * <ol>
@@ -219,8 +219,8 @@ public class ExecutionService {
     }
 
     /**
-     * Account deletion only (ADR-35): physically deletes every execution log of the logged-in person and their edit
-     * revisions (ADR-40), soft-deleted rows included.
+     * Account deletion only: physically deletes every execution log of the logged-in person and their edit
+     * revisions, soft-deleted rows included.
      * Joins the caller's transaction; the caller (AccountService) deletes in foreign-key order: execution, todo,
      * review, plan, then the person.
      */

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <!--
-  Export: owned by #{userId}, plans overlapping the chosen range [#{from}, #{to}] and their data (ADR-44),
+  Export: owned by #{userId}, plans overlapping the chosen range [#{from}, #{to}] and their data,
   soft-deleted rows and children of soft-deleted parents excluded, every collection ordered by its unique key. Credential and email columns are never selected.
 -->
 <mapper namespace="com.plandosee.diary.export.application.port.ExportMapper">
 
     <!--
-      ADR-44: only plans whose period [start_date, end_date] overlaps the chosen range [from, to] (both inclusive),
+      Only plans whose period [start_date, end_date] overlaps the chosen range [from, to] (both inclusive),
       with everything that belongs to them; execution times are not cut. Every data query below adds this after its
       owner and soft-delete conditions (the plan alias is p).
     -->

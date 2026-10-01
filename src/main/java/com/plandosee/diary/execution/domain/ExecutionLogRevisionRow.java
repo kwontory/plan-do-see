@@ -3,7 +3,7 @@ package com.plandosee.diary.execution.domain;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-/** The values of an execution record just before one edit (ADR-40). Stored and exported, not shown on screen. */
+/** The values of an execution record just before one edit. Stored and exported, not shown on screen. */
 public class ExecutionLogRevisionRow {
 
     private UUID id;

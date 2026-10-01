@@ -31,7 +31,7 @@ public class ExecutionForm {
     @PlainText(TextInput.Lines.MULTI)
     private String blockerReason;
 
-    /** Hidden edit version (edit form only, ADR-18); null when adding a record. */
+    /** Hidden edit version (edit form only); null when adding a record. */
     private Integer version;
 
     /** The edit form's values from a stored record (times in Asia/Seoul). */

@@ -36,7 +36,7 @@
     </div>
     <p class="note" th:if="${unavailable}" data-test="snapshot-unavailable" th:text="#{conflict.latest.unavailable}">unavailable</p>
 
-    <!--/* 1. Add (composer), in place under the head (ADR-41 amendment 1): a folded bar "+ 할 일 추가" opens the form
+    <!--/* 1. Add (composer), in place under the head: a folded bar "+ 할 일 추가" opens the form
            right there; while open the bar is hidden, so "할 일 추가" shows once (bar or form heading). The page script
            folds it unless the server says it starts open (data-open: the add form came back with errors) or the tab
            keeps a draft of it. Without the script the bar stays hidden and the form stays open. */-->
@@ -71,7 +71,7 @@
            (fieldMessage, id q-error), the box keeps the typed text and gets focus (focus-first-invalid). */-->
     <section class="section" aria-labelledby="filter-heading">
         <!--/* Head: visible heading, the number of conditions in use (server value filterActiveCount, shown on every
-               width, none at 0; not counted here, ADR-17) and, on narrow screens only, the toggle that the page script
+               width, none at 0; not counted here) and, on narrow screens only, the toggle that the page script
                shows while it folds the filter panel. */-->
         <div class="filter-head">
             <h2 id="filter-heading" th:text="#{todos.filter.heading}">filter</h2>

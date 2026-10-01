@@ -6,7 +6,7 @@ import com.plandosee.diary.common.error.StaleVersionException;
 import com.plandosee.diary.execution.domain.ExecutionLogRow;
 
 /**
- * The execution record edit form was out of date (ADR-18, ADR-40). latest is the record as stored now (read under
+ * The execution record edit form was out of date. latest is the record as stored now (read under
  * the row lock); changedFields uses ExecutionForm field names (startedAt, endedAt, blockerReason).
  */
 public class ExecutionStaleException extends StaleVersionException {

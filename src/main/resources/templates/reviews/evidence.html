@@ -75,7 +75,7 @@
                         th:replace="~{fragments/layout :: verdict(${ok})}"></strong>
                 </th:block>
                 <th:block th:case="'variance'" th:with="ok=${evidenceVarianceMinutes == summary.varianceMinutes}">
-                    <!--/* Variance (ADR-42): the two sums, then the difference as a sentence twice (from the evidence
+                    <!--/* Variance: the two sums, then the difference as a sentence twice (from the evidence
                            below / the review metric), each on its own line, then the verdict. */-->
                     <span class="evidence-check__line"><th:block th:text="#{evidence.check.varianceActual}"></th:block> <th:block th:replace="~{fragments/layout :: duration(${evidenceActualDuration})}">0</th:block> · <th:block th:text="#{evidence.check.varianceEstimated}"></th:block> <th:block th:replace="~{fragments/layout :: duration(${evidenceEstimatedDuration})}">0</th:block></span>
                     <span class="evidence-check__line"><th:block th:text="#{evidence.check.varianceEvidence}"></th:block> <th:block

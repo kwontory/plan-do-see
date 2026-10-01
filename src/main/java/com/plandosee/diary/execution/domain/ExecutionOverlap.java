@@ -7,7 +7,7 @@ import com.plandosee.diary.common.error.DomainRuleException;
 import com.plandosee.diary.common.time.TimeConfig;
 
 /**
- * No two execution records of one person may overlap (ADR-40). Periods are half-open {@code [start, end)}: a record
+ * No two execution records of one person may overlap. Periods are half-open {@code [start, end)}: a record
  * ending when the next starts is fine, and a record with start = end (0 minutes) never overlaps anything.
  */
 public final class ExecutionOverlap {

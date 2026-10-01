@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import com.plandosee.diary.export.domain.ExportRange;
 
 /**
- * The export range form (ADR-44): {@code from}, {@code to} as {@code yyyy-MM-dd} (Asia/Seoul dates; the format and
+ * The export range form: {@code from}, {@code to} as {@code yyyy-MM-dd} (Asia/Seoul dates; the format and
  * the date range are checked by FormBindingAdvice). Required here for the field errors; every rule, required ones
  * included, is checked again by ExportRange.
  */

@@ -65,8 +65,8 @@ public class ExportService {
     }
 
     /**
-     * The plans of the logged-in person whose period overlaps the range, with everything that belongs to them
-     * (ADR-44). The range is checked again here whatever the caller did (ExportRange).
+     * The plans of the logged-in person whose period overlaps the range, with everything that belongs to them.
+     * The range is checked again here whatever the caller did (ExportRange).
      */
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public Map<String, Object> export(ExportRange range) {

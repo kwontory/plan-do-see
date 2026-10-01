@@ -38,7 +38,7 @@ import com.plandosee.diary.todo.web.TodoPageModels;
  * of its time budget or pool wait re-renders it with HTTP 503 without reading the database (
  * snapshotUnavailable).
  * <p>
- * Editing (ADR-40), like the plan and todo edit forms: GET /executions/{id}/edit shows {@value #EDIT_VIEW} with
+ * Editing, like the plan and todo edit forms: GET /executions/{id}/edit shows {@value #EDIT_VIEW} with
  * {@code log} (the record with todoId, todoTitle, version) and {@code executionForm} (startedAt, endedAt,
  * blockerReason, hidden version); PUT /executions/{id} (POST + _method=put) saves and redirects to the todo page with
  * {@link #FLASH_UPDATED} or {@link #FLASH_UNCHANGED}. A rule violation or an overlap re-renders the form (200) with the

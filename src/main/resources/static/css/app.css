@@ -2120,7 +2120,7 @@ fieldset.field-group {
     margin: var(--space-2) 0 0;
 }
 
-/* Todo list add area (ADR-41 amendment 1): one place. Folded = a full-width bar "+ 할 일 추가"; open = a light primary
+/* Todo list add area: one place. Folded = a full-width bar "+ 할 일 추가"; open = a light primary
    card (heading + 닫기) in the same spot, the bar hidden, so "할 일 추가" shows once. app.js switches them; without it
    the bar stays hidden and the card open. */
 .add-area > * {
@@ -3135,7 +3135,7 @@ tfoot td {
     color: var(--color-text-muted);
 }
 
-/* Variance card (ADR-42): one sentence, no heading. The duration is the emphasis (bold, larger) and one chunk that
+/* Variance card: one sentence, no heading. The duration is the emphasis (bold, larger) and one chunk that
    never splits; the words around it wrap between words. */
 .stat__sentence {
     font-size: var(--font-size-lg);

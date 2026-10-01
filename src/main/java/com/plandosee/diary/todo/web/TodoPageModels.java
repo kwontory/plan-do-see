@@ -104,7 +104,7 @@ public class TodoPageModels {
         }
         model.addAttribute(BindingResult.MODEL_KEY_PREFIX + "filter", filterResult);
         model.addAttribute("searchRejected", rejected != null);
-        // Conditions in use for the list heading (ADR-41); a rejected search text was not applied.
+        // Conditions in use for the list heading; a rejected search text was not applied.
         model.addAttribute("filterActiveCount", filter.activeFilterCount(rejected == null));
         // Longest search text the server accepts; for the search box maxlength and its help text.
         model.addAttribute("searchQueryMax", TodoRules.SEARCH_QUERY_MAX);
@@ -141,7 +141,7 @@ public class TodoPageModels {
     /**
      * Todo detail. logs is one page (query parameter logPage, model logPage and logPageNav); logsActualMinutes is the
      * total of all the todo's records (logsActualDuration: the same value as days, hours and minutes). Edit and
-     * completion histories are not on the screen (ADR-43); they are stored and exported only.
+     * completion histories are not on the screen; they are stored and exported only.
      */
     public String detail(Model model, UUID todoId, ExecutionForm executionForm, int logPage) {
         // Every read happens before the model is filled, so a failed read leaves no partial page behind.

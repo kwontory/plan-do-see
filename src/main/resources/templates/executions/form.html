@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<!--/* S03 execution record edit (ADR-40). Model: log (ExecutionLogRow: id, todoId, todoTitle, actual time, version; the
+<!--/* S03 execution record edit. Model: log (ExecutionLogRow: id, todoId, todoTitle, actual time, version; the
        503 stand-in has only id and the submitted values), executionForm (startedAt, endedAt, blockerReason, hidden
        version). Conflict (409): latest + changedFields, the global error execution.edit.staleVersion. Busy (503):
        snapshotUnavailable. An overlap or another rule comes back as a field error (200) with the input kept.
        Optional model plan (id, title, priority) fills the shell's open plan and the breadcrumb when the server gives it.
-       The edit history is never shown (ADR-40 amendment 1). */-->
+       The edit history is never shown. */-->
 <html lang="ko" xmlns:th="http://www.thymeleaf.org"
       th:with="formError=${#fields.hasErrors('${executionForm.*}')},
                conflict=${latest != null or snapshotUnavailable == true},

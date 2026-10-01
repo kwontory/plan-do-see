@@ -143,7 +143,7 @@
         <p th:replace="~{fragments/layout :: allPagesNote(${logPageNav})}"></p>
         <div th:replace="~{fragments/layout :: pager(${logPageNav}, 'logPage', @{/todos/{id}(id=${todo.id})}, '#logs-heading', ${#messages.msg('pager.nav', #messages.msg('todos.detail.logs.heading'))})}"></div>
     </section>
-    <!--/* Completion/reopen records and the todo edit history are not shown (ADR-43): stored and exported only. */-->
+    <!--/* Completion/reopen records and the todo edit history are not shown: stored and exported only. */-->
     </th:block>
 </main>
 

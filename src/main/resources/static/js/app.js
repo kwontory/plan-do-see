@@ -492,7 +492,7 @@
     document.addEventListener('input', keepAliveWhileTyping, true);
     document.addEventListener('change', keepAliveWhileTyping, true);
 
-    // ---------- Todo list: folded add area and narrow-screen filter panel (ADR-41) ----------
+    // ---------- Todo list: folded add area and narrow-screen filter panel ----------
     // Without this script both toggles stay hidden and both areas stay open. Folding is only a view state.
 
     // The one place that decides whether the add area starts open: the server marks it (data-open="true": the add form

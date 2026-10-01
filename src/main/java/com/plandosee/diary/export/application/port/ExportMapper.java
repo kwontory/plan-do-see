@@ -47,7 +47,7 @@ public interface ExportMapper {
     List<ExecutionLogRow> executionLogs(@Param("userId") UUID userId, @Param("from") LocalDate from,
             @Param("to") LocalDate to);
 
-    /** Edit revisions of the exported execution records (ADR-40), by id. */
+    /** Edit revisions of the exported execution records, by id. */
     List<ExecutionLogRevisionRow> executionLogRevisions(@Param("userId") UUID userId, @Param("from") LocalDate from,
             @Param("to") LocalDate to);
 
