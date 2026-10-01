@@ -101,7 +101,7 @@
         <p class="sort-note" th:text="#{todos.detail.logs.sortNote}">sort</p>
         <p class="empty" th:if="${logs.isEmpty()}" th:text="#{todos.detail.logs.empty}">empty</p>
         <th:block th:unless="${logs.isEmpty()}">
-        <!--/* This table fits from 480px; below that a long value can make it scroll inside its area. */-->
+        <!--/* This table fits from 360px; below that (or with a very long word) it scrolls inside its area. */-->
         <p class="table-hint table-hint--narrow" th:text="#{common.table.scrollHint}">scroll</p>
         <div class="table-wrap" tabindex="0" role="region" th:attr="aria-label=#{todos.detail.logs.heading}">
             <table class="table--fit">

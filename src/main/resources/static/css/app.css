@@ -2817,8 +2817,8 @@ button.check:hover .icon {
     }
 }
 
-/* The execution table fits at 480px and wider, so its hint shows only below that. */
-@media (min-width: 480px) {
+/* The execution table (S03) fits at 360px and wider, so its hint shows only below that. */
+@media (min-width: 360px) {
     .table-hint--narrow {
         display: none;
     }
@@ -2978,6 +2978,57 @@ tfoot td {
     .table--sticky thead th:first-child,
     .table--sticky tfoot th:first-child {
         background: var(--color-canvas);
+    }
+}
+
+/* Execution records (S03) below 480px: four columns and the icon action fit a 360px screen without scrolling.
+   13px text; start/end times 12px (each date is one 10ch line, time on the next); 4px side padding between columns
+   and 10px before the first; the actual time breaks only between its parts ("1시간 / 15분", keep-all keeps "15분"
+   whole); the blocker reason keeps 4em and its own longest word no longer sets the column: Korean still wraps between
+   words, and only a word longer than the column breaks inside (anywhere); the 44px action keeps 4px on its right.
+   Widths at 360 (area 326): about 88 + 82 + 40 + 52 + 48 = 310. */
+@media (max-width: 479px) {
+    .table--fit {
+        font-size: var(--font-size-xs);
+    }
+
+    .table--fit time {
+        font-size: var(--font-size-2xs);
+    }
+
+    .table--fit th,
+    .table--fit td {
+        padding-inline: 4px;
+    }
+
+    .table--fit th:first-child,
+    .table--fit td:first-child {
+        padding-left: 10px;
+    }
+
+    .table--fit td.num {
+        white-space: normal;
+        word-break: keep-all;
+        overflow-wrap: normal;
+    }
+
+    .table--fit .table__wide {
+        min-width: 4em;
+        overflow-wrap: anywhere;
+    }
+
+    .table--fit th.logs-actions,
+    .table--fit td.logs-actions {
+        padding-right: 4px;
+    }
+}
+
+/* Below 360 the table scrolls inside its area anyway (the hint shows), so the blocker reason keeps a readable
+   8em (about 8 Korean letters a line) and words are never split, as from 480 up. */
+@media (max-width: 359px) {
+    .table--fit .table__wide {
+        min-width: 8em;
+        overflow-wrap: break-word;
     }
 }
 
