@@ -1,4 +1,4 @@
-# Vercel container build (detected by this file name). Same image as Dockerfile; keep the two in sync.
+# Vercel container build (detected by this file name).
 # No secrets are baked into the image; DB_* values come from Vercel project env vars.
 # Vercel routes traffic to $PORT (set PORT=8080 in the project env vars); the app listens on ${PORT:8080}.
 FROM eclipse-temurin:25-jdk AS build

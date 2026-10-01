@@ -1,6 +1,6 @@
 server:
   port: ${PORT:8080}
-  # The request's scheme, host, and port behind a proxy (Render) come from Tomcat's RemoteIpValve.
+  # The request's scheme, host, and port behind a proxy (Vercel) come from Tomcat's RemoteIpValve.
   # It applies X-Forwarded-Proto/-Host/-Port/-For only when the connection comes from a trusted internal proxy
   # (server.tomcat.remoteip.internal-proxies, env SERVER_TOMCAT_REMOTEIP_INTERNALPROXIES; default private ranges and
   # loopback). SameOriginWriteFilter compares the Origin with that result only and never reads X-Forwarded-* itself.
